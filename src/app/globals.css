@@ -1,26 +1,135 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --unisoko-primary: #4F46E5;
+  --unisoko-primary-dark: #3730A3;
+  --unisoko-success: #10B981;
+  --unisoko-success-dark: #059669;
+  --unisoko-background: #F8FAFC;
+  --unisoko-surface: #FFFFFF;
+  --unisoko-text: #0F172A;
+  --unisoko-muted: #64748B;
+  --unisoko-border: #E2E8F0;
+  --unisoko-warning: #F59E0B;
+  --unisoko-error: #EF4444;
+  --unisoko-info: #0EA5E9;
+  --background: var(--unisoko-background);
+  --foreground: var(--unisoko-text);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-slate-50: var(--unisoko-background);
+  --color-slate-200: var(--unisoko-border);
+  --color-slate-300: var(--unisoko-border);
+  --color-slate-500: var(--unisoko-muted);
+  --color-slate-600: var(--unisoko-muted);
+  --color-slate-900: var(--unisoko-text);
+  --color-indigo-600: var(--unisoko-primary);
+  --color-indigo-700: var(--unisoko-primary-dark);
+  --color-emerald-500: var(--unisoko-success);
+  --color-emerald-600: var(--unisoko-success-dark);
+  --color-amber-500: var(--unisoko-warning);
+  --color-red-500: var(--unisoko-error);
+  --color-sky-500: var(--unisoko-info);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+}
+
+/* Explicit high-contrast form controls */
+input:not([type="range"]):not([type="checkbox"]), select, textarea {
+  color: var(--unisoko-text) !important;
+  background-color: var(--unisoko-surface) !important;
+  border: 1px solid var(--unisoko-border);
+}
+
+input:not([type="range"])::placeholder, textarea::placeholder {
+  color: var(--unisoko-muted) !important;
+}
+
+input:not([type="range"]):not([type="checkbox"]):focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--unisoko-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--unisoko-primary) 25%, transparent) !important;
+}
+
+input[type="file"]::file-selector-button {
+  color: var(--unisoko-text);
+  background: var(--unisoko-background);
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  margin-right: 0.75rem;
+}
+
+/* Glassmorphism & Depth Utilities */
+.glass-nav {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-nav {
+  background-color: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.8);
+}
+
+/* Hide scrollbar for tabs/chips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Confetti Ripple Animation */
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.animate-ripple {
+  animation: ripple 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+@media print {
+  body {
+    background: var(--unisoko-surface) !important;
+    color: var(--unisoko-text) !important;
+  }
+
+  header,
+  aside,
+  button,
+  a[href="/admin"] {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  main > section {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
 }
