@@ -97,7 +97,8 @@ export default function GroupBuyPage() {
     setNotice('Group-buy link copied. Share it with your classmates.');
   };
 
-  const wholesaleUnlocked = Boolean(group && group.participantCount >= 2);
+  const wholesaleUnlocked = Boolean(group && group.participantCount >= group.minimumQuantity);
+  const participantsRemaining = group ? Math.max(0, group.minimumQuantity - group.participantCount) : 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -113,14 +114,14 @@ export default function GroupBuyPage() {
               <div className={`rounded-2xl p-4 ${wholesaleUnlocked ? 'bg-emerald-50' : 'bg-slate-50'}`}><p className="text-[10px] font-bold uppercase tracking-wide text-emerald-800">Bei ya Jumla per unit</p><p className="mt-1 text-lg font-black text-slate-900">{formatTZS(group.wholesalePrice)}</p></div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-950 p-4 text-white">
-              <div className="flex items-center gap-2"><Users className="h-5 w-5 text-indigo-300" /><div><p className="text-xl font-black">{group.participantCount} students</p><p className="text-xs text-slate-300">2 participants unlock wholesale</p></div></div>
+              <div className="flex items-center gap-2"><Users className="h-5 w-5 text-indigo-300" /><div><p className="text-xl font-black">{group.participantCount} / {group.minimumQuantity} students</p><p className="text-xs text-slate-300">{participantsRemaining === 0 ? 'Wholesale threshold reached' : `${participantsRemaining} more to unlock wholesale`}</p></div></div>
               <div className="text-right"><p className="flex items-center justify-end gap-1 text-xs text-slate-300"><Clock3 className="h-3.5 w-3.5" />Time left</p><p className="font-mono text-lg font-black text-amber-300">{countdown}</p></div>
             </div>
             <div className={`mt-4 rounded-2xl p-4 text-sm font-bold ${wholesaleUnlocked ? 'bg-emerald-100 text-emerald-900' : 'bg-indigo-50 text-indigo-900'}`}>
-              {remainingMs <= 0 ? 'This 24-hour group buy has expired.' : wholesaleUnlocked ? 'Wholesale unlocked! Ask the UniSoko team to coordinate your shared order and campus hand-off.' : 'Invite at least one more student. The group rate unlocks when the second participant joins.'}
+              {remainingMs <= 0 ? 'This 24-hour group buy has expired.' : wholesaleUnlocked ? 'Wholesale unlocked! Ask the UniSoko team to coordinate your shared order and campus hand-off.' : `Invite ${participantsRemaining} more student${participantsRemaining === 1 ? '' : 's'}. The group rate unlocks at ${group.minimumQuantity} participants.`}
             </div>
-            {remainingMs > 0 && !hasJoined && <button disabled={isJoining} onClick={() => void joinGroup()} className="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isJoining ? 'Joining…' : 'Join this group buy'}</button>}
-            <button onClick={() => void copyInvite()} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50"><Share2 className="h-4 w-4" /><Copy className="h-4 w-4" />Copy invite link</button>
+            {remainingMs > 0 && !hasJoined && <button disabled={isJoining} onClick={() => void joinGroup()} className="mt-5 min-h-11 w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isJoining ? 'Joining…' : 'Join this group buy'}</button>}
+            <button onClick={() => void copyInvite()} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50"><Share2 className="h-4 w-4" /><Copy className="h-4 w-4" />Copy invite link</button>
           </> : <p className="mt-4 text-sm text-slate-600">Loading group details…</p>}
           {notice && <p role="status" className="mt-4 text-center text-xs font-semibold text-emerald-700">{notice}</p>}
           {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-800">{error}</p>}

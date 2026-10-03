@@ -16,6 +16,7 @@ import {
   Check,
   ArrowLeft,
   CheckCircle2,
+  Clock3,
   MapPin,
   Flame,
   Users,
@@ -24,20 +25,40 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
+import { getProductSpecEntries } from '@/lib/productSpecs';
+import TradeInModal from '@/components/TradeInModal';
+import type { TradeInQuoteAttachment } from '@/lib/types';
 
 export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { addToCart, selectedCampus } = useStore();
+  const { addToCart, selectedCampus, tradeInQuote, setTradeInQuote } = useStore();
 
   const productId = params?.id as string;
-  const product = MOCK_PRODUCTS.find((p) => p.id === productId) || MOCK_PRODUCTS[0];
+  const product = MOCK_PRODUCTS.find((p) => p.id === productId);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [isStartingGroupBuy, setIsStartingGroupBuy] = useState(false);
   const [groupBuyError, setGroupBuyError] = useState('');
+  const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <Header />
+        <main className="mx-auto max-w-xl px-4 py-16 text-center">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Product unavailable</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">This product could not be found in UniSoko’s catalog.</p>
+          <Link href="/" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700">Browse products</Link>
+        </main>
+        <CartDrawer />
+      </div>
+    );
+  }
+
+  const productSpecEntries = getProductSpecEntries(product);
 
   const minWholesale = product.minWholesaleQty || 3;
   const isWholesaleUnlocked = quantity >= minWholesale;
@@ -53,7 +74,13 @@ export default function ProductDetailsPage() {
   const handleIncrement = () => setQuantity((q) => q + 1);
   const handleDecrement = () => setQuantity((q) => Math.max(1, q - 1));
 
+  const isAvailable = product.stockStatus !== 'Coming Soon';
+  const tradeInEligible = ['Phones', 'Smart Phones & Accessories', 'Laptops', 'Laptops & Computers'].includes(product.category)
+    || /\b(phone|tablet|laptop|notebook|macbook|thinkpad|ipad)\b/i.test(`${product.title} ${product.category}`);
+  const handleTradeInQuote = (quote: TradeInQuoteAttachment) => setTradeInQuote(quote);
+
   const handleAddToCart = () => {
+    if (!isAvailable) return;
     addToCart(product, quantity);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1500);
@@ -114,7 +141,7 @@ export default function ProductDetailsPage() {
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <span>{product.category}</span>
             <span>/</span>
-            <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-50">
+            <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-40 sm:max-w-50">
               {product.title}
             </span>
           </div>
@@ -130,6 +157,7 @@ export default function ProductDetailsPage() {
                 src={product.images[selectedImageIndex] || product.images[0]}
                 alt={product.title}
                 fill
+                sizes="(max-width: 1023px) 100vw, 58vw"
                 priority
                 className="object-cover transition-all duration-300"
               />
@@ -163,7 +191,7 @@ export default function ProductDetailsPage() {
                         : 'border-slate-200 opacity-70 hover:opacity-100 dark:border-slate-800'
                     }`}
                   >
-                    <Image src={img} alt={`Thumbnail ${idx + 1}`} fill className="object-cover" />
+                    <Image src={img} alt={`Thumbnail ${idx + 1}`} fill sizes="96px" className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -189,8 +217,9 @@ export default function ProductDetailsPage() {
                 <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {product.category}
                 </span>
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> In Stock for Delivery
+                <span className={`text-xs font-medium flex items-center gap-1 ${isAvailable ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-300'}`}>
+                  {isAvailable ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
+                  {isAvailable ? 'Available for Delivery' : 'Coming Soon'}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
@@ -255,7 +284,7 @@ export default function ProductDetailsPage() {
                   <div className="flex items-center rounded-xl border-2 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 p-1">
                     <button
                       onClick={handleDecrement}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-700 shadow-xs hover:bg-slate-100 dark:bg-slate-700 dark:text-white transition-colors"
+                      className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-700 shadow-xs hover:bg-slate-100 dark:bg-slate-700 dark:text-white transition-colors"
                       aria-label="Decrease quantity"
                     >
                       <Minus className="h-4 w-4" />
@@ -265,7 +294,7 @@ export default function ProductDetailsPage() {
                     </span>
                     <button
                       onClick={handleIncrement}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-700 shadow-xs hover:bg-slate-100 dark:bg-slate-700 dark:text-white transition-colors"
+                      className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-700 shadow-xs hover:bg-slate-100 dark:bg-slate-700 dark:text-white transition-colors"
                       aria-label="Increase quantity"
                     >
                       <Plus className="h-4 w-4" />
@@ -330,12 +359,16 @@ export default function ProductDetailsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                  {tradeInEligible && <div className="flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900 dark:bg-emerald-950/30"><div><p className="text-xs font-bold text-slate-900 dark:text-white">Trade In Your Existing Device for an Instant Discount</p><p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">{tradeInQuote ? `Estimate: ${formatTZS(tradeInQuote.estimatedPrice)} · ${tradeInQuote.itemTitle}` : 'Apply an estimated discount at checkout.'}</p></div><button type="button" role="switch" aria-checked={Boolean(tradeInQuote)} aria-label="Trade in your existing device for an instant discount" onClick={() => tradeInQuote ? setTradeInQuote(null) : setIsTradeInModalOpen(true)} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${tradeInQuote ? 'bg-emerald-700' : 'bg-slate-300'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${tradeInQuote ? 'translate-x-6' : 'translate-x-1'}`} /></button></div>}
                   <button
                     onClick={handleAddToCart}
-                    className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-xs sm:text-sm font-bold shadow-lg transition-all ${
+                    disabled={!isAvailable}
+                    className={`flex min-h-11 items-center justify-center gap-2 rounded-xl py-3.5 text-xs sm:text-sm font-bold shadow-lg transition-all ${
                       isAdded
                         ? 'bg-emerald-600 text-white shadow-emerald-600/20'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/20 active:scale-95'
+                        : isAvailable
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/20 active:scale-95'
+                          : 'cursor-not-allowed bg-slate-200 text-slate-500 shadow-none dark:bg-slate-800 dark:text-slate-400'
                     }`}
                   >
                     {isAdded ? (
@@ -346,14 +379,14 @@ export default function ProductDetailsPage() {
                     ) : (
                       <>
                         <ShoppingBag className="h-4 w-4" />
-                        <span>Add {quantity} to Cart</span>
+                        <span>{isAvailable ? `Add ${quantity} to Cart` : 'Coming Soon'}</span>
                       </>
                     )}
                   </button>
 
                   <button
                     onClick={handleWhatsAppOrder}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all"
+                    className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 transition-all"
                   >
                     <MessageCircle className="h-4 w-4" />
                     <span>Order via WhatsApp</span>
@@ -361,8 +394,8 @@ export default function ProductDetailsPage() {
                 </div>
                 <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div><p className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><Users className="h-4 w-4 text-indigo-600" />Start Group-Buy (Split Wholesale)</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Share a 24-hour invite. Two students unlock the group wholesale rate.</p></div>
-                    <button onClick={() => void handleStartGroupBuy()} disabled={isStartingGroupBuy} className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isStartingGroupBuy ? 'Starting…' : 'Start group'}</button>
+                    <div><p className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><Users className="h-4 w-4 text-indigo-600" />Start Group-Buy (Split Wholesale)</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Share a 24-hour invite. {minWholesale} participants unlock this product’s wholesale rate.</p></div>
+                    <button onClick={() => void handleStartGroupBuy()} disabled={isStartingGroupBuy} className="min-h-11 shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isStartingGroupBuy ? 'Starting…' : 'Start group'}</button>
                   </div>
                   {groupBuyError && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{groupBuyError}</p>}
                 </div>
@@ -387,7 +420,7 @@ export default function ProductDetailsPage() {
         </div>
 
         {/* Specifications Breakdown */}
-        {product.specs && (
+        {productSpecEntries.length > 0 && (
           <section className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -399,7 +432,7 @@ export default function ProductDetailsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(product.specs).map(([key, val]) => (
+              {productSpecEntries.map(([key, val]) => (
                 <div
                   key={key}
                   className="flex items-center justify-between rounded-xl bg-slate-50 p-3.5 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800"
@@ -440,6 +473,7 @@ export default function ProductDetailsPage() {
         )}
       </main>
 
+        <TradeInModal isOpen={isTradeInModalOpen} onClose={() => setIsTradeInModalOpen(false)} onQuoted={handleTradeInQuote} selectedCampus={selectedCampus} purchasePrice={totalPrice} />
       <CartDrawer />
     </div>
   );

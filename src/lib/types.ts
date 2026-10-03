@@ -15,7 +15,7 @@ export type StockStatus = 'In Stock' | 'New Stock' | 'Trending' | 'Coming Soon';
 
 export type DeliverySpotType = 'Hostel' | 'Landmark' | 'Off-Campus' | 'Courier';
 
-export type OrderStatus = 'Pending Verification' | 'Approved' | 'Out for Delivery' | 'Completed';
+export type OrderStatus = 'Pending Verification' | 'Approved' | 'Out for Delivery' | 'Completed' | 'Cancelled';
 
 export type PaymentStatus = 'Submitted' | 'Verification' | 'Verified' | 'Failed';
 
@@ -24,7 +24,7 @@ export type FulfillmentStatus = 'Unconfirmed' | 'Confirmed' | 'Preparing' | 'Rea
 export type DeliveryStatus = 'Not Dispatched' | 'With Winga' | 'With Courier' | 'Ready for Pickup' | 'Delivered';
 
 export interface OrderStatusEvent {
-  statusType: 'payment' | 'fulfillment' | 'delivery';
+  statusType: 'payment' | 'fulfillment' | 'delivery' | 'cancellation';
   status: string;
   label: string;
   changedBy: 'customer' | 'admin';
@@ -36,14 +36,35 @@ export interface Product {
   title: string;
   description: string;
   category: ProductCategory;
+  brand?: string;
+  model?: string;
   priceRetail: number;
   priceWholesale: number; // min 3 units
   condition: ProductCondition;
   stockStatus: StockStatus;
   images: string[];
   specs?: Record<string, string>;
+  specifications?: {
+    processor?: string;
+    ram?: string;
+    storage?: string;
+    display?: string;
+    battery?: string;
+    connectivity?: string;
+    details?: Record<string, string>;
+  };
+  warrantyDays?: number;
   minWholesaleQty?: number;
   featured?: boolean;
+}
+
+export interface OrderItem {
+  productId: string;
+  productTitle: string;
+  condition: ProductCondition;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
 }
 
 export interface Order {
@@ -57,6 +78,14 @@ export interface Order {
   deliverySpotType: DeliverySpotType;
   deliveryDetails: string; // e.g., Hostel Name, Room No, or Landmark
   quantity: number;
+  items?: OrderItem[];
+  subtotalAmount?: number;
+  shippingFee?: number;
+  promoDiscount?: number;
+  tradeInRequestId?: string;
+  tradeInEstimate?: number;
+  tradeInInspectionStatus?: 'Not Required' | 'Trade-In Pending Inspection' | 'Inspected' | 'Rejected';
+  cancellationStatus?: 'Not Requested' | 'Pending' | 'Under Review' | 'Approved' | 'Rejected' | 'Completed';
   totalAmount: number;
   wingaCodeUsed?: string;
   lipaNambaTxId: string;
@@ -96,6 +125,7 @@ export type WingaApplicationStatus = 'Pending' | 'Approved' | 'Rejected';
 export interface WingaApplication {
   id: string;
   userId: string;
+  email: string;
   fullName: string;
   phone: string;
   university: string;
@@ -103,6 +133,7 @@ export interface WingaApplication {
   promoCode?: string;
   submittedAt: string;
   reviewedAt?: string;
+  studentIdVerified?: boolean;
 }
 
 export interface UniversityLocation {
@@ -163,6 +194,15 @@ export interface TradeInRequest {
   status: TradeInStatus;
   adminNotes?: string;
   submittedAt: string;
+  orderId?: string;
+  valuationInputs?: Record<string, unknown>;
+}
+
+export interface TradeInQuoteAttachment {
+  requestId: string;
+  token: string;
+  estimatedPrice: number;
+  itemTitle: string;
 }
 
 export interface StoreSettings {
@@ -174,8 +214,20 @@ export interface StoreSettings {
   minPayoutThreshold: number;
   bannerNotice: string;
   partnerBadges: { name: string; shortCode: string; category: string; logoUrl?: string; url?: string }[];
-  paymentMethods?: { network: 'M-Pesa' | 'Tigo Pesa' | 'Airtel Money'; tillNumber: string; accountName: string; enabled: boolean }[];
+  paymentMethods?: { id?: string; network: 'M-Pesa' | 'Tigo Pesa' | 'Airtel Money'; tillNumber: string; accountName: string; enabled: boolean }[];
   officialWhatsAppNumbers?: string[];
+  developerProfile: DeveloperProfileSettings;
+}
+
+export interface DeveloperProfileSettings {
+  name: string;
+  story: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  link: string;
+  imageUrl: string;
+  imagePath: string;
 }
 
 export interface BrandAsset {

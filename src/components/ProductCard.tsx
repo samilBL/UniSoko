@@ -8,6 +8,8 @@ import { formatTZS } from '@/lib/mockData';
 import { useStore } from '@/context/StoreContext';
 import { ShoppingBag, MessageCircle, Check, Sparkles, ArrowUpRight, ShieldCheck, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getProductSpecEntries } from '@/lib/productSpecs';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 interface ProductCardProps {
   product: Product;
@@ -16,10 +18,13 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart, selectedCampus, storeSettings } = useStore();
   const [isAdded, setIsAdded] = useState(false);
+  const isAvailable = product.stockStatus !== 'Coming Soon';
+  const productSpecEntries = getProductSpecEntries(product);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isAvailable) return;
     addToCart(product, 1);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1500);
@@ -33,8 +38,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     const msg = encodeURIComponent(
       `Habari UniSoko! Nipo ${campusName} (${campusCode}). Nataka kuagiza gadget hii:\n\n• ${product.title}\n• Condition: ${product.condition}\n• Bei ya Rejareja: ${formatTZS(product.priceRetail)}\n• Bei ya Jumla (3+): ${formatTZS(product.priceWholesale)}\n\nTafadhali nambie upatikanaji wa hostel delivery!`
     );
-    const waUrl = storeSettings?.supportWhatsApp || 'https://wa.me/255754892110';
-    window.open(`${waUrl}?text=${msg}`, '_blank');
+    window.open(`${UNISOKO_CONTACT.whatsappUrl}?text=${msg}`, '_blank', 'noopener,noreferrer');
   };
 
   // Badge color mapping for conditions
@@ -62,7 +66,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.condition}
           </span>
 
-          {product.stockStatus === 'Trending' ? (
+          {product.stockStatus === 'Coming Soon' ? (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">COMING SOON</span>
+          ) : product.stockStatus === 'Trending' ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:text-amber-400 border border-amber-500/20">
               <Zap className="h-2.5 w-2.5 fill-current text-amber-600" />
               HOT DEAL
@@ -102,9 +108,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         {/* Quick Specs Snippet */}
-        {product.specs && (
+        {productSpecEntries.length > 0 && (
           <div className="mt-2.5 flex flex-wrap gap-1">
-            {Object.entries(product.specs).slice(0, 2).map(([key, val]) => (
+            {productSpecEntries.slice(0, 2).map(([key, val]) => (
               <span
                 key={key}
                 className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60"
@@ -144,13 +150,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Add to Cart */}
           <button
             onClick={handleAddToCart}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-all ${
-              isAdded
+            disabled={!isAvailable}
+              className={`flex min-h-11 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-all ${
+              !isAvailable
+                ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                : isAdded
                 ? 'bg-emerald-600 text-white shadow-md'
                 : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-600/20'
             }`}
           >
-            {isAdded ? (
+            {!isAvailable ? (
+              <span>Coming Soon</span>
+            ) : isAdded ? (
               <>
                 <Check className="h-3.5 w-3.5" />
                 <span>Added!</span>
@@ -166,7 +177,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Order via WhatsApp */}
           <button
             onClick={handleWhatsAppOrder}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/50 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-600 active:scale-95 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60 transition-all"
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-500/50 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-600 active:scale-95 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60 transition-all"
             aria-label="Order via WhatsApp"
           >
             <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />

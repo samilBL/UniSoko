@@ -1,28 +1,24 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
-import { useStore } from '@/context/StoreContext';
-import { OrderStatus, WingaAgent } from '@/lib/types';
 import { ArrowLeft, BadgeCheck, Medal, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react';
 
-const SUCCESSFUL_STATUSES: OrderStatus[] = ['Approved', 'Out for Delivery', 'Completed'];
-
-function agentStats(agent: WingaAgent, orders: ReturnType<typeof useStore>['orders']) {
-  const referredOrders = orders.filter((order) => order.wingaCodeUsed?.toUpperCase() === agent.promoCode.toUpperCase());
-  const successfulOrders = referredOrders.filter((order) => SUCCESSFUL_STATUSES.includes(order.status));
-  return {
-    orders: successfulOrders.length,
-    products: successfulOrders.reduce((total, order) => total + Math.max(0, order.quantity), 0),
-  };
-}
+type PublicWinga = { id: string; fullName: string; university: string; joinedAt: string; studentIdVerified: boolean; successfulPurchases: number; productsSold: number };
 
 export default function WingaLeaderboardPage() {
-  const { wingaAgents, orders } = useStore();
-  const rankedAgents = wingaAgents
-    .map((agent) => ({ agent, ...agentStats(agent, orders) }))
-    .sort((left, right) => right.products - left.products || right.orders - left.orders || right.agent.totalEarnings - left.agent.totalEarnings);
+  const [wingas, setWingas] = useState<PublicWinga[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/winga/leaderboard', { cache: 'no-store' })
+      .then(async (response) => response.ok ? response.json() as Promise<{ wingas?: PublicWinga[] }> : null)
+      .then((result) => { if (result?.wingas) setWingas(result.wingas); })
+      .catch(() => undefined)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -38,28 +34,28 @@ export default function WingaLeaderboardPage() {
           </div>
         </section>
         <section className="space-y-3" aria-label="Winga rankings">
-          {rankedAgents.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No Winga agents have registered yet.</div> : rankedAgents.map(({ agent, orders: successfulOrders, products }, index) => {
-            const joinedDate = agent.joinedAt ? new Date(agent.joinedAt) : null;
+          {isLoading ? <div role="status" className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Loading campus rankings…</div> : wingas.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No approved Winga profiles yet.</div> : wingas.map((winga, index) => {
+            const joinedDate = winga.joinedAt ? new Date(winga.joinedAt) : null;
             const joined = joinedDate && !Number.isNaN(joinedDate.getTime())
               ? `Joined ${new Intl.DateTimeFormat('en', { month: 'short', year: 'numeric' }).format(joinedDate)}`
               : 'Join date unavailable';
-            const verified = agent.kycStatus === 'Verified';
+            const verified = winga.studentIdVerified;
             return (
-              <article key={agent.id} className="grid gap-4 rounded-3xl border border-slate-200/80 bg-white/85 p-5 shadow-xl shadow-indigo-950/[0.03] backdrop-blur-xl sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-6">
+              <article key={winga.id} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-6">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-2xl font-black ${index < 3 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'}`} aria-label={`Rank ${index + 1}`}>
                   {index < 3 ? <Medal className="h-6 w-6" /> : `#${index + 1}`}
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="truncate text-base font-extrabold text-slate-950">{agent.fullName}</h2>
+                    <h2 className="truncate text-base font-extrabold text-slate-950">{winga.fullName}</h2>
                     {verified ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-800"><BadgeCheck className="h-3.5 w-3.5" />Verified Student ID</span> : <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800">ID not verified</span>}
                   </div>
-                  <p className="mt-1 truncate text-sm text-slate-500">{agent.university}</p>
+                  <p className="mt-1 truncate text-sm text-slate-500">{winga.university}</p>
                   <p className="mt-1 text-xs font-medium text-slate-400">{joined}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:min-w-52">
-                  <div className="rounded-2xl bg-indigo-50 p-3"><p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-indigo-700"><PackageCheck className="h-3.5 w-3.5" />Products sold</p><p className="mt-1 text-lg font-black text-slate-950">{products}</p></div>
-                  <div className="rounded-2xl bg-emerald-50 p-3"><p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800"><ShoppingBag className="h-3.5 w-3.5" />Successful orders</p><p className="mt-1 text-lg font-black text-slate-950">{successfulOrders}</p></div>
+                  <div className="rounded-xl bg-indigo-50 p-3"><p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-indigo-700"><PackageCheck className="h-3.5 w-3.5" />Products sold</p><p className="mt-1 text-lg font-black text-slate-950">{winga.productsSold}</p></div>
+                  <div className="rounded-xl bg-emerald-50 p-3"><p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800"><ShoppingBag className="h-3.5 w-3.5" />Successful purchases</p><p className="mt-1 text-lg font-black text-slate-950">{winga.successfulPurchases}</p></div>
                 </div>
               </article>
             );

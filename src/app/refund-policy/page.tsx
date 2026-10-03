@@ -112,7 +112,7 @@ export default function RefundPolicyPage() {
           <ul>
             <li><strong>Covered:</strong> Manufacturing defects, unexpected hardware failures not caused by physical or liquid damage, and battery degradation beyond 30% within the warranty period.</li>
             <li><strong>Not Covered:</strong> Accidental damage, water damage, unauthorised repair attempts, software issues, lost or stolen devices, and normal wear and tear (e.g., cosmetic scratches, keyboard keycap wear).</li>
-            <li><strong>Claim Process:</strong> Contact UniSoko via WhatsApp (+255 754 000 111) with your Order ID and a short video demonstrating the fault. Our team will respond within 24 hours with next steps.</li>
+            <li><strong>Claim Process:</strong> Contact UniSoko via WhatsApp (+255 616 961 511) with your Order ID and a short video demonstrating the fault. Our team will respond within 24 hours with next steps.</li>
             <li><strong>Warranty Repair:</strong> Where repair is possible, UniSoko will arrange free in-campus repair. If repair is not feasible, a like-for-like replacement will be provided.</li>
           </ul>
         </RefundSection>
@@ -123,7 +123,7 @@ export default function RefundPolicyPage() {
             <li>Devices where the buyer has broken the warranty seal or opened the chassis for self-repair.</li>
             <li>Accessories (chargers, cables, bags) once opened and used — unless proven to be non-functional at delivery.</li>
             <li>Orders where the Lipa Namba transaction ID was not verified and the order was not approved by UniSoko admin.</li>
-            <li>Trade-in devices submitted via the Sell Your Device portal — these are assessed on a separate agreement basis.</li>
+            <li>Devices submitted for trade-in are assessed on a separate agreement basis. A checkout estimate remains provisional until the required physical inspection is recorded.</li>
             <li>Devices reported as faults after the applicable return/exchange/warranty window has expired.</li>
           </ul>
         </RefundSection>
@@ -131,7 +131,7 @@ export default function RefundPolicyPage() {
         <RefundSection icon={<RotateCcw className="h-5 w-5 text-indigo-600" />} title="5. How to Initiate a Return or Warranty Claim">
           <p>To start a return or warranty claim:</p>
           <ol className="list-decimal ml-5 space-y-2">
-            <li>Contact UniSoko on WhatsApp at <strong>+255 754 000 111</strong> with your Order ID and the issue description.</li>
+            <li>Contact UniSoko on WhatsApp at <strong>+255 616 961 511</strong> with your Order ID and the issue description.</li>
             <li>Our team will confirm eligibility and provide a return/exchange reference number within 24 hours.</li>
             <li>Bring the device (and original packaging if available) to the agreed UniSoko campus pick-up point.</li>
             <li>After inspection, refunds are processed within 3–5 business days or an exchange unit is provided on the spot.</li>
@@ -142,8 +142,8 @@ export default function RefundPolicyPage() {
         {/* Contact */}
         <div className="rounded-3xl bg-slate-900 text-white p-6 text-xs space-y-2">
           <h2 className="text-sm font-bold font-heading">Returns & Warranty Contact</h2>
-          <p className="text-slate-300">WhatsApp (preferred): +255 754 000 111</p>
-          <p className="text-slate-300">Email: support@unisoko.co.tz | Campus: MUST, Mbeya, Tanzania</p>
+          <p className="text-slate-300">WhatsApp (preferred): +255 616 961 511</p>
+          <p className="text-slate-300">Email: qwazerty01012001@gmail.com | Campus: MUST, Mbeya, Tanzania</p>
           <p className="text-slate-400 mt-2">Operating Hours: Monday – Saturday, 8:00 AM – 7:00 PM EAT</p>
         </div>
 

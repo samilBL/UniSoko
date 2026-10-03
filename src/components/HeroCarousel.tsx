@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Laptop, Users, Layers, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 interface Slide {
   id: string;
@@ -42,13 +43,13 @@ const SLIDES: Slide[] = [
     id: 'winga-hero',
     badge: 'Earn While You Learn 💰',
     title: 'Become a UniSoko',
-    highlight: 'Campus Winga Agent',
+    highlight: 'Campus Winga',
     description:
       'Zero startup capital. Get your unique promo code (e.g. WINGA-SAM), share gadget deals with classmates, and earn 5% instant cash on every successful order.',
-    ctaText: 'Sign Up as Winga Agent',
-    ctaLink: '/winga',
-    secondaryCtaText: 'View Agent Dashboard',
-    secondaryCtaLink: '/winga/dashboard',
+    ctaText: 'Become Campus Winga',
+    ctaLink: '/winga/register',
+    secondaryCtaText: 'Winga Dashboard',
+    secondaryCtaLink: '/winga/login',
     bgColor: 'from-slate-900 via-slate-900 to-slate-900',
     accentColor: 'text-emerald-400',
     icon: <Users className="h-6 w-6 text-emerald-400" />,
@@ -64,7 +65,7 @@ const SLIDES: Slide[] = [
     ctaText: 'Explore Jumla Deals (3+)',
     ctaLink: '#products-section',
     secondaryCtaText: 'WhatsApp Sales Desk',
-    secondaryCtaLink: 'https://wa.me/255754892110?text=Habari%20UniSoko!%20Nataka%20bei%20za%20jumla%20kwa%20chuo%20chetu',
+    secondaryCtaLink: `${UNISOKO_CONTACT.whatsappUrl}?text=Habari%20UniSoko!%20Nataka%20bei%20za%20jumla%20kwa%20chuo%20chetu`,
     bgColor: 'from-slate-900 via-slate-900 to-slate-900',
     accentColor: 'text-amber-400',
     icon: <Layers className="h-6 w-6 text-amber-400" />,

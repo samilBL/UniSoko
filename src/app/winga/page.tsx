@@ -1,28 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, ArrowRight, CheckCircle2, Clock3, KeyRound, MessageCircle, Phone, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, Clock3, KeyRound, Mail, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { ALL_UNIVERSITIES, OTHER_TANZANIA_UNIVERSITY } from '@/lib/mockData';
 import { getSupabaseBrowser } from '@/lib/supabaseBrowser';
 
-type ApplicationStep = 'phone' | 'otp' | 'application' | 'submitted';
+type ApplicationStep = 'email' | 'otp' | 'application' | 'submitted';
 
 export default function WingaLandingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" aria-busy="true" />}>
+      <WingaApplicationForm />
+    </Suspense>
+  );
+}
+
+function WingaApplicationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [university, setUniversity] = useState(ALL_UNIVERSITIES[0]?.name || '');
   const [otherUniversity, setOtherUniversity] = useState('');
-  const [step, setStep] = useState<ApplicationStep>('phone');
+  const [step, setStep] = useState<ApplicationStep>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  const normalizedEmail = () => email.trim().toLowerCase();
 
   const normalizedPhone = () => {
     const digits = phone.replace(/\D/g, '');
@@ -36,26 +47,25 @@ export default function WingaLandingPage() {
     setError('');
     setIsSubmitting(true);
     const supabase = getSupabaseBrowser();
-    const canonicalPhone = normalizedPhone();
     if (!supabase) {
-      setError('Phone sign-in is not configured. Please contact UniSoko support.');
+      setError('Email sign-in is not configured. Please contact UniSoko support.');
       setIsSubmitting(false);
       return;
     }
-    if (!/^\+255[67]\d{8}$/.test(canonicalPhone)) {
-      setError('Enter a valid Tanzanian mobile number, for example +255 712 345 678.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail())) {
+      setError('Enter a valid email address.');
       setIsSubmitting(false);
       return;
     }
-    const { error: otpError } = await supabase.auth.signInWithOtp({ phone: canonicalPhone });
+    const { error: otpError } = await supabase.auth.signInWithOtp({ email: normalizedEmail() });
     setIsSubmitting(false);
     if (otpError) {
-      setError('Could not send a verification code. Check the number and try again.');
+      setError('Could not send a verification code. Check the email address and try again.');
       return;
     }
-    setPhone(canonicalPhone);
+    setEmail(normalizedEmail());
     setStep('otp');
-    setMessage(`We sent a verification code to ${canonicalPhone}.`);
+    setMessage(`We sent a verification code to ${normalizedEmail()}.`);
   };
 
   const verifyOtp = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -64,14 +74,14 @@ export default function WingaLandingPage() {
     setIsSubmitting(true);
     const supabase = getSupabaseBrowser();
     if (!supabase) {
-      setError('Phone sign-in is not configured. Please contact UniSoko support.');
+      setError('Email sign-in is not configured. Please contact UniSoko support.');
       setIsSubmitting(false);
       return;
     }
-    const { error: verifyError } = await supabase.auth.verifyOtp({ phone: normalizedPhone(), token: otp.trim(), type: 'sms' });
+    const { error: verifyError } = await supabase.auth.verifyOtp({ email: normalizedEmail(), token: otp.trim(), type: 'email' });
     setIsSubmitting(false);
     if (verifyError) {
-      setError('That code could not be verified. Check it and try again.');
+      setError('That code could not be verified. Check your email and try again.');
       return;
     }
     const response = await fetch('/api/winga/me', { cache: 'no-store' });
@@ -82,7 +92,7 @@ export default function WingaLandingPage() {
         return;
       }
     }
-    setMessage('Phone verified. Complete your Winga application below.');
+    setMessage('Email verified. Complete your Winga application below.');
     setStep('application');
   };
 
@@ -117,7 +127,7 @@ export default function WingaLandingPage() {
             <Sparkles className="h-4 w-4" />
             <span>Join the nationwide UniSoko agent network</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight">Become a UniSoko <span className="text-emerald-400">Winga Agent</span></h1>
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight">Become a UniSoko <span className="text-emerald-400">Campus Winga</span></h1>
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Promote UniSoko products and help coordinate campus hand-offs. Winga applications are reviewed by UniSoko; agents are not sellers and do not receive customer payments.
           </p>
@@ -131,27 +141,28 @@ export default function WingaLandingPage() {
               <p className="text-xs text-slate-500 dark:text-slate-400">UniSoko will review your application. A promo code and portal access are issued only after approval.</p>
               <Link href="/winga/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-6 py-3 text-xs font-bold text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800">View application status<ArrowRight className="h-4 w-4" /></Link>
             </div>
-          ) : step === 'phone' ? (
+          ) : step === 'email' ? (
             <form onSubmit={sendOtp} className="space-y-4">
-              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Apply to become a Winga</h2><p className="text-xs text-slate-500 dark:text-slate-400">Verify your mobile number first. UniSoko reviews every application before activation.</p></div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Mobile number
-                <span className="relative mt-1.5 block"><Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="tel" autoComplete="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+255 712 345 678" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></span>
+              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Apply to become Campus Winga</h2><p className="text-xs text-slate-500 dark:text-slate-400">Verify your email first. UniSoko reviews every application before activation.</p></div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Email address
+                <span className="relative mt-1.5 block"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></span>
               </label>
-              <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60"><span className="inline-flex items-center gap-2"><MessageCircle className="h-4 w-4" />{isSubmitting ? 'Sending code…' : 'Send SMS verification code'}</span></button>
+              <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60"><span className="inline-flex items-center gap-2"><Mail className="h-4 w-4" />{isSubmitting ? 'Sending code…' : 'Send email verification code'}</span></button>
             </form>
           ) : step === 'otp' ? (
             <form onSubmit={verifyOtp} className="space-y-4">
-              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Verify your phone</h2><p className="text-xs text-slate-500 dark:text-slate-400">Enter the SMS code sent to {phone}.</p></div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Verification code
+              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Verify your email</h2><p className="text-xs text-slate-500 dark:text-slate-400">Enter the code sent to {email}.</p></div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Email verification code
                 <span className="relative mt-1.5 block"><KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input inputMode="numeric" autoComplete="one-time-code" required value={otp} onChange={(event) => setOtp(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm tracking-widest text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></span>
               </label>
-              <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isSubmitting ? 'Verifying…' : 'Verify phone'}</button>
-              <button type="button" onClick={() => { setStep('phone'); setOtp(''); setMessage(''); }} className="w-full py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600">Change phone number</button>
+              <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isSubmitting ? 'Verifying…' : 'Verify email'}</button>
+              <button type="button" onClick={() => { setStep('email'); setOtp(''); setMessage(''); }} className="w-full py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600">Change email address</button>
             </form>
           ) : (
             <form onSubmit={submitApplication} className="space-y-4">
-              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Winga application</h2><p className="text-xs text-slate-500 dark:text-slate-400">Verified number: {phone}. A UniSoko admin must approve your application before activation.</p></div>
+              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Winga application</h2><p className="text-xs text-slate-500 dark:text-slate-400">Verified email: {email}. Add your mobile-money contact number below; it is not verified by UniSoko yet.</p></div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Full name<input type="text" autoComplete="name" required minLength={2} maxLength={120} value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="e.g. Kelvin Mwakyusa" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Mobile-money contact number<input type="tel" autoComplete="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+255 712 345 678" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></label>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">University or campus
                 <select value={university} onChange={(event) => setUniversity(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                   {ALL_UNIVERSITIES.map((item) => <option key={item.id} value={item.name}>{item.name} ({item.shortCode})</option>)}
@@ -164,8 +175,8 @@ export default function WingaLandingPage() {
           {message && <p role="status" className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4 shrink-0" />{message}</p>}
           {error && <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800"><AlertCircle className="h-4 w-4 shrink-0" />{error}</p>}
           {searchParams.get('auth') === 'unavailable' && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Winga sign-in is not configured. Please contact UniSoko support.</p>}
-          {searchParams.get('auth') === 'required' && <p role="status" className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">Sign in with your verified Winga phone to continue.</p>}
-          {searchParams.get('apply') === '1' && <p role="status" className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">Verify your phone to apply or check your application status.</p>}
+          {searchParams.get('auth') === 'required' && <p role="status" className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">Sign in with your verified email to continue.</p>}
+          {searchParams.get('apply') === '1' && <p role="status" className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">Verify your email to apply or check your application status.</p>}
         </section>
       </main>
       <CartDrawer />

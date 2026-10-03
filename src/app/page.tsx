@@ -7,6 +7,7 @@ import FilterChips, { FilterCategory } from '@/components/FilterChips';
 import ProductCard from '@/components/ProductCard';
 import WingaRecruitmentBanner from '@/components/WingaRecruitmentBanner';
 import CampusEngagement from '@/components/CampusEngagement';
+import HomepageBanners from '@/components/HomepageBanners';
 import { openStudentGuide } from '@/lib/studentGuide';
 import CartDrawer from '@/components/CartDrawer';
 import { useStore } from '@/context/StoreContext';
@@ -18,15 +19,22 @@ import {
   PlayCircle,
   DollarSign,
   Award,
+  GraduationCap,
+  BedDouble,
+  PackageCheck,
+  Sparkles,
+  ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createWhatsAppLink } from '@/lib/whatsapp';
+import { matchesProductSearch } from '@/lib/productSpecs';
+import { DEVELOPER_PROFILE_DEFAULTS, UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function StorefrontHomePage() {
-  const { selectedCampus, products, storeSettings } = useStore();
+  const { selectedCampus, products, storeSettings, searchQuery } = useStore();
+  const developerProfile = { ...DEVELOPER_PROFILE_DEFAULTS, ...storeSettings.developerProfile };
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Calculate counts for chips
   const filterCounts = useMemo(() => {
@@ -50,13 +58,7 @@ export default function StorefrontHomePage() {
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = product.title.toLowerCase().includes(query);
-        const matchesDesc = product.description.toLowerCase().includes(query);
-        const matchesCategory = product.category.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesDesc && !matchesCategory) return false;
-      }
+      if (searchQuery.trim() && !matchesProductSearch(product, searchQuery)) return false;
 
       // Category chip filter
       if (selectedFilter === 'All') return true;
@@ -166,6 +168,121 @@ export default function StorefrontHomePage() {
           </Link>
         </section>
 
+        {/* Student Services Quick-Launch Hub */}
+        <section aria-label="Campus Student Services" className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                Campus Student Services
+              </h2>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-500">Tailored for {selectedCampus.shortCode}</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* Service 1: Grad Clearance */}
+            <Link
+              href="/grad-clearance"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md dark:border-amber-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
+                  <GraduationCap className="h-5 w-5" />
+                </div>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                  Rush Season
+                </span>
+              </div>
+              <div className="mt-3">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 flex items-center gap-1">
+                  Graduation Clearance
+                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                  Sell your room gear & gadgets before leaving, or buy clearance items from seniors.
+                </p>
+              </div>
+            </Link>
+
+            {/* Service 2: Student Bundles */}
+            <Link
+              href="/bundles"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-white to-indigo-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-400 hover:shadow-md dark:border-indigo-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-400">
+                  <PackageCheck className="h-5 w-5" />
+                </div>
+                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-black text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                  Save 25%
+                </span>
+              </div>
+              <div className="mt-3">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 flex items-center gap-1">
+                  Student Starter Bundles
+                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                  Laptop + wireless mouse + bag + flash combos at subsidized semester prices.
+                </p>
+              </div>
+            </Link>
+
+            {/* Service 3: Find a Hostel */}
+            <Link
+              href="/hostels"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-purple-200/80 bg-gradient-to-br from-purple-50/70 via-white to-purple-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-400 hover:shadow-md dark:border-purple-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-purple-950/20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-400/10 dark:text-purple-400">
+                  <BedDouble className="h-5 w-5" />
+                </div>
+                <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-black text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                  Verified
+                </span>
+              </div>
+              <div className="mt-3">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 flex items-center gap-1">
+                  Hostel & Room Finder
+                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                  Verified off-campus hostels & private rooms near {selectedCampus.shortCode} with photos & direct terms.
+                </p>
+              </div>
+            </Link>
+
+            {/* Service 4: Sell / Trade-In */}
+            <Link
+              href="/sell-device"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  Instant Cash
+                </span>
+              </div>
+              <div className="mt-3">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 flex items-center gap-1">
+                  Device Trade-In / Sell
+                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                  Get instant valuation for your laptop or phone with hostel doorstep inspection.
+                </p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        <HomepageBanners />
+
         {/* Product Catalog Section */}
         <section id="products-section" className="space-y-6 pt-2">
           {/* Section Header & Filter Chips */}
@@ -223,10 +340,7 @@ export default function StorefrontHomePage() {
                 No gadgets found matching your selection.
               </p>
               <button
-                onClick={() => {
-                  setSelectedFilter('All');
-                  setSearchQuery('');
-                }}
+                onClick={() => setSelectedFilter('All')}
                 className="mt-3 text-xs font-bold text-indigo-600 hover:underline"
               >
                 Reset Filters
@@ -321,19 +435,22 @@ export default function StorefrontHomePage() {
               <Link href="/sell-device" className="hover:text-indigo-600">
                 Sell Your Device
               </Link>
-              <Link href="/winga" className="hover:text-indigo-600">
-                Become a Winga
+              <Link href="/support" className="hover:text-indigo-600 text-indigo-700 dark:text-indigo-400">
+                Support & Warranty
               </Link>
-              <Link href="/winga/dashboard" className="hover:text-indigo-600">
+              <Link href="/winga/register" className="hover:text-indigo-600">
+                Become Campus Winga
+              </Link>
+              <Link href="/winga/login" className="hover:text-indigo-600">
                 Winga Portal
               </Link>
               <a
-                href={createWhatsAppLink(storeSettings?.supportWhatsApp || '0616961511', 'Habari UniSoko!')}
+                href={createWhatsAppLink(UNISOKO_CONTACT.phoneDigits, 'Habari UniSoko!')}
                 target="_blank"
                 rel="noreferrer"
                 className="hover:text-emerald-600 text-emerald-700 dark:text-emerald-400"
               >
-                WhatsApp Helpline ({storeSettings?.supportPhone || '+255 754 892 110'})
+                WhatsApp Helpline ({UNISOKO_CONTACT.phoneDisplay})
               </a>
             </div>
           </div>
@@ -355,7 +472,12 @@ export default function StorefrontHomePage() {
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
             <div className="text-center sm:text-left">
               <p>© {new Date().getFullYear()} UniSoko. All rights reserved.</p>
-              <p className="mt-1">Created by Rheis Ifan · <a className="hover:text-indigo-600" href="tel:0704961511">0704961511</a> · <a className="hover:text-emerald-600" href="https://wa.me/255704961511" target="_blank" rel="noreferrer">WhatsApp</a> · <a className="hover:text-indigo-600" href="mailto:qwazerty01012001@gmail.com">qwazerty01012001@gmail.com</a></p>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                {developerProfile.imageUrl ? <Image src={developerProfile.imageUrl} alt="" width={36} height={36} unoptimized className="h-9 w-9 rounded-full object-cover" /> : <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-xs font-black text-indigo-800">RI</span>}
+                <div><p className="text-[10px] font-bold uppercase text-slate-400">Built by</p><p className="font-bold text-slate-700 dark:text-slate-200">{developerProfile.name} <span className="font-normal text-slate-500">· Developer / Creator</span></p></div>
+                <Link href="/developer" className="ml-1 font-semibold text-indigo-700 hover:underline">About Developer</Link>
+              </div>
+              <p className="mt-2"><a className="hover:text-indigo-600" href={`tel:${developerProfile.phone}`}>{developerProfile.phone}</a> · <a className="hover:text-emerald-600" href={createWhatsAppLink(developerProfile.whatsapp, 'Hello UniSoko, I need help.')} target="_blank" rel="noreferrer">WhatsApp</a> · <a className="hover:text-indigo-600" href={`mailto:${developerProfile.email}`}>{developerProfile.email}</a></p>
             </div>
 
             <div className="flex items-center gap-5 font-semibold">

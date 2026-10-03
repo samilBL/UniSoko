@@ -28,7 +28,7 @@ const steps = [
     action: { href: '/checkout', label: 'Continue to checkout' },
   },
   {
-    title: 'Become a Winga. Earn on every sale.',
+    title: 'Become Campus Winga. Earn on every sale.',
     eyebrow: '03 · SHARE & EARN',
     description: 'Join from any university in Tanzania. Winga hub managers coordinate local campus hand-off after receiving bulk stock from UniSoko.',
     icon: Wallet,

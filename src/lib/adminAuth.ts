@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import type { NextRequest } from 'next/server';
 
 export const ADMIN_SESSION_COOKIE = 'unisoko_admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
@@ -45,6 +46,10 @@ export function isValidAdminSession(value?: string) {
   const expected = Buffer.from(sign(expiresAt, secret));
   const received = Buffer.from(signature);
   return expected.length === received.length && timingSafeEqual(expected, received);
+}
+
+export function hasAdminRequestSession(request: NextRequest) {
+  return isValidAdminSession(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
 }
 
 export const adminSessionTtl = SESSION_TTL_SECONDS;

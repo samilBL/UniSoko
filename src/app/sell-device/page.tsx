@@ -19,6 +19,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { createWhatsAppLink } from '@/lib/whatsapp';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function SellDevicePage() {
   const { submitTradeInRequest, selectedCampus, storeSettings } = useStore();
@@ -157,7 +158,7 @@ export default function SellDevicePage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <a
-                href={createWhatsAppLink(storeSettings?.supportWhatsApp || '0616961511', `Habari UniSoko! Nimewasilisha ombi la kuuza kifaa changu (Ref: #${submittedReq.id} - ${submittedReq.itemTitle}). Nipo ${submittedReq.university}.`)}
+                href={createWhatsAppLink(UNISOKO_CONTACT.phoneDigits, `Habari UniSoko! Nimewasilisha ombi la kuuza kifaa changu (Ref: #${submittedReq.id} - ${submittedReq.itemTitle}). Nipo ${submittedReq.university}.`)}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
@@ -392,7 +393,7 @@ export default function SellDevicePage() {
               <div className="rounded-2xl bg-indigo-50/70 p-4 border border-indigo-100 text-xs text-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-900">
                 <p className="font-bold">Need instant appraisal?</p>
                 <p className="mt-1 text-[11px]">
-                  Send photos of your laptop or phone directly to WhatsApp: <span className="font-bold">{storeSettings?.supportPhone || '+255 754 892 110'}</span>
+                  Send photos of your laptop or phone directly to WhatsApp: <span className="font-bold">{UNISOKO_CONTACT.phoneDisplay}</span>
                 </p>
               </div>
             </div>

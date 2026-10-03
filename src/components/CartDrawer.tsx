@@ -8,6 +8,7 @@ import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, MessageCircl
 import Image from 'next/image';
 import Link from 'next/link';
 import { createWhatsAppLink } from '@/lib/whatsapp';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function CartDrawer() {
   const {
@@ -37,8 +38,7 @@ export default function CartDrawer() {
       `Habari UniSoko! Nataka kuagiza kupitia Campus Store:\n\n${itemsText}\n\n📍 Chuo: ${selectedCampus.name} (${selectedCampus.shortCode})\n💵 Jumla Kuu: ${formatTZS(cartSubtotal)}${
         cartTotalSavings > 0 ? ` (Umeokoa ${formatTZS(cartTotalSavings)})` : ''
       }\n\nTafadhali nithibitishie namba ya Lipa na muda wa kupokea mzigo!`;
-    const configuredNumber = storeSettings?.officialWhatsAppNumbers?.[0] || storeSettings?.supportWhatsApp || '0616961511';
-    window.open(createWhatsAppLink(configuredNumber, message), '_blank', 'noopener,noreferrer');
+    window.open(createWhatsAppLink(UNISOKO_CONTACT.phoneDigits, message), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -79,7 +79,7 @@ export default function CartDrawer() {
                 </div>
                 <button
                   onClick={() => setIsCartOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -122,6 +122,7 @@ export default function CartDrawer() {
                               src={product.images[0]}
                               alt={product.title}
                               fill
+                              sizes="64px"
                               className="object-cover"
                             />
                           </div>
@@ -132,7 +133,7 @@ export default function CartDrawer() {
                               </h4>
                               <button
                                 onClick={() => removeFromCart(product.id)}
-                                className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                                className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 transition-colors"
                                 aria-label="Remove item"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -150,7 +151,7 @@ export default function CartDrawer() {
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-slate-500">
-                                  Add {3 - quantity} more for Jumla discount
+                                  Add {Math.max(0, (product.minWholesaleQty || 3) - quantity)} more for Jumla discount
                                 </span>
                               )}
                             </div>
@@ -159,7 +160,7 @@ export default function CartDrawer() {
                               <div className="flex items-center rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
                                 <button
                                   onClick={() => updateQuantity(product.id, quantity - 1)}
-                                  className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-l-lg transition-colors"
+                                  className="flex h-11 w-11 items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-l-lg transition-colors"
                                 >
                                   <Minus className="h-3 w-3" />
                                 </button>
@@ -168,7 +169,7 @@ export default function CartDrawer() {
                                 </span>
                                 <button
                                   onClick={() => updateQuantity(product.id, quantity + 1)}
-                                  className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-r-lg transition-colors"
+                                  className="flex h-11 w-11 items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-r-lg transition-colors"
                                 >
                                   <Plus className="h-3 w-3" />
                                 </button>
@@ -227,7 +228,7 @@ export default function CartDrawer() {
                   <div className="grid grid-cols-2 gap-2 pt-2">
                     <button
                       onClick={handleWhatsAppCheckout}
-                      className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+                      className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
                     >
                       <MessageCircle className="h-4 w-4" />
                       WhatsApp
@@ -235,7 +236,7 @@ export default function CartDrawer() {
                     <Link
                       href="/checkout"
                       onClick={() => setIsCartOpen(false)}
-                      className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all"
+                      className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all"
                     >
                       <span>Checkout</span>
                       <ArrowRight className="h-4 w-4" />

@@ -53,10 +53,11 @@ export default function PrivacyPolicyPage() {
         <PolicySection icon={<Database className="h-5 w-5 text-indigo-600" />} title="1. Information We Collect">
           <p>We collect information you provide directly when using UniSoko, including:</p>
           <ul>
-            <li><strong>Identity Data:</strong> Full name, university/campus affiliation, and student ID card images (for Winga Agent KYC verification only).</li>
+            <li><strong>Identity Data:</strong> Full name, university/campus affiliation, verified email address, and student ID details or images when provided for Campus Winga identity review.</li>
             <li><strong>Contact Data:</strong> Phone number (used to confirm orders and deliver Lipa Namba receipts via SMS/WhatsApp).</li>
             <li><strong>Order Data:</strong> Products ordered, delivery location (hostel name, room number, campus landmark), quantity, promo codes used, and M-Pesa/Tigo Pesa transaction reference IDs.</li>
-            <li><strong>Device Trade-In Data:</strong> Photos, specifications, and expected price for gadgets submitted via the Sell Your Device portal.</li>
+            <li><strong>Device Trade-In Data:</strong> Photos, specifications, condition details, and provisional estimate for devices submitted for sale or attached to a purchase.</li>
+            <li><strong>Room and Hostel Data:</strong> Room locations, amenities, listing photos, landlord contacts, and student contact details supplied for a vacancy lead or listing.</li>
             <li><strong>Agent Earnings Data:</strong> Winga promo code usage, commission earnings, payout requests, and mobile money disbursement records.</li>
           </ul>
           <p className="mt-3">We also automatically collect limited technical data such as browser type and session timestamps for security and fraud prevention purposes. We do <strong>not</strong> use tracking cookies for advertising.</p>
@@ -68,9 +69,10 @@ export default function PrivacyPolicyPage() {
             <li>Process and fulfil your gadget orders and arrange campus hostel delivery.</li>
             <li>Verify Lipa Namba (M-Pesa / Tigo Pesa) payment transaction IDs against submitted orders.</li>
             <li>Communicate order status updates via WhatsApp and SMS.</li>
-            <li>Verify the identity of Winga Agents through student ID card review before authorising mobile money payouts.</li>
-            <li>Calculate and credit commission earnings to Winga Agent wallets when orders using their promo code are approved.</li>
+            <li>Verify Campus Winga identities through student ID review before authorising mobile money payouts.</li>
+            <li>Calculate and credit commission earnings to Winga balances when orders using their promo code are approved.</li>
             <li>Appraise and respond to student device trade-in submissions.</li>
+            <li>Apply provisional purchase trade-in estimates, arrange physical inspection, and review room listings and vacancy leads.</li>
             <li>Improve platform features based on aggregate, anonymised usage patterns.</li>
           </ul>
           <p className="mt-3">We will never sell your personal data to third parties or use it for targeted advertising.</p>
@@ -93,9 +95,9 @@ export default function PrivacyPolicyPage() {
             <li><strong>Correction:</strong> Request correction of inaccurate information (e.g., wrong phone number or university).</li>
             <li><strong>Deletion:</strong> Request deletion of your account and associated data, subject to retention requirements for active orders or unpaid commissions.</li>
             <li><strong>Portability:</strong> Request your earnings and order history in a readable format (CSV/PDF).</li>
-            <li><strong>Withdrawal of consent:</strong> Withdraw consent for KYC processing at any time, noting this will suspend your Winga Agent payout eligibility.</li>
+            <li><strong>Withdrawal of consent:</strong> Withdraw consent for KYC processing at any time, noting this will suspend your Winga payout eligibility.</li>
           </ul>
-          <p className="mt-3">To exercise these rights, contact us on WhatsApp at <strong>+255 754 000 111</strong> or email <strong>privacy@unisoko.co.tz</strong>.</p>
+          <p className="mt-3">To exercise these rights, contact us on WhatsApp at <strong>+255 616 961 511</strong> or email <strong>qwazerty01012001@gmail.com</strong>.</p>
         </PolicySection>
 
         <PolicySection icon={<Globe className="h-5 w-5 text-indigo-600" />} title="5. Sharing With Third Parties">
@@ -111,7 +113,7 @@ export default function PrivacyPolicyPage() {
           <p>UniSoko reserves the right to update this Privacy Policy as the platform evolves. Significant changes will be communicated via:</p>
           <ul>
             <li>A notice banner on the UniSoko homepage for 14 days.</li>
-            <li>A direct WhatsApp message to registered Winga Agents.</li>
+            <li>A direct WhatsApp message to registered Wingas.</li>
           </ul>
           <p className="mt-3">Continued use of UniSoko after the notice period constitutes acceptance of the updated policy.</p>
         </PolicySection>
@@ -120,7 +122,7 @@ export default function PrivacyPolicyPage() {
         <div className="rounded-3xl bg-slate-900 text-white p-6 text-xs space-y-2">
           <h2 className="text-sm font-bold font-heading">Contact UniSoko for Privacy Enquiries</h2>
           <p className="text-slate-300">Data Controller: UniSoko Tanzania Limited</p>
-          <p className="text-slate-300">WhatsApp: +255 754 000 111 | Email: privacy@unisoko.co.tz</p>
+          <p className="text-slate-300">WhatsApp: +255 616 961 511 | Email: qwazerty01012001@gmail.com</p>
           <p className="text-slate-300">Campus Office: MUST Campus, Mbeya, Tanzania</p>
         </div>
 

@@ -8,6 +8,7 @@ import {
   TradeInRequest,
   StoreSettings,
 } from './types';
+import { DEVELOPER_PROFILE_DEFAULTS, UNISOKO_CONTACT } from './siteConfig';
 
 export const BRAND_ASSETS: BrandAsset[] = [
   {
@@ -218,16 +219,17 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   merchantName: 'UniSoko Marketplace TZ',
   accountName: 'UNISOKO TECH CAMPUS HUB',
   tillNumber: '5849201',
-  supportPhone: '0616961511',
-  supportWhatsApp: 'https://wa.me/255616961511',
+  supportPhone: UNISOKO_CONTACT.phoneDisplay,
+  supportWhatsApp: UNISOKO_CONTACT.whatsappUrl,
   minPayoutThreshold: 20000,
   bannerNotice: 'Semester Rush: Group wholesale discounts unlock automatically at 3+ units on all gadgets!',
   paymentMethods: [
-    { network: 'M-Pesa', tillNumber: '5849201', accountName: 'UNISOKO TECH CAMPUS HUB', enabled: true },
-    { network: 'Tigo Pesa', tillNumber: '', accountName: '', enabled: true },
-    { network: 'Airtel Money', tillNumber: '', accountName: '', enabled: true },
+    { id: 'mpesa-primary', network: 'M-Pesa', tillNumber: '5849201', accountName: 'UNISOKO TECH CAMPUS HUB', enabled: true },
+    { id: 'tigo-primary', network: 'Tigo Pesa', tillNumber: '', accountName: '', enabled: true },
+    { id: 'airtel-primary', network: 'Airtel Money', tillNumber: '', accountName: '', enabled: true },
   ],
-  officialWhatsAppNumbers: ['0616961511'],
+  officialWhatsAppNumbers: [UNISOKO_CONTACT.phoneDigits],
+  developerProfile: { ...DEVELOPER_PROFILE_DEFAULTS },
   partnerBadges: [
     { name: 'Mbeya University of Science & Technology', shortCode: 'MUST', category: 'Campus Partner' },
     { name: 'Teofilo Kisanji University', shortCode: 'TEKU', category: 'Campus Partner' },
@@ -256,6 +258,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       'Ultra-durable aluminum enterprise laptop built for coursework, programming, and multitasking. Features a 14-inch Full HD anti-glare display, backlit keyboard, Bang & Olufsen tuned audio, and all-day battery performance.',
     category: 'Laptops',
+    brand: 'HP',
+    model: 'EliteBook 840 G6',
     priceRetail: 650000,
     priceWholesale: 580000,
     condition: 'Grade A Like-New',
@@ -266,6 +270,14 @@ export const MOCK_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=800&q=80',
     ],
+    specifications: {
+      processor: 'Intel Core i5-8365U',
+      ram: '16GB DDR4',
+      storage: '256GB PCIe NVMe SSD',
+      display: '14-inch FHD IPS anti-glare',
+      battery: 'Up to 7 hours (listing estimate)',
+      details: { Ports: 'Thunderbolt 3 USB-C, 2x USB 3.1, HDMI, RJ-45 LAN' },
+    },
     specs: {
       Processor: 'Intel Core i5-8365U (Quad-Core up to 4.1GHz)',
       Memory: '16GB DDR4 RAM',
@@ -333,6 +345,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       'Premium lightweight business powerhouse. Featuring carbon fiber lid construction, ExpressCharge battery technology, crisp narrow-border FHD screen, and fingerprint authentication for engineering and accounting students.',
     category: 'Laptops',
+    brand: 'Dell',
+    model: 'Latitude 7400',
     priceRetail: 780000,
     priceWholesale: 710000,
     condition: 'Grade A Like-New',
@@ -343,6 +357,13 @@ export const MOCK_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=800&q=80',
     ],
+    specifications: {
+      processor: 'Intel Core i7-8665U',
+      ram: '16GB DDR4',
+      storage: '512GB NVMe SSD',
+      display: '14-inch FHD WVA (touch options vary)',
+      details: { Weight: '1.35 kg' },
+    },
     specs: {
       Processor: 'Intel Core i7-8665U (up to 4.8GHz Turbo)',
       Memory: '16GB DDR4 High-Speed RAM',
@@ -357,6 +378,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       'Incredible performance with blazing-fast Apple Silicon M1. Unbelievable 20-hour battery life, brilliant Retina display with True Tone, studio-quality mics, and active cooling for video editing, software engineering, and graphic design.',
     category: 'Laptops',
+    brand: 'Apple',
+    model: 'MacBook Pro 13-inch (M1)',
     priceRetail: 1850000,
     priceWholesale: 1720000,
     condition: 'Refurbished',
@@ -367,6 +390,14 @@ export const MOCK_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&w=800&q=80',
     ],
+    specifications: {
+      processor: 'Apple M1 (8-core CPU, 8-core GPU)',
+      ram: '8GB unified memory',
+      storage: '256GB SSD',
+      display: '13.3-inch Retina',
+      battery: 'Up to 20 hours (manufacturer estimate)',
+      details: { Security: 'Touch ID' },
+    },
     specs: {
       Chip: 'Apple M1 (8-core CPU, 8-core GPU, 16-core Neural Engine)',
       Memory: '8GB Unified Memory',
@@ -381,6 +412,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       'Super Retina XDR OLED display, advanced dual-camera system with Cinematic Mode, A15 Bionic lightning-fast processor, 5G cellular speed, Ceramic Shield front glass, and all-day battery reliability.',
     category: 'Phones',
+    brand: 'Apple',
+    model: 'iPhone 13',
     priceRetail: 1250000,
     priceWholesale: 1150000,
     condition: 'Refurbished',
@@ -391,6 +424,14 @@ export const MOCK_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80',
     ],
+    specifications: {
+      processor: 'Apple A15 Bionic',
+      storage: '128GB',
+      display: '6.1-inch Super Retina XDR OLED',
+      battery: 'Battery health varies by unit; confirm with UniSoko before purchase',
+      connectivity: '5G, nano-SIM + eSIM',
+      details: { Camera: 'Dual 12MP wide and ultra-wide' },
+    },
     specs: {
       Display: '6.1" Super Retina XDR OLED',
       Processor: 'Apple A15 Bionic (6-core CPU)',
@@ -405,6 +446,8 @@ export const MOCK_PRODUCTS: Product[] = [
     description:
       'Vivid 120Hz Super AMOLED screen, 50MP triple OIS camera system, IP67 water and dust resistance, and 5000mAh battery that easily powers through 2 days of campus lectures and social media.',
     category: 'Phones',
+    brand: 'Samsung',
+    model: 'Galaxy A54 5G',
     priceRetail: 720000,
     priceWholesale: 645000,
     condition: 'Brand New',
@@ -415,6 +458,14 @@ export const MOCK_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=800&q=80',
     ],
+    specifications: {
+      ram: '8GB',
+      storage: '128GB (microSD expandable)',
+      display: '6.4-inch FHD+ 120Hz Super AMOLED',
+      battery: '5,000mAh',
+      connectivity: '5G',
+      details: { Protection: 'Gorilla Glass 5, IP67' },
+    },
     specs: {
       Display: '6.4" FHD+ 120Hz Super AMOLED (1000 nits)',
       RAM_Storage: '8GB RAM + 128GB Storage (MicroSD expandable up to 1TB)',
@@ -527,6 +578,32 @@ export const MOCK_PRODUCTS: Product[] = [
       Power: 'USB 5V powered via laptop or power bank',
       Tripod: 'Reinforced 160cm adjustable aluminum stand',
     },
+  },
+  {
+    id: 'prod-room-bedframe',
+    title: 'Compact Single Student Bed Frame',
+    description: 'A sturdy, space-conscious single bed frame suited to student rooms and hostel spaces.',
+    category: 'Room Gear',
+    priceRetail: 320000,
+    priceWholesale: 285000,
+    condition: 'Brand New',
+    stockStatus: 'In Stock',
+    minWholesaleQty: 3,
+    images: ['https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80'],
+    specs: { Size: 'Single', Assembly: 'Flat-pack', Use: 'Student room' },
+  },
+  {
+    id: 'prod-laptop-stand',
+    title: 'Adjustable Aluminum Laptop Stand',
+    description: 'An adjustable, foldable stand for better screen height and airflow during study sessions.',
+    category: 'Accessories',
+    priceRetail: 48000,
+    priceWholesale: 40000,
+    condition: 'Brand New',
+    stockStatus: 'In Stock',
+    minWholesaleQty: 3,
+    images: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80'],
+    specs: { Material: 'Aluminum alloy', Design: 'Foldable, adjustable height', Compatibility: 'Most laptops and tablets' },
   },
 ];
 

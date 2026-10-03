@@ -1,28 +1,34 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/context/StoreContext";
 import StudentOnboardingHost from "@/components/StudentOnboardingHost";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
+import { SITE_URL } from '@/lib/seo';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
-  title: "UniSoko - Premier University Gadget Marketplace & Campus Store (Tanzania)",
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'UniSoko',
+  title: {
+    default: 'UniSoko | Tanzania Campus Marketplace',
+    template: '%s | UniSoko',
+  },
   description:
-    "Student-first tech marketplace in Tanzania. Certified Grade-A laptops, smartphones, and accessories with Bei ya Jumla wholesale discounts and fast hostel delivery across MUST, TEKU, TIA, Mzumbe, and CUoM.",
+    'Shop laptops, smartphones, and student essentials directly from UniSoko, with wholesale pricing and campus-aware delivery across Tanzania.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: 'UniSoko',
+    locale: 'en_TZ',
+    url: '/',
+    title: 'UniSoko | Tanzania Campus Marketplace',
+    description: 'Shop student essentials directly from UniSoko, with wholesale pricing and campus-aware delivery across Tanzania.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'UniSoko | Tanzania Campus Marketplace',
+    description: 'Shop student essentials directly from UniSoko across Tanzania.',
+  },
   icons: {
     icon: "/icons/unisoko-logo.svg",
   },
@@ -32,12 +38,12 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "UniSoko",
   },
-  creator: "Rheis Ifan",
-  authors: [{ name: "Rheis Ifan", url: "mailto:qwazerty01012001@gmail.com" }],
+  creator: UNISOKO_CONTACT.developerName,
+  authors: [{ name: UNISOKO_CONTACT.developerName, url: UNISOKO_CONTACT.emailUrl }],
   other: {
-    "contact:phone": "0704961511",
-    "contact:whatsapp": "0704961511",
-    "contact:email": "qwazerty01012001@gmail.com",
+    "contact:phone": UNISOKO_CONTACT.phoneE164,
+    "contact:whatsapp": UNISOKO_CONTACT.phoneE164,
+    "contact:email": UNISOKO_CONTACT.email,
   },
 };
 
@@ -49,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans">
         <StoreProvider>

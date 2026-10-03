@@ -13,12 +13,19 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   const tokenHash = createHash('sha256').update(token).digest('hex');
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, product_id, product_title, buyer_name, buyer_phone, university, delivery_spot_type, delivery_details, quantity, total_amount, winga_code_used, lipa_namba_tx_id, item_serial_number, warranty_days, status, payment_status, fulfillment_status, delivery_status, created_at, approved_at')
+    .select('id, product_id, product_title, campus_id, buyer_name, buyer_phone, university, delivery_spot_type, delivery_details, quantity, subtotal_amount, shipping_fee, promo_discount, trade_in_request_id, trade_in_estimate, trade_in_inspection_status, cancellation_status, total_amount, winga_code_used, lipa_namba_tx_id, item_serial_number, warranty_days, status, payment_status, fulfillment_status, delivery_status, created_at, approved_at')
     .eq('id', id)
     .eq('tracking_token_hash', tokenHash)
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not load this order.' }, { status: 500 });
   if (!order) return NextResponse.json({ error: 'This tracking link is invalid or has expired.' }, { status: 404 });
+
+  const { data: items, error: itemsError } = await supabase
+    .from('order_items')
+    .select('product_id, product_title, condition, quantity, unit_price, line_total')
+    .eq('order_id', id)
+    .order('id', { ascending: true });
+  if (itemsError) return NextResponse.json({ error: 'Could not load this order’s items.' }, { status: 500 });
 
   const { data: events, error: historyError } = await supabase
     .from('order_status_history')
@@ -35,9 +42,25 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       buyerName: order.buyer_name,
       buyerPhone: order.buyer_phone,
       university: order.university,
+      campusId: order.campus_id,
       deliverySpotType: order.delivery_spot_type,
       deliveryDetails: order.delivery_details,
       quantity: order.quantity,
+      items: (items || []).map((item) => ({
+        productId: item.product_id,
+        productTitle: item.product_title,
+        condition: item.condition,
+        quantity: item.quantity,
+        unitPrice: Number(item.unit_price),
+        lineTotal: Number(item.line_total),
+      })),
+      subtotalAmount: Number(order.subtotal_amount),
+      shippingFee: Number(order.shipping_fee),
+      promoDiscount: Number(order.promo_discount),
+      tradeInRequestId: order.trade_in_request_id || undefined,
+      tradeInEstimate: Number(order.trade_in_estimate || 0),
+      tradeInInspectionStatus: order.trade_in_inspection_status,
+      cancellationStatus: order.cancellation_status,
       totalAmount: Number(order.total_amount),
       wingaCodeUsed: order.winga_code_used,
       lipaNambaTxId: order.lipa_namba_tx_id,

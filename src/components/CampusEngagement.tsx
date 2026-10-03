@@ -14,6 +14,9 @@ export default function CampusEngagement() {
   const [campusId, setCampusId] = useState(ALL_UNIVERSITIES[0]?.id || '');
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [voted, setVoted] = useState(false);
+  const [voterId, setVoterId] = useState('');
+  const [isSubmittingVote, setIsSubmittingVote] = useState(false);
+  const [voteError, setVoteError] = useState('');
 
   useEffect(() => {
     const hydrationTimer = window.setTimeout(() => {
@@ -21,38 +24,53 @@ export default function CampusEngagement() {
         const saved = localStorage.getItem(VOTES_KEY);
         if (saved) setVotes(JSON.parse(saved) as Record<string, number>);
         setVoted(localStorage.getItem(HAS_VOTED_KEY) === 'true');
+        const savedVoterId = localStorage.getItem(VOTER_KEY) || crypto.randomUUID();
+        localStorage.setItem(VOTER_KEY, savedVoterId);
+        setVoterId(savedVoterId);
       } catch {
         setVotes({});
+        setVoteError('This browser cannot save a persistent vote identifier. Enable site storage to vote.');
       }
     }, 0);
     return () => window.clearTimeout(hydrationTimer);
   }, []);
 
+  useEffect(() => {
+    fetch('/api/campus-votes', { cache: 'no-store' })
+      .then(async (response) => response.ok ? response.json() as Promise<{ votes?: Record<string, number> }> : null)
+      .then((result) => { if (result?.votes) setVotes(result.votes); })
+      .catch(() => undefined);
+  }, []);
+
   const popularCampus = useMemo(() => Object.entries(votes).sort((a, b) => b[1] - a[1])[0], [votes]);
   const projectedEarnings = Math.round(weeklySales * 0.05);
 
-  const submitVote = () => {
-    if (!campusId || voted) return;
-    let voterId: string;
+  const submitVote = async () => {
+    if (!campusId || voted || !voterId || isSubmittingVote) return;
+    setIsSubmittingVote(true);
+    setVoteError('');
     try {
-      voterId = localStorage.getItem(VOTER_KEY) || crypto.randomUUID();
-      localStorage.setItem(VOTER_KEY, voterId);
-    } catch {
-      voterId = crypto.randomUUID();
-    }
-    void fetch('/api/campus-votes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campusId, voterId }),
-    }).catch(() => undefined);
-    const nextVotes = { ...votes, [campusId]: (votes[campusId] || 0) + 1 };
-    setVotes(nextVotes);
-    setVoted(true);
-    try {
+      const response = await fetch('/api/campus-votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campusId, voterId }),
+      });
+      if (response.status === 409) {
+        setVoted(true);
+        localStorage.setItem(HAS_VOTED_KEY, 'true');
+        setVoteError('A vote has already been recorded from this browser.');
+        return;
+      }
+      if (!response.ok) throw new Error('Could not record your vote. Please retry.');
+      const nextVotes = { ...votes, [campusId]: (votes[campusId] || 0) + 1 };
+      setVotes(nextVotes);
+      setVoted(true);
       localStorage.setItem(VOTES_KEY, JSON.stringify(nextVotes));
       localStorage.setItem(HAS_VOTED_KEY, 'true');
-    } catch {
-      // Keep the in-page vote visible when browser storage is unavailable.
+    } catch (error) {
+      setVoteError(error instanceof Error ? error.message : 'Could not record your vote. Please retry.');
+    } finally {
+      setIsSubmittingVote(false);
     }
   };
 
@@ -78,11 +96,12 @@ export default function CampusEngagement() {
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-600">Tell us where students want local campus delivery and Winga hub support next.</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <select aria-label="Choose a university campus" value={campusId} onChange={(event) => { setCampusId(event.target.value); setVoted(false); }} className="min-w-0 flex-1 rounded-xl px-3 py-3 text-sm">
+          <select aria-label="Choose a university campus" value={campusId} onChange={(event) => setCampusId(event.target.value)} className="min-w-0 flex-1 rounded-xl px-3 py-3 text-sm">
             {ALL_UNIVERSITIES.map((campus) => <option key={campus.id} value={campus.id}>{campus.shortCode} · {campus.city}</option>)}
           </select>
-          <button onClick={submitVote} disabled={voted || !campusId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-default disabled:bg-emerald-600"><Vote className="h-4 w-4" />{voted ? 'Vote recorded' : 'Vote for campus'}</button>
+          <button onClick={() => void submitVote()} disabled={voted || !campusId || !voterId || isSubmittingVote} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-default disabled:bg-emerald-700"><Vote className="h-4 w-4" />{isSubmittingVote ? 'Recording…' : voted ? 'Vote recorded' : 'Vote for campus'}</button>
         </div>
+        {voteError && <p role="status" className="mt-3 text-xs font-semibold text-amber-800">{voteError}</p>}
         <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-xs text-indigo-950">
           {popularCampus ? <><span className="font-bold">Leading in this browser:</span> {ALL_UNIVERSITIES.find((campus) => campus.id === popularCampus[0])?.name || popularCampus[0]} · {popularCampus[1]} {popularCampus[1] === 1 ? 'vote' : 'votes'}</> : <span>Be the first to register a campus vote.</span>}
         </div>

@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ALL_UNIVERSITIES } from '@/lib/mockData';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
+export async function GET() {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ votes: {}, configured: false });
+  const { data, error } = await supabase.from('campus_votes').select('campus_id');
+  if (error) return NextResponse.json({ error: 'Could not load campus votes.' }, { status: 500 });
+  const votes = (data || []).reduce<Record<string, number>>((counts, row) => {
+    counts[row.campus_id] = (counts[row.campus_id] || 0) + 1;
+    return counts;
+  }, {});
+  return NextResponse.json({ votes }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
 export async function POST(request: NextRequest) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: 'Campus voting database is not configured.' }, { status: 503 });

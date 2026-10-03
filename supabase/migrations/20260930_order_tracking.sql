@@ -3,15 +3,19 @@ create table if not exists public.orders (
   tracking_token_hash text not null unique check (tracking_token_hash ~ '^[a-f0-9]{64}$'),
   product_id text not null,
   product_title text not null,
+  campus_id text not null,
   buyer_name text not null,
   buyer_phone text not null,
   university text not null,
   delivery_spot_type text not null check (delivery_spot_type in ('Hostel', 'Landmark', 'Off-Campus', 'Courier')),
   delivery_details text not null,
   quantity integer not null check (quantity > 0),
+  subtotal_amount numeric(12, 2) not null check (subtotal_amount >= 0),
+  shipping_fee numeric(12, 2) not null default 0 check (shipping_fee >= 0),
+  promo_discount numeric(12, 2) not null default 0 check (promo_discount >= 0),
   total_amount numeric(12, 2) not null check (total_amount >= 0),
   winga_code_used text,
-  lipa_namba_tx_id text not null,
+  lipa_namba_tx_id text not null unique,
   item_serial_number text,
   warranty_days smallint check (warranty_days in (30, 60, 90)),
   status text not null default 'Pending Verification' check (status in ('Pending Verification', 'Approved', 'Out for Delivery', 'Completed')),
@@ -26,6 +30,21 @@ create table if not exists public.orders (
 create index if not exists orders_created_at_idx on public.orders (created_at desc);
 create index if not exists orders_status_idx on public.orders (payment_status, fulfillment_status, delivery_status);
 
+create table if not exists public.order_items (
+  id bigint generated always as identity primary key,
+  order_id text not null references public.orders(id) on delete cascade,
+  product_id text not null,
+  product_title text not null,
+  condition text not null,
+  quantity integer not null check (quantity > 0 and quantity <= 100),
+  unit_price numeric(12, 2) not null check (unit_price >= 0),
+  line_total numeric(12, 2) not null check (line_total >= 0),
+  created_at timestamptz not null default now(),
+  unique (order_id, product_id)
+);
+
+create index if not exists order_items_order_id_idx on public.order_items (order_id);
+
 create table if not exists public.order_status_history (
   id bigint generated always as identity primary key,
   order_id text not null references public.orders(id) on delete cascade,
@@ -39,9 +58,10 @@ create table if not exists public.order_status_history (
 create index if not exists order_status_history_order_idx on public.order_status_history (order_id, changed_at);
 
 alter table public.orders enable row level security;
+alter table public.order_items enable row level security;
 alter table public.order_status_history enable row level security;
-revoke all on public.orders, public.order_status_history from anon, authenticated;
-grant all on public.orders, public.order_status_history to service_role;
+revoke all on public.orders, public.order_items, public.order_status_history from anon, authenticated;
+grant all on public.orders, public.order_items, public.order_status_history to service_role;
 
 create or replace function public.transition_order_status(
   target_order_id text,

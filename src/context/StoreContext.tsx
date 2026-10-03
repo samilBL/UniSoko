@@ -10,6 +10,7 @@ import {
   OrderStatus,
   TradeInRequest,
   TradeInStatus,
+  TradeInQuoteAttachment,
   StoreSettings,
 } from '@/lib/types';
 import {
@@ -29,7 +30,11 @@ export interface CartItem {
 }
 
 interface StoreContextType {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   cart: CartItem[];
+  tradeInQuote: TradeInQuoteAttachment | null;
+  setTradeInQuote: (quote: TradeInQuoteAttachment | null) => void;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -69,7 +74,10 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [hasHydrated, setHasHydrated] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [tradeInQuote, setTradeInQuote] = useState<TradeInQuoteAttachment | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedCampus, setSelectedCampus] = useState<UniversityLocation>(MBEYA_UNIVERSITIES[0]); // MUST default
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
@@ -92,6 +100,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const savedCart = localStorage.getItem('unisoko_cart');
       if (savedCart) setCart(JSON.parse(savedCart));
 
+      const savedTradeInQuote = sessionStorage.getItem('unisoko_tradein_quote');
+      if (savedTradeInQuote) setTradeInQuote(JSON.parse(savedTradeInQuote));
+
       const savedOrders = localStorage.getItem('unisoko_orders');
       if (savedOrders) setOrders(JSON.parse(savedOrders));
 
@@ -112,7 +123,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (savedTradeIns) setTradeInRequests(JSON.parse(savedTradeIns));
 
       const savedSettings = localStorage.getItem('unisoko_settings');
-      if (savedSettings) setStoreSettings(JSON.parse(savedSettings));
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings) as Partial<StoreSettings>;
+        setStoreSettings({
+          ...DEFAULT_STORE_SETTINGS,
+          ...parsedSettings,
+          developerProfile: { ...DEFAULT_STORE_SETTINGS.developerProfile, ...parsedSettings.developerProfile },
+        });
+      }
 
       const savedCampusId = localStorage.getItem('unisoko_campus_id');
       if (savedCampusId) {
@@ -121,6 +139,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.error('Failed to load local storage state:', e);
+    } finally {
+      setHasHydrated(true);
     }
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -136,60 +156,77 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Sync back to localStorage
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_cart', JSON.stringify(cart));
     } catch (e) {
       console.error(e);
     }
-  }, [cart]);
+  }, [cart, hasHydrated]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
+    try {
+      if (tradeInQuote) sessionStorage.setItem('unisoko_tradein_quote', JSON.stringify(tradeInQuote));
+      else sessionStorage.removeItem('unisoko_tradein_quote');
+    } catch (e) {
+      console.error(e);
+    }
+  }, [tradeInQuote, hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_orders', JSON.stringify(orders));
     } catch (e) {
       console.error(e);
     }
-  }, [orders]);
+  }, [hasHydrated, orders]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_products', JSON.stringify(products));
     } catch (e) {
       console.error(e);
     }
-  }, [products]);
+  }, [hasHydrated, products]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_agents', JSON.stringify(wingaAgents));
     } catch (e) {
       console.error(e);
     }
-  }, [wingaAgents]);
+  }, [hasHydrated, wingaAgents]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_payouts', JSON.stringify(payoutRequests));
     } catch (e) {
       console.error(e);
     }
-  }, [payoutRequests]);
+  }, [hasHydrated, payoutRequests]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_tradeins', JSON.stringify(tradeInRequests));
     } catch (e) {
       console.error(e);
     }
-  }, [tradeInRequests]);
+  }, [hasHydrated, tradeInRequests]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       localStorage.setItem('unisoko_settings', JSON.stringify(storeSettings));
     } catch (e) {
       console.error(e);
     }
-  }, [storeSettings]);
+  }, [hasHydrated, storeSettings]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCart((prev) => {
@@ -222,7 +259,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    setTradeInQuote(null);
+  };
 
   const addOrder = (order: Order) => {
     setOrders((prev) => [order, ...prev]);
@@ -464,7 +504,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   return (
     <StoreContext.Provider
       value={{
+        searchQuery,
+        setSearchQuery,
         cart,
+        tradeInQuote,
+        setTradeInQuote,
         addToCart,
         removeFromCart,
         updateQuantity,

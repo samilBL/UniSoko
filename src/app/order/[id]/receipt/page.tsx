@@ -8,6 +8,7 @@ import { useStore } from '@/context/StoreContext';
 import { formatTZS } from '@/lib/mockData';
 import { createWhatsAppLink } from '@/lib/whatsapp';
 import { CheckCircle2, Printer, ShieldCheck } from 'lucide-react';
+import { TRADE_IN_INSPECTION_DISCLAIMER } from '@/lib/tradeInValuation';
 
 const WARRANTY_OPTIONS = [30, 60, 90] as const;
 
@@ -48,6 +49,7 @@ export default function DigitalReceiptPage() {
     `Risiti: ${order.id}`,
     `Bidhaa: ${order.product?.title || order.productId} (${order.quantity} unit${order.quantity === 1 ? '' : 's'})`,
     `Jumla: ${formatTZS(order.totalAmount)}`,
+    ...(order.tradeInRequestId ? [`Trade-in estimate: -${formatTZS(order.tradeInEstimate || 0)} (pending physical inspection)`, `DISCLAIMER: ${TRADE_IN_INSPECTION_DISCLAIMER}`] : []),
     `Chuo / sehemu ya kupokea: ${order.university} · ${order.deliveryDetails}`,
     `Namba ya kifaa: ${serialNumber || 'Itawekwa wakati wa makabidhiano'}`,
     `Dhamana: ${warrantyDays} siku kuanzia tarehe ya idhini${order.approvedAt ? ` (${new Date(order.approvedAt).toLocaleDateString('en-GB')})` : ''}`,
@@ -76,6 +78,8 @@ export default function DigitalReceiptPage() {
               <div className="grid grid-cols-[1fr_auto] gap-4 bg-slate-50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500"><span>Item</span><span>Total</span></div>
               <div className="grid grid-cols-[1fr_auto] gap-4 px-4 py-4 text-sm"><div><p className="font-bold text-slate-900">{order.product?.title || order.productId}</p><p className="mt-1 text-xs text-slate-500">Quantity: {order.quantity} · Payment reference: {order.lipaNambaTxId}</p></div><p className="font-black text-slate-900">{formatTZS(order.totalAmount)}</p></div>
             </div>
+
+            {order.tradeInRequestId && <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4 text-xs font-semibold leading-5 text-amber-950"><p className="font-extrabold">Trade-in pending physical inspection</p><p className="mt-1">Estimate applied: -{formatTZS(order.tradeInEstimate || 0)}</p><p className="mt-2">⚠️ DISCLAIMER: {TRADE_IN_INSPECTION_DISCLAIMER}</p></div>}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-xs font-bold text-slate-700">Item serial number

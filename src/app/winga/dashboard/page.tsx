@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { CheckCircle2, Clock3, ShieldCheck, XCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import WingaSignOutButton from '@/components/WingaSignOutButton';
+import WingaPasswordManager from '@/components/WingaPasswordManager';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -20,7 +21,7 @@ export default async function WingaAgentDashboardPage() {
 
   const { data: application, error } = await serviceClient
     .from('winga_applications')
-    .select('full_name, phone, university, status, promo_code, submitted_at, reviewed_at')
+    .select('email, full_name, phone, university, status, promo_code, submitted_at, reviewed_at')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -56,7 +57,8 @@ export default async function WingaAgentDashboardPage() {
                 <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${isApproved ? 'bg-emerald-100 text-emerald-800' : isRejected ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'}`}>{application.status}</span>
               </div>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{application.university}</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Verified phone: {application.phone}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Verified email: {application.email}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mobile-money contact (not verified): {application.phone}</p>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Applied {formattedSubmitted}</p>
             </div>
           </div>
@@ -76,9 +78,11 @@ export default async function WingaAgentDashboardPage() {
               UniSoko is reviewing your application. Your agent access and promo code will appear here after approval.
             </div>
           )}
+
+          <WingaPasswordManager />
         </section>
 
-        <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga profile is linked to your verified phone account. Wallet, commission, KYC, and payout details will appear here only when connected to authoritative UniSoko records.</p>
+        <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga profile is linked to your verified email account. Wallet, commission, KYC, and payout details will appear here only when connected to authoritative UniSoko records.</p>
         <Link href="/" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-800">Return to UniSoko</Link>
       </main>
     </div>

@@ -48,7 +48,7 @@ export default function WingaRecruitmentBanner() {
             <h2 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-white">
               Become a Campus{' '}
               <span className="text-emerald-400">
-                Winga Agent
+                Winga
               </span>
             </h2>
             <p className="mt-2 text-sm text-slate-300 max-w-xl">
@@ -65,14 +65,14 @@ export default function WingaRecruitmentBanner() {
               Watch Guide
             </button>
             <Link
-              href="/winga"
+              href="/winga/register"
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 active:scale-95 transition-all"
             >
-              <span>Join as Winga Agent</span>
+              <span>Join as Winga</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/winga/dashboard"
+              href="/winga/login"
               className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3.5 text-sm font-semibold text-white hover:bg-white/20 active:scale-95 border border-white/10 transition-all"
             >
               <span>Agent Portal</span>
@@ -119,7 +119,7 @@ export default function WingaRecruitmentBanner() {
             </div>
             <div>
               <p className="text-xs font-bold text-white">
-                Active Winga Agents in Mbeya:
+                Active Wingas in Mbeya:
               </p>
               <p className="text-[11px] text-slate-400">
                 {MOCK_WINGA_AGENTS[0].fullName} ({MOCK_WINGA_AGENTS[0].promoCode}) earned {formatTZS(MOCK_WINGA_AGENTS[0].totalEarnings)} this semester!
@@ -131,7 +131,7 @@ export default function WingaRecruitmentBanner() {
             href="/winga/leaderboard"
             className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline underline-offset-4 flex items-center gap-1"
           >
-            See Winga Agent Leaderboard <ArrowRight className="h-3.5 w-3.5" />
+            See Winga Leaderboard <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>

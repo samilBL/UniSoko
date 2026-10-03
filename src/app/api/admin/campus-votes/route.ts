@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { hasAdminRequestSession } from '@/lib/adminAuth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!hasAdminRequestSession(request)) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ votes: {}, configured: false });
   const { data, error } = await supabase.from('campus_votes').select('campus_id');

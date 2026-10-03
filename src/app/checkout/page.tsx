@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { useStore } from '@/context/StoreContext';
@@ -8,8 +8,6 @@ import {
   ALL_UNIVERSITIES,
   MBEYA_UNIVERSITIES,
   NON_MBEYA_UNIVERSITIES,
-  MOCK_WINGA_AGENTS,
-  MOCK_PRODUCTS,
   formatTZS,
 } from '@/lib/mockData';
 import { Order, DeliverySpotType } from '@/lib/types';
@@ -29,11 +27,16 @@ import {
   AlertCircle,
   Clock,
   MessageCircle,
+  ShoppingBag,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createWhatsAppLink } from '@/lib/whatsapp';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
+import TradeInModal from '@/components/TradeInModal';
+import { TRADE_IN_INSPECTION_DISCLAIMER } from '@/lib/tradeInValuation';
+import type { TradeInQuoteAttachment } from '@/lib/types';
 
 export default function CheckoutPage() {
   const {
@@ -41,15 +44,13 @@ export default function CheckoutPage() {
     selectedCampus,
     setSelectedCampus,
     allUniversities = ALL_UNIVERSITIES,
-    addOrder,
+    clearCart,
     storeSettings,
+    tradeInQuote,
+    setTradeInQuote,
   } = useStore();
 
-  // If cart is empty, use sample item so page can be previewed/tested
-  const checkoutItems = useMemo(() => {
-    if (cart && cart.length > 0) return cart;
-    return [{ product: MOCK_PRODUCTS[0], quantity: 1 }];
-  }, [cart]);
+  const checkoutItems = useMemo(() => cart || [], [cart]);
 
   // Safe fallback for selected campus
   const safeCampus = useMemo(() => {
@@ -86,8 +87,10 @@ export default function CheckoutPage() {
   // Completed Order State
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [trackingToken, setTrackingToken] = useState<string | null>(null);
-  const [trackingUnavailable, setTrackingUnavailable] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
+  const paymentModalRef = useRef<HTMLDivElement>(null);
+  const proceedButtonRef = useRef<HTMLButtonElement>(null);
 
   // University determination with defensive checks
   const isMbeyaUni = Boolean(safeCampus?.isMbeya);
@@ -105,8 +108,11 @@ export default function CheckoutPage() {
   }, 0);
 
   const promoDiscount = appliedPromo ? appliedPromo.discountAmount : 0;
+  const tradeInDiscount = Math.min(tradeInQuote?.estimatedPrice || 0, rawSubtotal);
   const shippingFee = isMbeyaUni ? 0 : 7000; // Free for Mbeya hostels, TZS 7,000 for regional courier
-  const finalTotal = Math.max(0, rawSubtotal + shippingFee - promoDiscount);
+  const finalTotal = Math.max(0, rawSubtotal + shippingFee - promoDiscount - tradeInDiscount);
+
+  const handleTradeInQuote = (quote: TradeInQuoteAttachment) => setTradeInQuote(quote);
 
   // Handle Promo Validation
   const handleApplyPromo = () => {
@@ -119,28 +125,14 @@ export default function CheckoutPage() {
       return;
     }
 
-    const matchedAgent = MOCK_WINGA_AGENTS.find(
-      (a) => a.promoCode.toUpperCase() === code
-    );
-
-    if (matchedAgent) {
-      setAppliedPromo({
-        code: matchedAgent.promoCode,
-        agentName: matchedAgent.fullName,
-        university: matchedAgent.university,
-        discountAmount: 5000,
-      });
-      setPromoSuccess(
-        `🎉 TZS 5,000 credit applied! Ambassador: ${matchedAgent.fullName} (${matchedAgent.university.split(' ')[0]})`
-      );
-    } else if (code.startsWith('WINGA-')) {
+    if (/^WINGA-[A-F0-9]{6}$/.test(code)) {
       setAppliedPromo({
         code: code,
         agentName: 'Campus Student Ambassador',
         university: safeCampus.shortCode || 'Uni',
         discountAmount: 5000,
       });
-      setPromoSuccess(`🎉 TZS 5,000 credit applied via Winga code ${code}!`);
+      setPromoSuccess(`Code ${code} will be verified by UniSoko before the order is accepted.`);
     } else {
       setPromoError('Invalid promo code. Try WINGA-SAM or WINGA-MARY.');
     }
@@ -161,12 +153,40 @@ export default function CheckoutPage() {
     setIsLipaModalOpen(true);
   };
 
+  const closePaymentModal = () => {
+    setIsLipaModalOpen(false);
+    window.requestAnimationFrame(() => proceedButtonRef.current?.focus());
+  };
+
+  const handlePaymentModalKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closePaymentModal();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(paymentModalRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    ) || []).filter((element) => element.offsetParent !== null);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   const handleCompleteOrder = async () => {
     if (!lipaTxId.trim()) {
       setTxError('Please enter the M-Pesa / Tigo Pesa Transaction Reference ID from your SMS.');
       return;
     }
 
+    setTxError('');
     setIsSubmitting(true);
 
     const defaultSpot = safeCampus?.popularSpots?.[0] || 'Campus Gate Landmark';
@@ -179,9 +199,23 @@ export default function CheckoutPage() {
       : `Regional Courier Hub: ${regionalHubAddress || defaultHub}`;
 
     const newOrder: Order = {
-      id: `ORD-TZ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: '',
       productId: checkoutItems[0]?.product?.id || 'prod-custom',
       product: checkoutItems[0]?.product,
+      items: checkoutItems.map(({ product, quantity }) => ({
+        productId: product.id,
+        productTitle: product.title,
+        condition: product.condition,
+        quantity,
+        unitPrice: quantity >= (product.minWholesaleQty || 3) ? product.priceWholesale : product.priceRetail,
+        lineTotal: (quantity >= (product.minWholesaleQty || 3) ? product.priceWholesale : product.priceRetail) * quantity,
+      })),
+      subtotalAmount: rawSubtotal,
+      shippingFee,
+      promoDiscount,
+        tradeInRequestId: tradeInQuote?.requestId,
+        tradeInEstimate: tradeInDiscount,
+        tradeInInspectionStatus: tradeInQuote ? 'Trade-In Pending Inspection' : 'Not Required',
       buyerName: buyerName.trim(),
       buyerPhone: buyerPhone.trim(),
       university: `${safeCampus.name} (${safeCampus.shortCode})`,
@@ -205,29 +239,60 @@ export default function CheckoutPage() {
       createdAt: new Date().toISOString(),
     };
 
+    let orderCreated = false;
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newOrder,
-          productTitle: newOrder.product?.title || newOrder.productId,
+          buyerName: newOrder.buyerName,
+          buyerPhone: newOrder.buyerPhone,
+          campusId: safeCampus.id,
+          deliverySpotType: newOrder.deliverySpotType,
+          deliveryDetails: newOrder.deliveryDetails,
+          items: checkoutItems.map(({ product, quantity }) => ({ productId: product.id, quantity })),
+          wingaCodeUsed: appliedPromo?.code,
+          lipaNambaTxId: newOrder.lipaNambaTxId,
+          tradeIn: tradeInQuote ? { requestId: tradeInQuote.requestId, token: tradeInQuote.token } : null,
         }),
       });
-      if (response.ok) {
-        const result = await response.json() as { trackingToken?: string };
-        if (result.trackingToken) setTrackingToken(result.trackingToken);
-        else setTrackingUnavailable(true);
-      } else {
-        setTrackingUnavailable(true);
+      const result = await response.json() as {
+        orderId?: string;
+        trackingToken?: string;
+        items?: Order['items'];
+        subtotalAmount?: number;
+        shippingFee?: number;
+        promoDiscount?: number;
+        tradeInRequestId?: string | null;
+        tradeInEstimate?: number;
+        totalAmount?: number;
+        error?: string;
+      };
+      if (!response.ok || !result.orderId || !result.trackingToken || !Number.isFinite(result.totalAmount)) {
+        setTxError(result.error || 'UniSoko could not securely submit this order. Please retry.');
+        return;
       }
+      const acceptedOrder: Order = {
+        ...newOrder,
+        id: result.orderId,
+        items: result.items,
+        subtotalAmount: result.subtotalAmount,
+        shippingFee: result.shippingFee,
+        promoDiscount: result.promoDiscount,
+        tradeInRequestId: result.tradeInRequestId || undefined,
+        tradeInEstimate: result.tradeInEstimate,
+        tradeInInspectionStatus: result.tradeInRequestId ? 'Trade-In Pending Inspection' : 'Not Required',
+        totalAmount: result.totalAmount as number,
+      };
+      setTrackingToken(result.trackingToken);
+      clearCart();
+      setCompletedOrder(acceptedOrder);
+      orderCreated = true;
     } catch {
-      setTrackingUnavailable(true);
+      setTxError('Network error. Your order was not submitted; check your connection and retry.');
     } finally {
-      addOrder(newOrder);
-      setCompletedOrder(newOrder);
       setIsSubmitting(false);
-      setIsLipaModalOpen(false);
+      if (orderCreated) setIsLipaModalOpen(false);
     }
   };
 
@@ -294,6 +359,9 @@ export default function CheckoutPage() {
                   </span>
                 </div>
               )}
+                            {completedOrder.tradeInRequestId && <div className="flex justify-between pb-2 border-b border-slate-200 dark:border-slate-700"><span className="text-slate-500 font-medium">Trade-in estimate:</span><span className="font-bold text-emerald-700">-{formatTZS(completedOrder.tradeInEstimate || 0)} · Pending inspection</span></div>}
+
+                          {completedOrder.tradeInRequestId && <p className="relative z-10 rounded-xl border-2 border-amber-400 bg-amber-50 p-4 text-left text-xs font-semibold leading-5 text-amber-950">⚠️ DISCLAIMER: {TRADE_IN_INSPECTION_DISCLAIMER}</p>}
               <div className="flex justify-between items-baseline pt-1">
                 <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
                   Total Amount Paid:
@@ -326,13 +394,9 @@ export default function CheckoutPage() {
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Track Order</span>
                 </Link>
-              ) : trackingUnavailable ? (
-                <p role="status" className="text-xs text-amber-800 dark:text-amber-300">
-                  Secure online tracking is unavailable. Keep this order reference for support.
-                </p>
               ) : null}
               <a
-                href={createWhatsAppLink(storeSettings?.supportWhatsApp || '0616961511', `Habari UniSoko! Nimekamilisha malipo ya Order #${completedOrder.id} (Tx: ${completedOrder.lipaNambaTxId}) kwa ${completedOrder.university}. Tafadhali thibitisha delivery!`)}
+                href={createWhatsAppLink(UNISOKO_CONTACT.phoneDigits, `Habari UniSoko! Nimekamilisha malipo ya Order #${completedOrder.id} (Tx: ${completedOrder.lipaNambaTxId}) kwa ${completedOrder.university}. Tafadhali thibitisha delivery!`)}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
@@ -349,6 +413,13 @@ export default function CheckoutPage() {
               </Link>
             </div>
           </motion.div>
+        ) : checkoutItems.length === 0 ? (
+          <section className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <ShoppingBag className="mx-auto h-8 w-8 text-slate-400" />
+            <h1 className="mt-3 text-xl font-bold text-slate-900 dark:text-white">Your cart is empty</h1>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Add an available UniSoko product before starting checkout.</p>
+            <Link href="/" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700">Browse products<ArrowRight className="h-4 w-4" /></Link>
+          </section>
         ) : (
           /* Checkout Input Form */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -371,6 +442,14 @@ export default function CheckoutPage() {
               </div>
 
               <form onSubmit={handleStartPayment} className="space-y-6">
+                <section className="rounded-2xl border border-emerald-200 bg-white p-5 dark:border-emerald-900 dark:bg-slate-900">
+                  <div className="flex items-start justify-between gap-4">
+                    <div><h2 className="text-sm font-bold text-slate-950 dark:text-white">Trade In Your Existing Device for an Instant Discount</h2><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Get a provisional discount for a phone, tablet, or laptop.</p></div>
+                    <button type="button" role="switch" aria-checked={Boolean(tradeInQuote)} aria-label="Trade in your existing device for an instant discount" onClick={() => tradeInQuote ? setTradeInQuote(null) : setIsTradeInModalOpen(true)} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${tradeInQuote ? 'bg-emerald-700' : 'bg-slate-300'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${tradeInQuote ? 'translate-x-6' : 'translate-x-1'}`} /></button>
+                  </div>
+                  {tradeInQuote && <div className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-950"><div className="flex items-center justify-between gap-3"><span className="font-semibold">{tradeInQuote.itemTitle}</span><strong>-{formatTZS(tradeInDiscount)}</strong></div><button type="button" onClick={() => setIsTradeInModalOpen(true)} className="mt-2 font-bold text-emerald-800 underline">Update estimate</button><p className="mt-2 border-t border-emerald-200 pt-2 leading-5">⚠️ DISCLAIMER: {TRADE_IN_INSPECTION_DISCLAIMER}</p></div>}
+                </section>
+
                 {/* 1. Buyer Contact Details */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
                   <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -477,7 +556,7 @@ export default function CheckoutPage() {
                             type="button"
                             key={type}
                             onClick={() => setDeliverySpotType(type)}
-                            className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                            className={`min-h-11 rounded-xl py-2 text-xs font-bold transition-all ${
                               deliverySpotType === type
                                 ? 'bg-indigo-600 text-white shadow-xs'
                                 : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
@@ -638,6 +717,7 @@ export default function CheckoutPage() {
                 {/* Proceed to Payment CTA */}
                 <button
                   type="submit"
+                  ref={proceedButtonRef}
                   className="w-full rounded-2xl bg-indigo-600 py-4 text-sm font-black text-white shadow-xl shadow-indigo-600/25 hover:bg-indigo-700 active:scale-98 transition-all flex items-center justify-center gap-2"
                 >
                   <CreditCard className="h-4 w-4" />
@@ -670,7 +750,7 @@ export default function CheckoutPage() {
                       >
                         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-700">
                           {product?.images?.[0] && (
-                            <Image src={product.images[0]} alt={product.title} fill className="object-cover" />
+                            <Image src={product.images[0]} alt={product.title} fill sizes="48px" className="object-cover" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -717,6 +797,8 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  {tradeInDiscount > 0 && <div className="flex justify-between font-bold text-emerald-700"><span>Trade-in estimate</span><span>-{formatTZS(tradeInDiscount)}</span></div>}
+
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-baseline">
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
                       Total Payable
@@ -752,7 +834,7 @@ export default function CheckoutPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsLipaModalOpen(false)}
+              onClick={closePaymentModal}
               className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm"
             />
 
@@ -761,6 +843,11 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              ref={paymentModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="lipa-payment-title"
+              onKeyDown={handlePaymentModalKeyDown}
               className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto"
             >
               {/* Header */}
@@ -768,7 +855,7 @@ export default function CheckoutPage() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 mb-2">
                   <CreditCard className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                <h3 id="lipa-payment-title" className="text-lg font-black text-slate-900 dark:text-white">
                   Lipa Namba (Till Number) Payment
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -780,12 +867,12 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mt-4 space-y-3">
-                {paymentMethods.map((method) => (
-                  <div key={method.network} className="rounded-2xl bg-slate-900 p-4 text-white shadow-md">
+                {paymentMethods.map((method, index) => (
+                  <div key={method.id || `${method.network}-${method.tillNumber}-${index}`} className="rounded-2xl bg-slate-900 p-4 text-white shadow-md">
                     <div className="flex items-center justify-between gap-3 text-xs text-indigo-200"><span>{method.network}</span><span className="text-right">Merchant: {method.accountName || storeSettings?.merchantName || 'UniSoko'}</span></div>
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <div><span className="block text-[10px] uppercase tracking-widest text-slate-400">Till / Lipa number</span><span className="font-mono text-2xl font-black tracking-wider text-amber-300">{method.tillNumber}</span></div>
-                      <button onClick={() => handleCopyTill(method.tillNumber)} className="flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-500">{copiedTill ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}<span>{copiedTill ? 'Copied!' : 'Copy Till'}</span></button>
+                      <button onClick={() => handleCopyTill(method.tillNumber)} className="flex min-h-11 items-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-500">{copiedTill ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}<span>{copiedTill ? 'Copied!' : 'Copy Till'}</span></button>
                     </div>
                   </div>
                 ))}
@@ -793,7 +880,7 @@ export default function CheckoutPage() {
 
               <div className="mt-4 space-y-1.5 text-xs">
                 <p className="font-bold text-slate-800 dark:text-slate-200">USSD payment shortcuts:</p>
-                {paymentMethods.map((method) => <div key={method.network} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300"><span className="font-bold text-indigo-600 dark:text-indigo-400">{method.network}:</span> {method.network === 'M-Pesa' ? '*150*00# > Lipa kwa M-Pesa' : method.network === 'Tigo Pesa' ? '*150*01# > Lipa kwa Simu' : '*150*60# > Lipa kwa Airtel Money'} &gt; Lipa Namba ({method.tillNumber})</div>)}
+                {paymentMethods.map((method, index) => <div key={method.id || `${method.network}-${method.tillNumber}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-[11px] text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300"><span className="font-bold text-indigo-600 dark:text-indigo-400">{method.network}:</span> {method.network === 'M-Pesa' ? '*150*00# > Lipa kwa M-Pesa' : method.network === 'Tigo Pesa' ? '*150*01# > Lipa kwa Simu' : '*150*60# > Lipa kwa Airtel Money'} &gt; Lipa Namba ({method.tillNumber})</div>)}
               </div>
 
               {/* Transaction ID Input with Explicit High Contrast */}
@@ -802,6 +889,7 @@ export default function CheckoutPage() {
                   Enter M-Pesa / Tigo Pesa Transaction Reference ID *
                 </label>
                 <input
+                  autoFocus
                   type="text"
                   required
                   placeholder="e.g. QA78XX99YY or MP8921034"
@@ -827,8 +915,8 @@ export default function CheckoutPage() {
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsLipaModalOpen(false)}
-                  className="rounded-xl border border-slate-300 py-3 text-xs font-bold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-all"
+                  onClick={closePaymentModal}
+                  className="min-h-11 rounded-xl border border-slate-300 py-3 text-xs font-bold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-all"
                 >
                   Cancel
                 </button>
@@ -836,7 +924,7 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={handleCompleteOrder}
                   disabled={isSubmitting}
-                  className="rounded-xl bg-emerald-600 py-3 text-xs font-black text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
+                  className="min-h-11 rounded-xl bg-emerald-600 py-3 text-xs font-black text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
                 >
                   {isSubmitting ? (
                     <span>Submitting Order...</span>
@@ -852,6 +940,8 @@ export default function CheckoutPage() {
           </div>
         )}
       </AnimatePresence>
+
+  <TradeInModal isOpen={isTradeInModalOpen} onClose={() => setIsTradeInModalOpen(false)} onQuoted={handleTradeInQuote} selectedCampus={safeCampus} purchasePrice={rawSubtotal} />
 
       <CartDrawer />
     </div>
