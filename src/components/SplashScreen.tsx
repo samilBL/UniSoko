@@ -36,27 +36,32 @@ export default function SplashScreen() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    // Show once per session
-    if (sessionStorage.getItem('unisoko_splash_seen')) {
-      setVisible(false);
-      return;
+    let alreadySeen = false;
+    try {
+      alreadySeen = sessionStorage.getItem('unisoko_splash_seen') === 'true';
+      if (!alreadySeen) sessionStorage.setItem('unisoko_splash_seen', 'true');
+    } catch {
+      // Storage can be blocked on mobile/private browsing; the splash must still dismiss.
     }
-    sessionStorage.setItem('unisoko_splash_seen', 'true');
+    if (alreadySeen) {
+      const hideTimer = window.setTimeout(() => setVisible(false), 0);
+      return () => window.clearTimeout(hideTimer);
+    }
 
     // Phase 1: Show logo icon for 600ms, then start typing
-    const t1 = setTimeout(() => setPhase('typing'), 600);
-    return () => clearTimeout(t1);
+    const t1 = window.setTimeout(() => setPhase('typing'), 400);
+    return () => window.clearTimeout(t1);
   }, []);
 
   // Typewriter effect
   useEffect(() => {
     if (phase !== 'typing') return;
     if (typedChars < WORD.length) {
-      const t = setTimeout(() => setTypedChars((c) => c + 1), 90);
+      const t = window.setTimeout(() => setTypedChars((c) => c + 1), 65);
       return () => clearTimeout(t);
     } else {
       // All chars typed — show tagline after brief pause
-      const t = setTimeout(() => setPhase('tagline'), 300);
+      const t = window.setTimeout(() => setPhase('tagline'), 180);
       return () => clearTimeout(t);
     }
   }, [phase, typedChars]);
@@ -64,13 +69,13 @@ export default function SplashScreen() {
   // After tagline appears, fade out after 1.2s
   useEffect(() => {
     if (phase !== 'tagline') return;
-    const t = setTimeout(() => setPhase('done'), 1400);
+    const t = window.setTimeout(() => setPhase('done'), 800);
     return () => clearTimeout(t);
   }, [phase]);
 
   useEffect(() => {
     if (phase === 'done') {
-      const t = setTimeout(() => setVisible(false), 500);
+      const t = window.setTimeout(() => setVisible(false), 350);
       return () => clearTimeout(t);
     }
   }, [phase]);
@@ -85,27 +90,27 @@ export default function SplashScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-between bg-black"
+          className="fixed inset-0 z-[9999] h-[100dvh] min-h-[100svh] w-full overflow-hidden bg-black"
         >
           {/* Centre: icon + name */}
-          <div className="flex flex-1 flex-col items-center justify-center gap-5">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:gap-5">
             {/* Bag icon */}
             <motion.div
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="flex h-24 w-24 items-center justify-center rounded-3xl bg-indigo-600 shadow-2xl shadow-indigo-600/50"
+              className="flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-600 shadow-2xl shadow-indigo-600/50 sm:h-24 sm:w-24"
             >
               <UniSokoIcon />
             </motion.div>
 
             {/* Typewriter name */}
-            <div className="flex items-center h-14">
+            <div className="flex h-12 items-center sm:h-14">
               {(phase === 'typing' || phase === 'tagline') && (
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-5xl font-black tracking-tight text-white"
+                  className="text-4xl font-black tracking-tight text-white sm:text-5xl"
                 >
                   <span className="text-indigo-400">
                     {WORD.slice(0, Math.min(typedChars, 3))}
@@ -133,7 +138,7 @@ export default function SplashScreen() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: phase === 'tagline' ? 1 : 0, y: phase === 'tagline' ? 0 : 8 }}
             transition={{ duration: 0.4 }}
-            className="pb-14 text-center"
+            className="absolute inset-x-0 bottom-[max(1.5rem,env(safe-area-inset-bottom))] px-4 text-center"
           >
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-600">
               Powered by

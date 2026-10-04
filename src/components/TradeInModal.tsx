@@ -117,8 +117,8 @@ export default function TradeInModal({ isOpen, onClose, onQuoted, selectedCampus
   const labelClass = 'block text-xs font-semibold text-slate-700';
 
   return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget && !isSubmitting) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="trade-in-title" className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+    <div className="fixed inset-0 z-70 flex h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain bg-slate-950/70 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center" onMouseDown={(event) => { if (event.target === event.currentTarget && !isSubmitting) onClose(); }}>
+      <section role="dialog" aria-modal="true" aria-labelledby="trade-in-title" className="my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-7">
           <div><p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Instant purchase estimate</p><h2 id="trade-in-title" className="mt-1 text-lg font-bold text-slate-950">Trade in your device</h2></div>
           <button type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close trade-in form" className="rounded-md p-2 text-slate-600 hover:bg-slate-100 disabled:opacity-50"><X className="h-5 w-5" /></button>
@@ -126,7 +126,7 @@ export default function TradeInModal({ isOpen, onClose, onQuoted, selectedCampus
         <div className="flex gap-2 px-5 pt-4 sm:px-7" aria-label={`Step ${step} of 3`}>
           {['Device', 'Condition', 'Photos'].map((label, index) => <div key={label} className={`h-1.5 flex-1 rounded-full ${step >= index + 1 ? 'bg-emerald-600' : 'bg-slate-200'}`} title={label} />)}
         </div>
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto px-5 py-5 sm:px-7">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-7 sm:py-5">
           {step === 1 && <>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={labelClass}>Category<select className={selectClass} value={valuation.category} onChange={(event) => updateValuation('category', event.target.value as TradeInCategory)}>{(['Phone', 'Tablet', 'Laptop'] as const).map((category) => <option key={category}>{category}</option>)}</select></label>

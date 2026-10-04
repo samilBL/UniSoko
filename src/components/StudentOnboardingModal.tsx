@@ -47,9 +47,9 @@ export default function StudentOnboardingModal({ isOpen, onClose }: StudentOnboa
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="walkthrough-title">
+        <div className="fixed inset-0 z-50 flex h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="walkthrough-title">
           <motion.button aria-label="Close walkthrough" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-slate-950/70 backdrop-blur-xl" />
-          <motion.section initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: 0.98 }} transition={{ type: 'spring', damping: 26, stiffness: 260 }} className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-6 shadow-2xl shadow-indigo-950/30 backdrop-blur-xl sm:p-9">
+          <motion.section initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: 0.98 }} transition={{ type: 'spring', damping: 26, stiffness: 260 }} className="relative my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-3xl border border-white/70 bg-white/90 p-4 shadow-2xl shadow-indigo-950/30 backdrop-blur-xl sm:p-9">
             <button aria-label="Close walkthrough" onClick={onClose} className="absolute right-5 top-5 rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"><X className="h-4 w-4" /></button>
             <div className="pr-10">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Your UniSoko field guide</p>

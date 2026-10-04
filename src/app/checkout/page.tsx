@@ -882,7 +882,7 @@ export default function CheckoutPage() {
       {/* Lipa Namba Payment Modal */}
       <AnimatePresence>
         {isLipaModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:items-center sm:p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -902,7 +902,7 @@ export default function CheckoutPage() {
               aria-modal="true"
               aria-labelledby="lipa-payment-title"
               onKeyDown={handlePaymentModalKeyDown}
-              className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto"
+              className="relative my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-6 dark:border-slate-800 dark:bg-slate-900"
             >
               {/* Header */}
               <div className="text-center pb-4 border-b border-slate-100 dark:border-slate-800">

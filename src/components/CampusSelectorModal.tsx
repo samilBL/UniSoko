@@ -22,7 +22,7 @@ export default function CampusSelectorModal({ isOpen, onClose }: CampusSelectorM
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain px-3 py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:items-center sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -38,7 +38,7 @@ export default function CampusSelectorModal({ isOpen, onClose }: CampusSelectorM
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-slate-800"
+            className="relative my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white p-4 shadow-2xl ring-1 ring-slate-900/10 sm:p-6 dark:bg-slate-900 dark:ring-slate-800"
           >
             {/* Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
@@ -65,7 +65,7 @@ export default function CampusSelectorModal({ isOpen, onClose }: CampusSelectorM
             </div>
 
             {/* University List */}
-            <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
               {/* Mbeya Campuses */}
               <div className="space-y-2">
                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
@@ -187,7 +187,7 @@ export default function CampusSelectorModal({ isOpen, onClose }: CampusSelectorM
             </div>
 
             {/* Footer Note */}
-            <div className="mt-5 rounded-xl bg-emerald-50/80 p-3 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50 flex items-center gap-2">
+            <div className="mt-4 flex shrink-0 items-center gap-2 rounded-xl border border-emerald-200/60 bg-emerald-50/80 p-3 text-xs text-emerald-800 sm:mt-5 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>
                 Mbeya offers direct campus hand-off; regional campuses use courier delivery and local Winga hub coordination.

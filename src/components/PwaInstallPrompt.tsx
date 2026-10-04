@@ -71,7 +71,7 @@ export default function PwaInstallPrompt() {
   if (!showBanner) return null;
 
   return (
-    <aside className="fixed inset-x-3 bottom-3 z-60 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white/95 p-3 text-slate-900 shadow-2xl shadow-slate-950/20 backdrop-blur-xl sm:hidden" aria-label="Install UniSoko app">
+    <aside className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-60 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white/95 p-3 text-slate-900 shadow-2xl shadow-slate-950/20 backdrop-blur-xl sm:hidden" aria-label="Install UniSoko app">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white"><Download className="h-5 w-5" /></div>
         <div className="min-w-0 flex-1"><p className="text-sm font-extrabold">Install UniSoko App</p><p className="text-[11px] text-slate-600">Quick access to campus deals from your home screen.</p></div>
