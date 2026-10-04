@@ -13,6 +13,7 @@ import CartDrawer from '@/components/CartDrawer';
 import { useStore } from '@/context/StoreContext';
 import {
   ShieldCheck,
+  ArrowUpRight,
   MapPin,
   Layers,
   ArrowRight,
@@ -23,7 +24,6 @@ import {
   BedDouble,
   PackageCheck,
   Sparkles,
-  ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -109,58 +109,62 @@ export default function StorefrontHomePage() {
 
         {/* Value Props Strip */}
         <section className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4" aria-label="UniSoko benefits">
-          <div className="flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+          <Link href="/hostels" className="group relative flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-400 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-indigo-950/40">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-indigo-950 dark:text-indigo-400">
               <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[11px] font-bold leading-tight text-slate-900 sm:text-xs dark:text-white">
+              <h4 className="flex items-start justify-between gap-1 text-[11px] font-bold leading-tight text-slate-900 group-hover:text-indigo-700 sm:text-xs dark:text-white dark:group-hover:text-indigo-300">
                 Hostel Hand-Off in Mbeya
+                <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-300" />
               </h4>
               <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Direct delivery to {selectedCampus?.shortCode || 'MUST'} hostels
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+          <Link href="/#products-section" className="group relative flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-400 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-indigo-950/40">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-emerald-950 dark:text-emerald-400">
               <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[11px] font-bold leading-tight text-slate-900 sm:text-xs dark:text-white">
+              <h4 className="flex items-start justify-between gap-1 text-[11px] font-bold leading-tight text-slate-900 group-hover:text-indigo-700 sm:text-xs dark:text-white dark:group-hover:text-indigo-300">
                 Bei ya Jumla (Wholesale)
+                <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-300" />
               </h4>
               <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Pool 3+ units for direct supplier discount
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+          <Link href="/#products-section" className="group relative flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-400 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-indigo-950/40">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-amber-950 dark:text-amber-400">
               <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-[11px] font-bold leading-tight text-slate-900 sm:text-xs dark:text-white">
+              <h4 className="flex items-start justify-between gap-1 text-[11px] font-bold leading-tight text-slate-900 group-hover:text-indigo-700 sm:text-xs dark:text-white dark:group-hover:text-indigo-300">
                 Grade-A Quality Inspected
+                <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-300" />
               </h4>
               <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Battery health & ports fully certified
               </p>
             </div>
-          </div>
+          </Link>
 
           <Link
             href="/sell-device"
-            className="group flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-300 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900"
+            className="group flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-400 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-indigo-950/40"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-transform group-hover:scale-105 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-emerald-950 dark:text-emerald-400">
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div className="min-w-0">
-              <h4 className="text-[11px] font-bold leading-tight text-slate-900 group-hover:text-indigo-600 sm:text-xs dark:text-white">
+            <div className="min-w-0 flex-1">
+              <h4 className="flex items-start justify-between gap-1 text-[11px] font-bold leading-tight text-slate-900 group-hover:text-indigo-600 sm:text-xs dark:text-white dark:group-hover:text-indigo-300">
                 Sell / Trade-In Device
+                <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-300" />
               </h4>
               <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Instant cash & upgrade credits

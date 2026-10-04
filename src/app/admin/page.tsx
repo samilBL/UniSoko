@@ -45,6 +45,7 @@ import {
   BarChart3,
   Wrench,
   School,
+  FileText,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -1530,7 +1531,7 @@ export default function AdminPanelPage() {
 
                             {/* Actions */}
                             <td className="p-4 text-right space-x-1.5">
-                              {isPersistedOrder ? nextOrderAction ? (
+                              {isPersistedOrder ? <div className="flex flex-col items-end gap-2">{nextOrderAction ? (
                                 <button
                                   onClick={() => void handlePersistedOrderTransition(ord)}
                                   disabled={updatingOrderId === ord.id || blocksDispatch}
@@ -1541,7 +1542,7 @@ export default function AdminPanelPage() {
                                 </button>
                               ) : (
                                 <span className="text-slate-400 text-xs font-semibold">Done</span>
-                              ) : isPending ? (
+                              )}<button type="button" onClick={() => router.push(`/order/${encodeURIComponent(ord.id)}/receipt`)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-2.5 text-[11px] font-bold text-indigo-800 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 dark:hover:bg-indigo-900"><FileText className="h-3.5 w-3.5" />Receipt & warranty</button></div> : isPending ? (
                                 <button
                                   onClick={() => {
                                     approveOrder(ord.id);

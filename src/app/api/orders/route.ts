@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
       .eq('status', 'Approved')
       .maybeSingle();
     if (promoError) return NextResponse.json({ error: 'Winga codes are temporarily unavailable. Retry without the code or contact support.' }, { status: 503 });
-    if (!approvedWinga) return NextResponse.json({ error: 'This Winga code is invalid or inactive.' }, { status: 400 });
-    if (!approvedWinga.student_id_verified) return NextResponse.json({ error: 'This Winga code is waiting for student ID verification and cannot earn a commission yet.' }, { status: 400 });
+    if (!approvedWinga || !approvedWinga.student_id_verified) return NextResponse.json({ error: 'Invalid promo code' }, { status: 400 });
     promoDiscount = Math.min(WINGA_DISCOUNT, subtotalAmount);
   }
   let tradeInRequestId: string | null = null;

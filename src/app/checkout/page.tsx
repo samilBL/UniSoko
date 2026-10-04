@@ -78,6 +78,7 @@ export default function CheckoutPage() {
   } | null>(null);
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
   // Lipa Namba State
   const [isLipaModalOpen, setIsLipaModalOpen] = useState(false);
@@ -117,9 +118,10 @@ export default function CheckoutPage() {
   const handleTradeInQuote = (quote: TradeInQuoteAttachment) => setTradeInQuote(quote);
 
   // Handle Promo Validation
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     setPromoError('');
     setPromoSuccess('');
+    setAppliedPromo(null);
     const code = promoInput.trim().toUpperCase();
 
     if (!code) {
@@ -127,16 +129,25 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (/^WINGA-[A-F0-9]{6}$/.test(code)) {
+    setIsApplyingPromo(true);
+    try {
+      const response = await fetch(`/api/winga/promo/${encodeURIComponent(code)}`, { cache: 'no-store' });
+      const result = await response.json() as { code?: string; discountAmount?: number; error?: string };
+      if (!response.ok || !result.code || !Number.isFinite(result.discountAmount)) {
+        setPromoError(response.status === 404 ? 'Invalid promo code' : result.error || 'Could not verify the promo code. Try again.');
+        return;
+      }
       setAppliedPromo({
-        code: code,
+        code: result.code,
         agentName: 'Campus Student Ambassador',
         university: safeCampus.shortCode || 'Uni',
-        discountAmount: 5000,
+        discountAmount: result.discountAmount as number,
       });
-      setPromoSuccess(`Code ${code} will be verified by UniSoko before the order is accepted.`);
-    } else {
-      setPromoError('Invalid promo code. Try WINGA-SAM or WINGA-MARY.');
+      setPromoSuccess(`Code ${result.code} applied.`);
+    } catch {
+      setPromoError('Could not verify the promo code. Try again.');
+    } finally {
+      setIsApplyingPromo(false);
     }
   };
 
@@ -306,7 +317,9 @@ export default function CheckoutPage() {
         error?: string;
       };
       if (!response.ok || !result.orderId || !result.trackingToken || !Number.isFinite(result.totalAmount)) {
-        setTxError(result.error || 'UniSoko could not securely submit this order. Please retry.');
+        const serverError = result.error?.toLowerCase() || '';
+        const message = appliedPromo && (serverError.includes('invalid') || serverError.includes('waiting for student id')) ? 'Invalid promo code' : result.error;
+        setTxError(message || 'UniSoko could not securely submit this order. Please retry.');
         return;
       }
       const acceptedOrder: Order = {
@@ -570,7 +583,7 @@ export default function CheckoutPage() {
                           setSelectedCampus(found);
                         }
                       }}
-                      className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs font-semibold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white transition-all cursor-pointer"
+                      className="min-h-14 w-full rounded-xl border-2 border-indigo-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none dark:border-indigo-800 dark:bg-slate-900 dark:text-white transition-all cursor-pointer"
                     >
                       <optgroup label="📍 Mbeya Region Campuses (Direct Hostel Hand-off)">
                         {MBEYA_UNIVERSITIES.map((uni) => (
@@ -588,6 +601,8 @@ export default function CheckoutPage() {
                       </optgroup>
                     </select>
                   </div>
+
+                  <CampusConfirmation key={safeCampus.id} campusName={`${safeCampus.name} (${safeCampus.shortCode})`} />
 
                   {/* Dynamic Conditional Delivery Fields */}
                   {isMbeyaUni ? (
@@ -739,17 +754,18 @@ export default function CheckoutPage() {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="e.g. WINGA-SAM or WINGA-MARY"
+                      placeholder="e.g. WINGA-5A19BF"
                       value={promoInput}
-                      onChange={(e) => setPromoInput(e.target.value)}
+                      onChange={(e) => { setPromoInput(e.target.value); setAppliedPromo(null); setPromoError(''); setPromoSuccess(''); }}
                       className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-mono uppercase text-slate-900 placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white font-bold"
                     />
                     <button
                       type="button"
-                      onClick={handleApplyPromo}
-                      className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95 dark:bg-indigo-600 dark:hover:bg-indigo-700 transition-all shadow-xs"
+                      onClick={() => void handleApplyPromo()}
+                      disabled={isApplyingPromo}
+                      className="min-w-20 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95 disabled:cursor-wait disabled:opacity-60 dark:bg-indigo-600 dark:hover:bg-indigo-700 transition-all shadow-xs"
                     >
-                      Apply
+                      {isApplyingPromo ? 'Checking…' : 'Apply'}
                     </button>
                   </div>
 
@@ -999,5 +1015,15 @@ export default function CheckoutPage() {
 
       <CartDrawer />
     </div>
+  );
+}
+
+function CampusConfirmation({ campusName }: { campusName: string }) {
+  const [confirmed, setConfirmed] = useState(false);
+  return (
+    <label className="flex min-h-12 items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-2 text-xs font-semibold text-indigo-950 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-100">
+      <input type="checkbox" required checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} className="h-4 w-4 shrink-0 accent-indigo-600" />
+      <span>I confirm delivery to {campusName}.</span>
+    </label>
   );
 }

@@ -68,7 +68,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" aria-label="UniSoko home" className="group flex shrink-0 items-center gap-1.5 sm:gap-2.5">
             <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 shadow-sm shadow-indigo-600/20 sm:h-11 sm:w-11">
-              <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none">
+              <svg viewBox="0 0 32 32" className="unisoko-bag-walk h-7 w-7" fill="none">
                 <path d="M8 11h16l1.5 14a2 2 0 0 1-2 2.2h-13a2 2 0 0 1-2-2.2L8 11Z" fill="var(--unisoko-background)" />
                 <path d="M12 11V9a4 4 0 0 1 8 0v2" stroke="var(--unisoko-background)" strokeWidth="2" strokeLinecap="round" />
                 <path d="m18 13-5 7h3l-1 5 6-8h-3l1-4Z" fill="var(--unisoko-success)" />
@@ -82,12 +82,12 @@ export default function Header() {
           {/* Campus Location Selector Button */}
           <button
             onClick={() => setIsCampusModalOpen(true)}
-            className="flex min-h-11 min-w-0 items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50/80 px-2 py-1.5 text-xs font-semibold text-indigo-900 shadow-xs transition-all hover:border-indigo-300 hover:bg-indigo-100 sm:gap-1.5 sm:px-3 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-900/60"
+            className="flex min-h-12 min-w-0 items-center gap-1.5 rounded-2xl border-2 border-indigo-300 bg-indigo-50/90 px-3 py-2.5 text-xs font-bold text-indigo-950 shadow-sm transition-all hover:border-indigo-400 hover:bg-indigo-100 sm:min-h-14 sm:gap-2 sm:px-4 dark:border-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-100 dark:hover:bg-indigo-900/70"
             aria-label={`Change campus location. Current campus ${selectedCampus.shortCode} in ${selectedCampus.city}`}
           >
             <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span className="truncate max-w-8 sm:max-w-45">
-              <span className="sm:hidden">{selectedCampus.shortCode}</span>
+            <span className="max-w-[6rem] truncate sm:max-w-45">
+              <span className="sm:hidden">{selectedCampus.shortCode} Campus</span>
               <span className="hidden sm:inline">📍 {selectedCampus.shortCode} Campus ({selectedCampus.city})</span>
             </span>
             <ChevronDown className="h-3 w-3 text-indigo-500 opacity-80" />

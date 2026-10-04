@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { formatTZS } from '@/lib/mockData';
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, PackageCheck, ShieldCheck, Truck } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, FileDown, PackageCheck, RefreshCw, ShieldCheck, Truck } from 'lucide-react';
 import type { Order } from '@/lib/types';
 
 function getCurrentStage(order: Order) {
@@ -26,6 +26,9 @@ export default function OrderTrackingPage() {
   const params = useParams<{ id: string }>();
   const orderId = decodeURIComponent(params.id);
   const [order, setOrder] = useState<Order | null>(null);
+  const [trackingToken, setTrackingToken] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [cancellationReason, setCancellationReason] = useState('Changed mind');
@@ -44,6 +47,7 @@ export default function OrderTrackingPage() {
       });
       return () => controller.abort();
     }
+    Promise.resolve().then(() => setTrackingToken(token));
 
     fetch(`/api/orders/${encodeURIComponent(orderId)}?token=${encodeURIComponent(token)}`, {
       cache: 'no-store',
@@ -65,6 +69,22 @@ export default function OrderTrackingPage() {
   }, [orderId]);
 
   const currentStage = order ? getCurrentStage(order) : '';
+
+  const refreshStatus = async () => {
+    if (!trackingToken || isRefreshing) return;
+    setIsRefreshing(true);
+    setRefreshError('');
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}?token=${encodeURIComponent(trackingToken)}`, { cache: 'no-store' });
+      const result = await response.json() as { order?: Order; error?: string };
+      if (!response.ok || !result.order) throw new Error(result.error || 'Could not refresh this order.');
+      setOrder(result.order);
+    } catch (requestError) {
+      setRefreshError(requestError instanceof Error ? requestError.message : 'Could not refresh this order.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -100,8 +120,9 @@ export default function OrderTrackingPage() {
               </div>
 
               <div className="mt-6 rounded-xl border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950/40">
-                <p className="flex items-center gap-2 text-xs font-semibold text-indigo-800 dark:text-indigo-200"><Clock3 className="h-4 w-4" />Current order status</p>
+                <div className="flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-semibold text-indigo-800 dark:text-indigo-200"><Clock3 className="h-4 w-4" />Current order status</p><button type="button" onClick={() => void refreshStatus()} disabled={isRefreshing} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-2.5 text-[11px] font-bold text-indigo-800 hover:bg-indigo-50 disabled:opacity-60 dark:border-indigo-800 dark:bg-slate-900 dark:text-indigo-200 dark:hover:bg-indigo-950"><RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />{isRefreshing ? 'Updating' : 'Refresh'}</button></div>
                 <p className="mt-1 text-lg font-extrabold text-indigo-950 dark:text-white">{currentStage}</p>
+                {refreshError && <p role="status" className="mt-2 text-xs font-semibold text-red-700 dark:text-red-300">{refreshError}</p>}
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -151,6 +172,7 @@ export default function OrderTrackingPage() {
                 <p className="mt-3 flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><Truck className="h-3.5 w-3.5" />{order.deliverySpotType === 'Courier' ? 'Courier delivery' : 'Campus hand-off'}</p>
               </div>
             </section>
+            {order.deliveryStatus === 'Delivered' && trackingToken && <section className="rounded-2xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-extrabold text-emerald-950 dark:text-emerald-100">Delivery confirmed</h2><p className="mt-1 text-xs text-emerald-900 dark:text-emerald-200">Your order has been marked delivered. Your item and warranty receipt is ready.</p></div><Link href={`/order/${encodeURIComponent(order.id)}/receipt?token=${encodeURIComponent(trackingToken)}`} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"><FileDown className="h-4 w-4" />View / Print Receipt</Link></div></section>}
             {order.cancellationStatus && order.cancellationStatus !== 'Not Requested' ? (
               <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" role="status"><p className="font-bold">Cancellation request: {order.cancellationStatus}</p><p className="mt-1 text-xs">UniSoko will review the request. A cancellation does not trigger an automatic refund; the team must verify any payment and record its resolution.</p></section>
             ) : order.status !== 'Completed' && order.status !== 'Cancelled' && order.deliveryStatus === 'Not Dispatched' && order.fulfillmentStatus !== 'Ready for Dispatch' ? (
