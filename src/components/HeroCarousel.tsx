@@ -92,7 +92,7 @@ export default function HeroCarousel() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl bg-slate-900 text-white shadow-2xl ring-1 ring-white/10"
+      className="relative overflow-hidden rounded-3xl bg-[#0A0A0E] text-white shadow-2xl ring-1 ring-white/10"
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
     >

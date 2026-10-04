@@ -27,13 +27,14 @@
   --color-slate-50: var(--unisoko-background);
   --color-slate-100: #111118;
   --color-slate-200: var(--unisoko-border);
-  --color-slate-300: #CBD5E1;
+  --color-slate-300: #334155;
   --color-slate-400: #94A3B8;
   --color-slate-500: #94A3B8;
   --color-slate-600: #94A3B8;
-  --color-slate-700: #CBD5E1;
-  --color-slate-800: #E2E8F0;
-  --color-slate-900: var(--unisoko-text);
+  --color-slate-700: #1C1C28;
+  --color-slate-800: #12121A;
+  --color-slate-900: #0A0A0E;
+  --color-slate-950: #000000;
   --color-indigo-600: var(--unisoko-primary);
   --color-indigo-700: var(--unisoko-primary-dark);
   --color-emerald-500: var(--unisoko-success);
