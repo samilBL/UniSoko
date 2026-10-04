@@ -215,6 +215,68 @@ export const ALL_UNIVERSITIES: UniversityLocation[] = [
   OTHER_TANZANIA_UNIVERSITY,
 ];
 
+// University institutions on the TCU approved list (March 2026). The current
+// store campuses above remain included for the locations UniSoko already serves.
+const TCU_UNIVERSITY_INSTITUTIONS = [
+  'Open University of Tanzania (OUT)',
+  'State University of Zanzibar (SUZA)',
+  'Nelson Mandela African Institution of Science and Technology (NM-AIST)',
+  'Muhimbili University of Health and Allied Sciences (MUHAS)',
+  'Moshi Cooperative University (MoCU)',
+  'Mwalimu Nyerere University of Agriculture and Technology (MNUAT)',
+  'Kairuki University (KU)',
+  'Abdulrahman Al-Sumait University (SUMAIT)',
+  'Zanzibar University (ZU)',
+  'Tumaini University Makumira (TUMA)',
+  'Aga Khan University (AKU)',
+  'Catholic University of Health and Allied Sciences (CUHAS)',
+  'University of Arusha (UoA)',
+  'St. Joseph University in Tanzania (SJUIT)',
+  'Mwenge Catholic University (MWECAU)',
+  'Muslim University of Morogoro (MUM)',
+  'University of Iringa (UoI)',
+  "St. John's University of Tanzania (SJUT)",
+  'Kampala International University in Tanzania (KIUT)',
+  'United African University of Tanzania (UAUT)',
+  'Ruaha Catholic University (RUCU)',
+  'Mwanza University (MzU)',
+  'Dar es Salaam Tumaini University (DarTU)',
+  'Rabininsia University (RU)',
+  'University of Medical Sciences and Technology (UMST)',
+  'Hikmah University of East Africa (HUEA)',
+  'KCMC University',
+  'Dar es Salaam University College of Education (DUCE)',
+  'Mkwawa University College of Education (MUCE)',
+  'Mzumbe University – Dar es Salaam Campus College',
+  'Mbeya College of Health and Allied Sciences (MCHAS)',
+  'Mbeya University of Science and Technology – Rukwa Campus College',
+  'Sokoine University of Agriculture – Mizengo Pinda Campus College',
+  'Mbeya University of Science and Technology – Mtwara Campus College of Technical Education',
+  'Stefano Moshi Memorial University College (SMMUCo)',
+  'Archbishop Mihayo University College of Tabora (AMUCTA)',
+  'Jordan University College (JUCo)',
+  'St. Francis University College of Health and Allied Sciences (SFUCHAS)',
+  'Stella Maris Mtwara University College (STeMMUCo)',
+  'Marian University College (MARUCo)',
+  'St. Joseph University College of Health and Allied Sciences (SJCHAS)',
+  'Mwenge Catholic University – Hedaru Campus College (MWECAU-HCC)',
+];
+
+export const CAMPUS_EXPANSION_UNIVERSITIES = [
+  ...ALL_UNIVERSITIES.map((university) => ({
+    id: university.id,
+    name: university.name,
+    campus: university.campus,
+    region: university.region,
+  })),
+  ...TCU_UNIVERSITY_INSTITUTIONS.map((name) => ({
+    id: `tcu-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+    name,
+    campus: 'Main institution',
+    region: 'Tanzania',
+  })),
+];
+
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   merchantName: 'UniSoko Marketplace TZ',
   accountName: 'UNISOKO TECH CAMPUS HUB',

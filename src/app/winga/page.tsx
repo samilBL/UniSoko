@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowRight, KeyRound, Mail, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, KeyRound, Mail, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { ALL_UNIVERSITIES, OTHER_TANZANIA_UNIVERSITY } from '@/lib/mockData';
@@ -17,6 +17,7 @@ export default function WingaLandingPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [university, setUniversity] = useState(ALL_UNIVERSITIES[0]?.name || '');
   const [otherUniversity, setOtherUniversity] = useState('');
@@ -55,7 +56,14 @@ export default function WingaLandingPage() {
           }),
         });
         const result = await response.json() as { error?: string };
-        if (!response.ok) throw new Error(result.error || 'Could not create your Winga account.');
+        if (!response.ok) {
+          if (response.status === 409) {
+            setMode('signin');
+            setMessage('An account may already exist for this email. Sign in with your password or use Forgot password.');
+            return;
+          }
+          throw new Error(result.error || 'Could not create your Winga account.');
+        }
       }
 
       if (mode === 'application') {
@@ -96,6 +104,33 @@ export default function WingaLandingPage() {
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Could not continue. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function sendPasswordReset() {
+    setError('');
+    setMessage('');
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError('Enter your Winga account email first.');
+      return;
+    }
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      setError('Winga sign-in is not configured. Please contact UniSoko support.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}/winga/reset-password`,
+      });
+      if (resetError) throw resetError;
+      setMessage('If an account exists for this email, a password reset link has been sent. Check your inbox.');
+    } catch {
+      setError('Could not send the reset email. Check the address and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +179,7 @@ export default function WingaLandingPage() {
 
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
               Password
-              <span className="relative mt-1.5 block"><KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={mode === 'signin' ? undefined : 12} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder={mode === 'signin' ? 'Your password' : 'At least 12 characters'} /></span>
+              <span className="relative mt-1.5 block"><KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type={showPassword ? 'text' : 'password'} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={mode === 'signin' ? undefined : 12} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-12 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder={mode === 'signin' ? 'Your password' : 'At least 12 characters'} /><button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 dark:text-slate-300 dark:hover:text-white">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></span>
             </label>
 
             {showProfileFields && <>
@@ -168,6 +203,7 @@ export default function WingaLandingPage() {
               {isSubmitting ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'application' ? 'Submit Winga profile' : 'Create account'}
               {!isSubmitting && <ArrowRight className="h-4 w-4" />}
             </button>
+            {mode === 'signin' && <button type="button" onClick={() => void sendPasswordReset()} disabled={isSubmitting} className="w-full py-1 text-xs font-bold text-indigo-700 hover:underline disabled:opacity-60 dark:text-indigo-300">Forgot password?</button>}
           </form>
 
           <button type="button" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); }} className="mt-4 w-full py-2 text-xs font-semibold text-indigo-700 hover:underline dark:text-indigo-300">

@@ -42,6 +42,7 @@ export default function ProductDetailsPage() {
   const [isAdded, setIsAdded] = useState(false);
   const [isStartingGroupBuy, setIsStartingGroupBuy] = useState(false);
   const [groupBuyError, setGroupBuyError] = useState('');
+  const [createdGroupBuyId, setCreatedGroupBuyId] = useState('');
   const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
 
   if (!product) {
@@ -110,7 +111,9 @@ export default function ProductDetailsPage() {
       });
       const result = await response.json() as { id?: string; error?: string };
       if (!response.ok || !result.id) throw new Error(result.error || 'Unable to create a group buy.');
-      router.push(`/group-buy/${result.id}`);
+      setCreatedGroupBuyId(result.id);
+      localStorage.setItem('unisoko_last_group_buy', result.id);
+      localStorage.setItem(`unisoko_group_buy_${result.id}_joined`, 'true');
     } catch (error) {
       setGroupBuyError(error instanceof Error ? error.message : 'Unable to create a group buy.');
     } finally {
@@ -395,8 +398,11 @@ export default function ProductDetailsPage() {
                 <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div><p className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><Users className="h-4 w-4 text-indigo-600" />Start Group-Buy (Split Wholesale)</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Share a 24-hour invite. {minWholesale} participants unlock this product’s wholesale rate.</p></div>
-                    <button onClick={() => void handleStartGroupBuy()} disabled={isStartingGroupBuy} className="min-h-11 shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isStartingGroupBuy ? 'Starting…' : 'Start group'}</button>
+                    {createdGroupBuyId
+                      ? <Link href={`/group-buy/${createdGroupBuyId}`} className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800">View group status</Link>
+                      : <button onClick={() => void handleStartGroupBuy()} disabled={isStartingGroupBuy} className="min-h-11 shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isStartingGroupBuy ? 'Starting…' : 'Start group'}</button>}
                   </div>
+                  {createdGroupBuyId && <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">Your group is live. Check the participant count and countdown, then share the invite link with classmates.</p>}
                   {groupBuyError && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{groupBuyError}</p>}
                 </div>
               </div>

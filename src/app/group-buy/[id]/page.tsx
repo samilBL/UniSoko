@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { formatTZS } from '@/lib/mockData';
-import { Clock3, Copy, Share2, Users } from 'lucide-react';
+import { Clock3, Copy, RefreshCw, Share2, Users } from 'lucide-react';
 
 interface GroupBuy {
   id: string;
@@ -37,6 +37,7 @@ export default function GroupBuyPage() {
   const [remainingMs, setRemainingMs] = useState(0);
   const [isJoining, setIsJoining] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
@@ -56,6 +57,16 @@ export default function GroupBuyPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => { void loadGroup(); }, 0);
     return () => window.clearTimeout(timer);
+  }, [loadGroup]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try { setHasJoined(localStorage.getItem(`unisoko_group_buy_${groupId}_joined`) === 'true'); } catch { setHasJoined(false); }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [groupId]);
+  useEffect(() => {
+    const interval = window.setInterval(() => { void loadGroup(); }, 15000);
+    return () => window.clearInterval(interval);
   }, [loadGroup]);
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -84,6 +95,7 @@ export default function GroupBuyPage() {
       if (!response.ok || !body.group) throw new Error(body.error || 'Could not join this group.');
       setGroup(body.group);
       setHasJoined(true);
+      localStorage.setItem(`unisoko_group_buy_${groupId}_joined`, 'true');
       setNotice('You joined the group buy. Share it with another student to unlock the bulk rate.');
     } catch (joinError) {
       setError(joinError instanceof Error ? joinError.message : 'Could not join this group buy.');
@@ -116,6 +128,10 @@ export default function GroupBuyPage() {
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-950 p-4 text-white">
               <div className="flex items-center gap-2"><Users className="h-5 w-5 text-indigo-300" /><div><p className="text-xl font-black">{group.participantCount} / {group.minimumQuantity} students</p><p className="text-xs text-slate-300">{participantsRemaining === 0 ? 'Wholesale threshold reached' : `${participantsRemaining} more to unlock wholesale`}</p></div></div>
               <div className="text-right"><p className="flex items-center justify-end gap-1 text-xs text-slate-300"><Clock3 className="h-3.5 w-3.5" />Time left</p><p className="font-mono text-lg font-black text-amber-300">{countdown}</p></div>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              <span>Group status refreshes automatically every 15 seconds.</span>
+              <button type="button" onClick={async () => { setIsRefreshing(true); await loadGroup(); setIsRefreshing(false); }} disabled={isRefreshing} className="inline-flex shrink-0 items-center gap-1.5 font-bold text-indigo-700 disabled:opacity-60 dark:text-indigo-300"><RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />{isRefreshing ? 'Refreshing' : 'Refresh'}</button>
             </div>
             <div className={`mt-4 rounded-2xl p-4 text-sm font-bold ${wholesaleUnlocked ? 'bg-emerald-100 text-emerald-900' : 'bg-indigo-50 text-indigo-900'}`}>
               {remainingMs <= 0 ? 'This 24-hour group buy has expired.' : wholesaleUnlocked ? 'Wholesale unlocked! Ask the UniSoko team to coordinate your shared order and campus hand-off.' : `Invite ${participantsRemaining} more student${participantsRemaining === 1 ? '' : 's'}. The group rate unlocks at ${group.minimumQuantity} participants.`}
