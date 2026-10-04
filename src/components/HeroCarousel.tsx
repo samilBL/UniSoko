@@ -92,12 +92,12 @@ export default function HeroCarousel() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl bg-[#0A0A0E] text-white shadow-2xl ring-1 ring-white/10"
+      className="relative overflow-hidden rounded-3xl bg-slate-950 text-white shadow-2xl ring-1 ring-white/10"
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
     >
       {/* Background Decorative Glow */}
-      <div className="absolute inset-0 bg-linear-to-br from-indigo-600/20 via-emerald-500/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-emerald-500/10 to-transparent pointer-events-none" />
       <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
       <div className="absolute -left-24 -bottom-24 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
 

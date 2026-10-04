@@ -93,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-slate-900/85 backdrop-blur-xs px-2.5 py-1 rounded-xl shadow-md">
               View Specs <ArrowUpRight className="h-3 w-3" />
             </span>

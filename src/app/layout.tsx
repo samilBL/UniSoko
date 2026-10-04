@@ -3,6 +3,7 @@ import "./globals.css";
 import { StoreProvider } from "@/context/StoreContext";
 import StudentOnboardingHost from "@/components/StudentOnboardingHost";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import SplashScreen from "@/components/SplashScreen";
 import { SITE_URL } from '@/lib/seo';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
@@ -59,6 +60,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-black text-white font-sans">
         <StoreProvider>
+          <SplashScreen />
           {children}
           <StudentOnboardingHost />
           <PwaInstallPrompt />
