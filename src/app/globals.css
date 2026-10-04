@@ -12,7 +12,7 @@
   --unisoko-surface: #0A0A0E;
   --unisoko-text: #FFFFFF;
   --unisoko-muted: #94A3B8;
-  --unisoko-border: rgba(255, 255, 255, 0.10);
+  --unisoko-border: rgba(255, 255, 255, 0.12);
   --unisoko-warning: #F59E0B;
   --unisoko-error: #EF4444;
   --unisoko-info: #0EA5E9;
@@ -26,17 +26,27 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-slate-50: var(--unisoko-background);
-  --color-slate-100: #111118;
-  --color-slate-200: var(--unisoko-border);
-  --color-slate-300: #334155;
-  --color-slate-400: #94A3B8;
-  --color-slate-500: #94A3B8;
-  --color-slate-600: #94A3B8;
-  --color-slate-700: #1C1C28;
-  --color-slate-800: #12121A;
-  --color-slate-900: #0A0A0E;
+
+  /*
+   * OLED DARK SURFACE OVERRIDES — only bg-slate-* utilities
+   * text-slate-* intentionally left at standard Tailwind values
+   * so that readable text colors work everywhere.
+   * We handle dark-mode text via body color & component dark: classes.
+   */
   --color-slate-950: #000000;
+  --color-slate-900: #0A0A0E;
+  --color-slate-800: #12121A;
+  --color-slate-700: #1C1C28;
+
+  /* Restore standard Tailwind slate for text/border/lighter-bg utilities */
+  --color-slate-600: #475569;
+  --color-slate-500: #64748B;
+  --color-slate-400: #94A3B8;
+  --color-slate-300: #CBD5E1;
+  --color-slate-200: #E2E8F0;
+  --color-slate-100: #F1F5F9;
+  --color-slate-50:  #F8FAFC;
+
   --color-indigo-600: var(--unisoko-primary);
   --color-indigo-700: var(--unisoko-primary-dark);
   --color-emerald-500: var(--unisoko-success);
@@ -49,6 +59,7 @@
   --font-mono: var(--font-mono);
 }
 
+/* ─── Base ─────────────────────────────────────────────── */
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -62,29 +73,97 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.025em;
 }
 
-/* Explicit high-contrast form controls */
-input:not([type="range"]):not([type="checkbox"]), select, textarea {
+/*
+ * FORCED DARK MODE TEXT FIX
+ * Since html.dark is always set, every element is in dark mode.
+ * Any component that uses "light mode" classes like text-slate-700/800/900
+ * (expecting dark text on a white bg) will be invisible on OLED dark surfaces.
+ * These overrides ensure those elements remain readable.
+ */
+.dark {
+  /* Light-mode text colors → map to legible light equivalents on dark bg */
+  --tw-text-opacity: 1;
+}
+
+/* Headings and strong text that use light-mode dark-text classes */
+.dark :where(h1, h2, h3, h4, h5, h6):not([class*="text-"]) {
+  color: #FFFFFF;
+}
+
+/* Every page wrapper that uses bg-slate-50 (the standard Next.js pattern) */
+.dark .bg-slate-50,
+.dark [class*="bg-slate-50"] {
+  background-color: var(--unisoko-surface) !important;
+}
+
+/* Card surfaces */
+.dark .bg-white,
+.dark .bg-white\/70,
+.dark .bg-white\/80,
+.dark .bg-white\/90 {
+  background-color: #12121A !important;
+}
+
+/* Text that was written for light-mode (dark on white) — make it light */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: #F1F5F9 !important;
+}
+
+.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+.dark .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+/* Borders */
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Amenity/chip badges on dark card bg */
+.dark .bg-slate-100 {
+  background-color: #1C1C28 !important;
+}
+
+/* Emerald verified badge */
+.dark .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+.dark .text-emerald-900 {
+  color: #6EE7B7 !important;
+}
+/* Amber "Hot" badge */
+.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+.dark .text-amber-800 {
+  color: #FCD34D !important;
+}
+
+/* ─── Form Controls ─────────────────────────────────────── */
+input:not([type="range"]):not([type="checkbox"]),
+select, textarea {
   color: var(--unisoko-text) !important;
   background-color: var(--unisoko-surface) !important;
-  border: 1px solid var(--unisoko-border);
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Removed hacky overrides that broke Tailwind styling */
-
-@media (max-width: 640px) {
-  .oled-surface, .bg-gradient-to-br { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36); }
-  .text-slate-300 { color: #E2E8F0 !important; }
-}
-.font-mono, .price, [data-price] { font-family: var(--font-mono); }
-.oled-surface { background: rgba(10, 10, 14, 0.88); border: 1px solid rgba(255, 255, 255, 0.10); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-
-input:not([type="range"])::placeholder, textarea::placeholder {
+input:not([type="range"])::placeholder,
+textarea::placeholder {
   color: var(--unisoko-muted) !important;
 }
 
-input:not([type="range"]):not([type="checkbox"]):focus, select:focus, textarea:focus {
+input:not([type="range"]):not([type="checkbox"]):focus,
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: var(--unisoko-primary);
+  border-color: var(--unisoko-primary) !important;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--unisoko-primary) 25%, transparent) !important;
 }
 
@@ -97,7 +176,17 @@ input[type="file"]::file-selector-button {
   margin-right: 0.75rem;
 }
 
-/* Glassmorphism & Depth Utilities */
+/* ─── Utilities ─────────────────────────────────────────── */
+.font-mono, .price, [data-price] { font-family: var(--font-mono); }
+
+.oled-surface {
+  background: rgba(18, 18, 26, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Glassmorphism Nav */
 .glass-nav {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -105,50 +194,23 @@ input[type="file"]::file-selector-button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
 }
 
-.dark .glass-nav {
-  background-color: rgba(15, 23, 42, 0.9);
-  border-bottom: 1px solid rgba(30, 41, 59, 0.8);
-}
-
 /* Hide scrollbar for tabs/chips */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Confetti Ripple Animation */
+/* ─── Animations ────────────────────────────────────────── */
 @keyframes ripple {
-  0% { transform: scale(0.8); opacity: 1; }
+  0%   { transform: scale(0.8); opacity: 1; }
   100% { transform: scale(2.2); opacity: 0; }
 }
-
 .animate-ripple {
   animation: ripple 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
 
+/* ─── Print ─────────────────────────────────────────────── */
 @media print {
-  body {
-    background: var(--unisoko-surface) !important;
-    color: var(--unisoko-text) !important;
-  }
-
-  header,
-  aside,
-  button,
-  a[href="/admin"] {
-    display: none !important;
-  }
-
-  main {
-    max-width: none !important;
-    padding: 0 !important;
-  }
-
-  main > section {
-    border: 0 !important;
-    box-shadow: none !important;
-  }
+  body { background: var(--unisoko-surface) !important; color: var(--unisoko-text) !important; }
+  header, aside, button, a[href="/admin"] { display: none !important; }
+  main { max-width: none !important; padding: 0 !important; }
+  main > section { border: 0 !important; box-shadow: none !important; }
 }
