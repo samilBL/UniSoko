@@ -35,6 +35,7 @@ export default function StorefrontHomePage() {
   const { selectedCampus, products, storeSettings, searchQuery } = useStore();
   const developerProfile = { ...DEVELOPER_PROFILE_DEFAULTS, ...storeSettings.developerProfile };
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
+  const [showDev, setShowDev] = useState(false);
 
   // Calculate counts for chips
   const filterCounts = useMemo(() => {
@@ -456,11 +457,11 @@ export default function StorefrontHomePage() {
           </div>
 
           {(storeSettings?.partnerBadges || []).length > 0 && (
-            <div className="border-t border-slate-100 pt-5 dark:border-slate-800">
-              <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">Campus partners & sponsors</p>
+            <div className="border-t border-white/10 pt-5">
+              <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">Campus partners &amp; sponsors</p>
               <div className="flex flex-wrap items-center justify-center gap-3">
                 {storeSettings.partnerBadges.map((partner, index) => (
-                  <a key={`${partner.shortCode}-${index}`} href={partner.url && /^https?:\/\//i.test(partner.url) ? partner.url : undefined} target={partner.url && /^https?:\/\//i.test(partner.url) ? '_blank' : undefined} rel={partner.url && /^https?:\/\//i.test(partner.url) ? 'noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-indigo-300 dark:border-slate-700 dark:text-slate-200">
+                  <a key={`${partner.shortCode}-${index}`} href={partner.url && /^https?:\/\//i.test(partner.url) ? partner.url : undefined} target={partner.url && /^https?:\/\//i.test(partner.url) ? '_blank' : undefined} rel={partner.url && /^https?:\/\//i.test(partner.url) ? 'noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-indigo-500 hover:text-white transition-colors">
                     {partner.logoUrl && <Image src={partner.logoUrl} alt="" width={20} height={20} unoptimized className="h-5 w-5 object-contain" />}{partner.name}
                   </a>
                 ))}
@@ -469,25 +470,43 @@ export default function StorefrontHomePage() {
           )}
 
           {/* Legal & Compliance Links */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+          <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <div className="text-center sm:text-left">
               <p>© {new Date().getFullYear()} UniSoko. All rights reserved.</p>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                {developerProfile.imageUrl ? <Image src={developerProfile.imageUrl} alt="" width={36} height={36} unoptimized className="h-9 w-9 rounded-full object-cover" /> : <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-xs font-black text-indigo-800">RI</span>}
-                <div><p className="text-[10px] font-bold uppercase text-slate-400">Built by</p><p className="font-bold text-slate-700 dark:text-slate-200">{developerProfile.name} <span className="font-normal text-slate-500">· Developer / Creator</span></p></div>
-                <Link href="/developer" className="ml-1 font-semibold text-indigo-700 hover:underline">About Developer</Link>
+                <button
+                  type="button"
+                  onClick={() => setShowDev((v) => !v)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-indigo-500 hover:text-white transition-all"
+                >
+                  About Developer
+                  <svg className={`h-3 w-3 transition-transform ${showDev ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
               </div>
-              <p className="mt-2"><a className="hover:text-indigo-600" href={`tel:${developerProfile.phone}`}>{developerProfile.phone}</a> · <a className="hover:text-emerald-600" href={createWhatsAppLink(developerProfile.whatsapp, 'Hello UniSoko, I need help.')} target="_blank" rel="noreferrer">WhatsApp</a> · <a className="hover:text-indigo-600" href={`mailto:${developerProfile.email}`}>{developerProfile.email}</a></p>
+              {showDev && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-700 bg-slate-800/60 p-3">
+                  {developerProfile.imageUrl ? <Image src={developerProfile.imageUrl} alt="" width={36} height={36} unoptimized className="h-9 w-9 rounded-full object-cover" /> : <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600/30 text-xs font-black text-indigo-300">RI</span>}
+                  <div><p className="text-[10px] font-bold uppercase text-slate-500">Built by</p><p className="font-bold text-slate-100">{developerProfile.name} <span className="font-normal text-slate-400">· Developer / Creator</span></p></div>
+                  <Link href="/developer" className="ml-auto font-semibold text-indigo-400 hover:underline hover:text-indigo-300 text-xs">View Profile →</Link>
+                  <p className="w-full mt-1 text-slate-400">
+                    <a className="hover:text-indigo-300" href={`tel:${developerProfile.phone}`}>{developerProfile.phone}</a>
+                    {' · '}
+                    <a className="hover:text-emerald-400" href={createWhatsAppLink(developerProfile.whatsapp, 'Hello UniSoko, I need help.')} target="_blank" rel="noreferrer">WhatsApp</a>
+                    {' · '}
+                    <a className="hover:text-indigo-300" href={`mailto:${developerProfile.email}`}>{developerProfile.email}</a>
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-5 font-semibold">
-              <Link href="/privacy-policy" className="hover:text-indigo-600">
+              <Link href="/privacy-policy" className="hover:text-indigo-400">
                 Privacy Policy
               </Link>
-              <Link href="/refund-policy" className="hover:text-indigo-600">
-                Refund & Warranty Policy
+              <Link href="/refund-policy" className="hover:text-indigo-400">
+                Refund &amp; Warranty Policy
               </Link>
-              <Link href="/terms-of-service" className="hover:text-indigo-600">
+              <Link href="/terms-of-service" className="hover:text-indigo-400">
                 Terms of Service
               </Link>
             </div>

@@ -148,65 +148,65 @@ export default function Header() {
         </form>
 
         {/* Student Services Quick-Access Subnav */}
-        <div className="border-t border-slate-100 bg-slate-50/80 px-4 py-2 dark:border-slate-800/80 dark:bg-slate-900/60 overflow-x-auto">
+        <div className="border-t border-white/10 bg-slate-900 px-4 py-2 overflow-x-auto no-scrollbar">
           <div className="mx-auto flex max-w-7xl items-center gap-2 text-xs font-semibold">
-            <span className="hidden sm:inline-flex text-[11px] font-bold text-slate-600 uppercase tracking-wider shrink-0 mr-1">
+            <span className="hidden sm:inline-flex text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
               Campus Hub:
             </span>
             <Link
               href="/grad-clearance"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-all shrink-0 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all shrink-0 ${
                 pathname === '/grad-clearance'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white border border-slate-700'
               }`}
             >
-              <GraduationCap className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+              <GraduationCap className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
               <span>Grad Clearance</span>
-              <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[9px] font-black text-amber-800 dark:bg-amber-950 dark:text-amber-300">Hot</span>
+              <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black text-amber-300">Hot</span>
             </Link>
             <Link
               href="/bundles"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-all shrink-0 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all shrink-0 ${
                 pathname === '/bundles'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white border border-slate-700'
               }`}
             >
-              <PackageCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <PackageCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <span>Student Bundles</span>
             </Link>
             <Link
               href="/hostels"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-all shrink-0 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all shrink-0 ${
                 pathname === '/hostels'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white border border-slate-700'
               }`}
             >
-              <BedDouble className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+              <BedDouble className="h-3.5 w-3.5 text-purple-400 shrink-0" />
               <span>Find a Hostel</span>
             </Link>
             <Link
               href="/sell-device"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-all shrink-0 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all shrink-0 ${
                 pathname === '/sell-device'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white border border-slate-700'
               }`}
             >
-              <DollarSign className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <DollarSign className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <span>Sell / Trade-In</span>
             </Link>
             <Link
               href="/support"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition-all shrink-0 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all shrink-0 ${
                 pathname === '/support'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white border border-slate-700'
               }`}
             >
-              <ShieldCheck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              <ShieldCheck className="h-3.5 w-3.5 text-blue-400 shrink-0" />
               <span>Warranty & Help</span>
             </Link>
           </div>
