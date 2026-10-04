@@ -36,7 +36,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 transition-colors">
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl transition-colors">
         {/* Top Info Strip */}
         <div className="bg-indigo-600 px-4 py-1.5 text-xs text-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between">
@@ -76,7 +76,7 @@ export default function Header() {
               </svg>
             </span>
             <span className="min-w-max whitespace-nowrap text-lg font-black leading-none tracking-normal sm:text-2xl">
-              <span className="text-indigo-600">Uni</span><span className="text-slate-900 dark:text-white">Soko</span>
+              <span className="text-indigo-400">Uni</span><span className="text-white">Soko</span>
             </span>
           </Link>
 

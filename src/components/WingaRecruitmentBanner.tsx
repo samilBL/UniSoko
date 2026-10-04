@@ -41,9 +41,9 @@ export default function WingaRecruitmentBanner() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-white/10">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/20">
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3.5 py-1 text-xs font-black uppercase tracking-wide text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Campus Student Ambassador Program</span>
+              <span>Winga Bonus</span>
             </div>
             <h2 className="mt-3 text-2xl sm:text-4xl font-black tracking-tight text-white">
               Become a Campus{' '}
@@ -75,7 +75,7 @@ export default function WingaRecruitmentBanner() {
               href="/winga/login"
               className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3.5 text-sm font-semibold text-white hover:bg-white/20 active:scale-95 border border-white/10 transition-all"
             >
-              <span>Agent Portal</span>
+              <span>Winga Portal</span>
             </Link>
           </div>
         </div>
