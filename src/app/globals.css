@@ -79,9 +79,17 @@ input:not([type="range"]):not([type="checkbox"]), select, textarea {
 .text-slate-950, .text-slate-900 { color: #FFFFFF !important; }
 .text-slate-800, .text-slate-700, .text-slate-600 { color: #CBD5E1 !important; }
 .text-slate-500, .text-slate-400 { color: #94A3B8 !important; }
+.text-slate-300 { color: #CBD5E1 !important; }
+.text-slate-200 { color: #E2E8F0 !important; }
+.text-slate-100 { color: #F8FAFC !important; }
 .text-indigo-950, .text-indigo-900, .text-indigo-800, .text-indigo-700 { color: #C7D2FE !important; }
 .text-emerald-950, .text-emerald-900, .text-emerald-800, .text-emerald-700 { color: #A7F3D0 !important; }
 .text-amber-950, .text-amber-900, .text-amber-800, .text-amber-700 { color: #FDE68A !important; }
+
+@media (max-width: 640px) {
+  .oled-surface, .bg-gradient-to-br { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36); }
+  .text-slate-300 { color: #E2E8F0 !important; }
+}
 .font-mono, .price, [data-price] { font-family: var(--font-mono); }
 .oled-surface { background: rgba(10, 10, 14, 0.88); border: 1px solid rgba(255, 255, 255, 0.10); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 
