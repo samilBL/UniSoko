@@ -25,7 +25,7 @@ export default function TermsOfServicePage() {
 
       <main className="mx-auto max-w-4xl px-4 sm:px-6 py-12 space-y-10">
         {/* Hero */}
-        <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-8 text-slate-900 shadow-sm">
+        <div className="rounded-3xl border border-indigo-800 bg-indigo-950 p-8 text-slate-100 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="rounded-2xl bg-white p-3">
               <FileText className="h-6 w-6 text-indigo-600" />

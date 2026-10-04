@@ -25,7 +25,7 @@ export default function RefundPolicyPage() {
 
       <main className="mx-auto max-w-4xl px-4 sm:px-6 py-12 space-y-10">
         {/* Hero */}
-        <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-8 text-slate-900 shadow-sm">
+        <div className="rounded-3xl border border-indigo-800 bg-indigo-950 p-8 text-slate-100 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="rounded-2xl bg-white p-3">
               <RotateCcw className="h-6 w-6 text-indigo-600" />
@@ -56,31 +56,31 @@ export default function RefundPolicyPage() {
               label: 'Brand New Gadgets',
               period: '14-Day Returns',
               note: 'Full refund if unopened / unused',
-              bg: 'bg-emerald-50 border-emerald-200',
-              text: 'text-emerald-900',
+              bg: 'bg-emerald-950 border-emerald-800',
+              text: 'text-emerald-100',
             },
             {
               icon: <Wrench className="h-5 w-5 text-indigo-600" />,
               label: 'Grade A / Refurbished',
               period: '7-Day Exchange',
               note: 'Hardware fault exchange only',
-              bg: 'bg-indigo-50 border-indigo-200',
-              text: 'text-indigo-900',
+              bg: 'bg-indigo-950 border-indigo-800',
+              text: 'text-indigo-100',
             },
             {
               icon: <Clock className="h-5 w-5 text-amber-600" />,
               label: 'Warranty Period',
               period: '3 Months',
               note: 'From verified delivery date',
-              bg: 'bg-amber-50 border-amber-200',
-              text: 'text-amber-900',
+              bg: 'bg-amber-950 border-amber-800',
+              text: 'text-amber-100',
             },
           ].map((card) => (
             <div key={card.label} className={`rounded-2xl border p-5 ${card.bg} flex flex-col gap-2`}>
               {card.icon}
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{card.label}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">{card.label}</span>
               <span className={`text-lg font-black ${card.text}`}>{card.period}</span>
-              <span className="text-xs text-slate-600">{card.note}</span>
+              <span className="text-xs text-slate-200">{card.note}</span>
             </div>
           ))}
         </div>
