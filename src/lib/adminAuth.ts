@@ -9,6 +9,12 @@ function sessionSecret() {
   return secret && secret.length >= 32 ? secret : null;
 }
 
+export function isAdminAuthConfigured() {
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  return Boolean(username && password && sessionSecret());
+}
+
 function sign(payload: string, secret: string) {
   return createHmac('sha256', secret).update(payload).digest('hex');
 }

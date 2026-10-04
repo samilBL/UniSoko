@@ -45,7 +45,6 @@ import {
   BarChart3,
   Wrench,
   School,
-  AlertTriangle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -196,11 +195,12 @@ export default function AdminPanelPage() {
   }, []);
 
   React.useEffect(() => {
+    if (activeTab !== 'winga-applications') return;
     fetch('/api/admin/winga-applications', { cache: 'no-store' })
       .then(async (response) => response.ok ? response.json() as Promise<{ applications?: WingaApplication[] }> : null)
       .then((result) => { if (result?.applications) setWingaApplications(result.applications); })
       .catch(() => undefined);
-  }, []);
+  }, [activeTab]);
 
   React.useEffect(() => {
     fetch('/api/admin/hostels', { cache: 'no-store' })
@@ -1291,14 +1291,14 @@ export default function AdminPanelPage() {
           <div className="space-y-5">
             <div>
               <h3 className="text-base font-bold text-slate-900 font-heading">Winga applications</h3>
-              <p className="mt-1 text-xs text-slate-500">Approving an application activates the agent profile and assigns a UniSoko promo code. Wingas are agents, not sellers.</p>
+              <p className="mt-1 text-xs text-slate-500">Approve the Winga profile and review the private student ID photo. Promo codes cannot earn commissions until the ID is verified.</p>
             </div>
             {wingaApplicationError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-800">{wingaApplicationError}</p>}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-slate-100 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                    <tr><th className="p-4">Applicant</th><th className="p-4">Verified email & contact</th><th className="p-4">University</th><th className="p-4">Status / Promo</th><th className="p-4 text-right">Review</th></tr>
+                    <tr><th className="p-4">Applicant</th><th className="p-4">Email & contact</th><th className="p-4">University</th><th className="p-4">Status / KYC / Promo</th><th className="p-4 text-right">Review</th></tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {wingaApplications.length === 0 ? (
@@ -1308,7 +1308,7 @@ export default function AdminPanelPage() {
                         <td className="p-4 font-semibold text-slate-900">{application.fullName}<span className="mt-1 block text-[10px] text-slate-500">Applied {new Date(application.submittedAt).toLocaleDateString('en-TZ')}</span></td>
                         <td className="p-4 text-slate-700"><span className="block">{application.email}</span><span className="mt-1 block font-mono text-[10px] text-slate-500">Contact: {application.phone}</span></td>
                         <td className="p-4 text-slate-700">{application.university}</td>
-                        <td className="p-4"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${application.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : application.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'}`}>{application.status}</span>{application.promoCode && <span className="mt-1 block font-mono font-bold text-indigo-700">{application.promoCode}</span>}{application.status === 'Approved' && <button type="button" disabled={isReviewingWingaId === application.id} onClick={() => void setWingaIdVerification(application)} title="Only mark verified after reviewing the student's ID" className="mt-2 block text-[10px] font-bold text-indigo-700 underline disabled:opacity-50">{application.studentIdVerified ? 'Student ID verified' : 'Mark student ID verified'}</button>}</td>
+                        <td className="p-4"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${application.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : application.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'}`}>{application.status}</span>{application.promoCode && <span className="mt-1 block font-mono font-bold text-indigo-700">{application.promoCode}</span>}{application.studentIdCardUrl ? <><a href={application.studentIdCardUrl} target="_blank" rel="noreferrer" className="mt-2 block text-[10px] font-bold text-indigo-700 underline">Review private student ID photo</a><button type="button" disabled={isReviewingWingaId === application.id} onClick={() => void setWingaIdVerification(application)} title="Verify only after checking the student's ID photo" className="mt-1 block text-[10px] font-bold text-indigo-700 underline disabled:opacity-50">{application.studentIdVerified ? 'Student ID verified · undo' : 'Mark student ID verified'}</button></> : <span className="mt-2 block text-[10px] text-slate-500">Student ID not submitted</span>}</td>
                         <td className="p-4 text-right">
                           {application.status === 'Pending' ? <div className="flex justify-end gap-2">
                             <button type="button" disabled={isReviewingWingaId === application.id} onClick={() => void reviewWingaApplication(application, 'Approved')} className="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-60">{isReviewingWingaId === application.id ? 'Saving…' : 'Approve'}</button>
@@ -1498,8 +1498,8 @@ export default function AdminPanelPage() {
                                   <span className="font-mono font-bold text-indigo-600">
                                     {ord.wingaCodeUsed}
                                   </span>
-                                  <span className="text-[10px] text-emerald-600 block font-semibold">
-                                    +{formatTZS(commission)} cut
+                                  <span className={`block text-[10px] font-semibold ${ord.wingaCommissionEligible === false ? 'text-amber-700' : 'text-emerald-600'}`}>
+                                    {ord.wingaCommissionEligible === false ? 'ID not verified · no commission' : `+${formatTZS(commission)} cut`}
                                   </span>
                                 </div>
                               ) : (

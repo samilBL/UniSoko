@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
           <ShieldCheck className="h-4 w-4" /> Authorized staff only
         </p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-950">Admin sign in</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Use the administrator credentials configured for this deployment.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Sign in with the admin username and password for this deployment. If setup is incomplete, this page will explain what needs configuring.</p>
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-4">
           <label className="block text-sm font-semibold text-slate-800">

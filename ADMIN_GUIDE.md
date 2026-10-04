@@ -38,9 +38,9 @@ https://unisoko.co.tz/admin/login       (Production)
 1. Copy `.env.example` to `.env.local` for local development and replace the admin placeholders with strong values.
 2. Configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`), and server-only `SUPABASE_SERVICE_ROLE_KEY`.
 3. Apply [supabase/schema.sql](supabase/schema.sql), then every SQL migration under `supabase/migrations/` in filename order. This includes bundle, trade-in checkout, leaderboard, hostel, room-bounty, and banner tables/fields required by the new features.
-4. Enable email OTP in Supabase Auth. Configure an SMTP provider for reliable delivery and update the Auth email template to include the one-time code (`{{ .Token }}`); the default confirmation-link template will not work with the code-entry screen. Email provider costs and sending limits depend on your provider and Supabase plan.
-5. Keep the service-role key server-only. Trade-in photos are private and delivered to authenticated admins as short-lived signed URLs. Hostel and banner photos are public only after admins publish the associated record.
-6. Winga applications and approval status are persisted in `winga_applications`. The Winga portal requires a confirmed Supabase email session; the applicant-provided mobile-money number is stored separately and is not verified by email OTP. Admins approve applicants and assign promo codes. Wallet, commission, payout, and KYC records are not yet connected to an authoritative backend ledger and must not be treated as production financial data.
+4. Keep the service-role key server-only. Trade-in photos and Winga student ID images are private and delivered to authenticated admins as short-lived signed URLs. Hostel and banner photos are public only after admins publish the associated record.
+5. Winga applicants create an account with a password and do not receive an email code. They can sign in before their student ID is checked, but promo-code use and commission attribution are blocked until an admin verifies the uploaded ID photo.
+6. Winga application status and student-ID review are persisted in `winga_applications`. Winga wallet, commission balance, and payout requests are not connected to an authoritative finance ledger and must not be treated as production financial records.
 
 ### Navigation Tabs
 
@@ -52,7 +52,7 @@ Once inside the admin panel, you will see the following tabs:
 | **Trade-In Requests** | 🔄 | Review student Sell Your Device submissions, set cash offers, and update workflow status |
 | **Catalog & Pricing** | 📦 | Add, edit, or remove products. Adjust retail and wholesale (Bei ya Jumla) pricing |
 | **Winga KYC & Payouts** | 💰 | Review available identity records and cash-out requests; confirm payout persistence before live disbursement |
-| **Winga Applications** | 🛡️ | Review email-verified applications; approve agents and issue their UniSoko promo codes |
+| **Winga Applications** | 🛡️ | Review Winga profiles and private student ID photos; approve agents and verify IDs before commissions |
 | **Store Settings** | ⚙️ | Update payment rails, merchants, partner logos, WhatsApp numbers, and payout thresholds; review campus vote totals |
 
 ### Quick Stats Dashboard
@@ -182,21 +182,21 @@ This application does not have an inventory-reservation system or financial ledg
 
 ### Understanding the KYC Flow
 
-Winga sign-in uses a confirmed email and one-time code. Applicants use `/winga/register`; returning applicants use `/winga/login`. The separately collected mobile-money phone number is not verified by email OTP.
+Winga applicants use `/winga/register` to create an account with email and a 12-character-minimum password. No verification code is sent. Returning applicants can use email and password at `/winga/login` or `/winga`.
 
 ```text
-Applicant email verified → Admin approves the application and assigns a promo code
-   → Admin reviews the student ID through the approved identity-check process
-   → Admin marks ID verified only after that review
+Winga creates account → Uploads a student ID photo to private storage
+   → Admin reviews the photo and marks the ID verified
+   → An approved account with a verified ID can earn commission
 ```
 
 ### Nationwide applications and logistics
 
-Students from any listed Tanzanian university may apply using email OTP. Applications remain pending until an admin approves them; the dashboard shows only the signed-in applicant's own status and, once approved, their UniSoko promo code. The public leaderboard excludes phone, email, promo-code, and earnings data.
+Students from any listed Tanzanian university may apply. The dashboard shows only the signed-in applicant's own status. An approved applicant sees a promo code only after the ID is verified. The public leaderboard excludes phone, email, promo-code, and earnings data and includes verified Wingas only.
 
 ### Student ID upload
 
-The current application form does not upload student ID images. Use the **Mark student ID verified** control only after checking the student's ID through an approved channel. The public badge records that admin decision; it is not proof that an ID image was securely stored.
+Applicants upload a JPG, PNG, or WebP photo up to 5 MB from the Winga dashboard. Files are stored in the private `winga-student-ids` bucket; the admin application tab creates a short-lived private review link. Do not copy or share the link. Select **Mark student ID verified** only after the photo is clear, current, and matches the applicant.
 
 ### Winga WhatsApp flyer
 
@@ -204,11 +204,11 @@ From the Winga dashboard, select an active product and use **Download Flyer Imag
 
 ### Marking a Student ID as Verified
 
-1. Open **Winga Applications** and locate an approved applicant.
-2. Verify the student's current ID through the approved identity-check channel. Check that the name matches and the ID is current.
-3. Select **Mark student ID verified** only after completing that check. Revoke the mark if verification is later invalidated.
+1. Open **Winga Applications** and locate the applicant.
+2. Select **Review private student ID photo**. Check that the photo is legible, current, and matches the account name.
+3. Select **Mark student ID verified** only after completing that check. Revoke the mark if verification is later invalidated; order creation and the public leaderboard will then stop attributing new earnings.
 
-> The current application flow does not upload ID images, and the Winga cash-out demo is not a durable finance ledger. Never mark an ID as verified or approve a live payment based on local demo data alone.
+> The Winga cash-out demo is not a durable finance ledger. Never approve a live payment based on local demo data alone.
 
 ### Processing a Cash-Out Disbursement
 

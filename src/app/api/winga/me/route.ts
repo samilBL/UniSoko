@@ -11,7 +11,7 @@ export async function GET() {
   if (authError || !user) return NextResponse.json({ error: 'Sign in to your Winga account.' }, { status: 401 });
   const { data, error } = await serviceClient
     .from('winga_applications')
-    .select('id, full_name, phone, university, status, promo_code, submitted_at, reviewed_at')
+    .select('id, full_name, phone, university, status, promo_code, submitted_at, reviewed_at, student_id_verified')
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not load your Winga profile.' }, { status: 500 });
@@ -24,7 +24,8 @@ export async function GET() {
       phone: data.phone,
       university: data.university,
       status: data.status,
-      promoCode: data.status === 'Approved' ? data.promo_code : null,
+      promoCode: data.status === 'Approved' && data.student_id_verified ? data.promo_code : null,
+      studentIdVerified: data.student_id_verified,
       submittedAt: data.submitted_at,
       reviewedAt: data.reviewed_at,
     },

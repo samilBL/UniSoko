@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { MapPin, TrendingUp, Vote, Wallet } from 'lucide-react';
-import { ALL_UNIVERSITIES } from '@/lib/mockData';
+import { MBEYA_UNIVERSITIES } from '@/lib/mockData';
 import { formatTZS } from '@/lib/mockData';
 
 const VOTES_KEY = 'unisoko_campus_votes';
@@ -11,7 +11,7 @@ const HAS_VOTED_KEY = 'unisoko_campus_vote_cast';
 
 export default function CampusEngagement() {
   const [weeklySales, setWeeklySales] = useState(500000);
-  const [campusId, setCampusId] = useState(ALL_UNIVERSITIES[0]?.id || '');
+  const [campusId, setCampusId] = useState(MBEYA_UNIVERSITIES[0]?.id || '');
   const [votes, setVotes] = useState<Record<string, number>>({});
   const [voted, setVoted] = useState(false);
   const [voterId, setVoterId] = useState('');
@@ -42,7 +42,9 @@ export default function CampusEngagement() {
       .catch(() => undefined);
   }, []);
 
-  const popularCampus = useMemo(() => Object.entries(votes).sort((a, b) => b[1] - a[1])[0], [votes]);
+  const popularCampus = useMemo(() => Object.entries(votes)
+    .filter(([id]) => MBEYA_UNIVERSITIES.some((campus) => campus.id === id))
+    .sort((a, b) => b[1] - a[1])[0], [votes]);
   const projectedEarnings = Math.round(weeklySales * 0.05);
 
   const submitVote = async () => {
@@ -76,7 +78,7 @@ export default function CampusEngagement() {
 
   return (
     <section className="grid gap-5 lg:grid-cols-2" aria-label="Winga earnings and campus expansion">
-      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8">
+      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Wallet className="h-5 w-5" /></div>
           <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Winga earnings estimator</p><h3 className="mt-1 text-lg font-extrabold text-slate-950">Your weekly effort, made tangible.</h3></div>
@@ -89,21 +91,21 @@ export default function CampusEngagement() {
         <p className="mt-3 text-xs leading-5 text-slate-500">Illustrative estimate only. Actual commissions depend on approved, completed sales.</p>
       </div>
 
-      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8">
+      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700"><MapPin className="h-5 w-5" /></div>
-          <div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">Campus expansion vote</p><h3 className="mt-1 text-lg font-extrabold text-slate-950">Where should UniSoko launch next?</h3></div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"><MapPin className="h-5 w-5" /></div>
+          <div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">Mbeya campus expansion</p><h3 className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">Which Mbeya university should we serve next?</h3></div>
         </div>
-        <p className="mt-3 text-sm leading-6 text-slate-600">Tell us where students want local campus delivery and Winga hub support next.</p>
+        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Vote for your campus to help us tailor delivery, hostel pickup points, and Winga support for universities across Mbeya.</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <select aria-label="Choose a university campus" value={campusId} onChange={(event) => setCampusId(event.target.value)} className="min-w-0 flex-1 rounded-xl px-3 py-3 text-sm">
-            {ALL_UNIVERSITIES.map((campus) => <option key={campus.id} value={campus.id}>{campus.shortCode} · {campus.city}</option>)}
+            {MBEYA_UNIVERSITIES.map((campus) => <option key={campus.id} value={campus.id}>{campus.shortCode} · {campus.campus}</option>)}
           </select>
           <button onClick={() => void submitVote()} disabled={voted || !campusId || !voterId || isSubmittingVote} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-default disabled:bg-emerald-700"><Vote className="h-4 w-4" />{isSubmittingVote ? 'Recording…' : voted ? 'Vote recorded' : 'Vote for campus'}</button>
         </div>
         {voteError && <p role="status" className="mt-3 text-xs font-semibold text-amber-800">{voteError}</p>}
-        <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-xs text-indigo-950">
-          {popularCampus ? <><span className="font-bold">Leading in this browser:</span> {ALL_UNIVERSITIES.find((campus) => campus.id === popularCampus[0])?.name || popularCampus[0]} · {popularCampus[1]} {popularCampus[1] === 1 ? 'vote' : 'votes'}</> : <span>Be the first to register a campus vote.</span>}
+        <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-xs text-indigo-950 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-100">
+          {popularCampus ? <><span className="font-bold">Leading Mbeya campus:</span> {MBEYA_UNIVERSITIES.find((campus) => campus.id === popularCampus[0])?.name || popularCampus[0]} · {popularCampus[1]} {popularCampus[1] === 1 ? 'vote' : 'votes'}</> : <span>Be the first to vote for a Mbeya campus.</span>}
         </div>
       </div>
     </section>

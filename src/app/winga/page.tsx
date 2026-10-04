@@ -1,39 +1,28 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, ArrowRight, CheckCircle2, Clock3, KeyRound, Mail, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { AlertCircle, ArrowRight, KeyRound, Mail, Sparkles } from 'lucide-react';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { ALL_UNIVERSITIES, OTHER_TANZANIA_UNIVERSITY } from '@/lib/mockData';
 import { getSupabaseBrowser } from '@/lib/supabaseBrowser';
 
-type ApplicationStep = 'email' | 'otp' | 'application' | 'submitted';
+type AccessMode = 'signup' | 'signin' | 'application';
 
 export default function WingaLandingPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50" aria-busy="true" />}>
-      <WingaApplicationForm />
-    </Suspense>
-  );
-}
-
-function WingaApplicationForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<AccessMode>('signup');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
   const [university, setUniversity] = useState(ALL_UNIVERSITIES[0]?.name || '');
   const [otherUniversity, setOtherUniversity] = useState('');
-  const [step, setStep] = useState<ApplicationStep>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-
-  const normalizedEmail = () => email.trim().toLowerCase();
 
   const normalizedPhone = () => {
     const digits = phone.replace(/\D/g, '');
@@ -42,141 +31,150 @@ function WingaApplicationForm() {
     return digits.startsWith('255') ? `+${digits}` : `+255${digits}`;
   };
 
-  const sendOtp = async (event: React.FormEvent<HTMLFormElement>) => {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    setMessage('');
     setIsSubmitting(true);
-    const supabase = getSupabaseBrowser();
-    if (!supabase) {
-      setError('Email sign-in is not configured. Please contact UniSoko support.');
-      setIsSubmitting(false);
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail())) {
-      setError('Enter a valid email address.');
-      setIsSubmitting(false);
-      return;
-    }
-    const { error: otpError } = await supabase.auth.signInWithOtp({ email: normalizedEmail() });
-    setIsSubmitting(false);
-    if (otpError) {
-      setError('Could not send a verification code. Check the email address and try again.');
-      return;
-    }
-    setEmail(normalizedEmail());
-    setStep('otp');
-    setMessage(`We sent a verification code to ${normalizedEmail()}.`);
-  };
 
-  const verifyOtp = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    const supabase = getSupabaseBrowser();
-    if (!supabase) {
-      setError('Email sign-in is not configured. Please contact UniSoko support.');
-      setIsSubmitting(false);
-      return;
-    }
-    const { error: verifyError } = await supabase.auth.verifyOtp({ email: normalizedEmail(), token: otp.trim(), type: 'email' });
-    setIsSubmitting(false);
-    if (verifyError) {
-      setError('That code could not be verified. Check your email and try again.');
-      return;
-    }
-    const response = await fetch('/api/winga/me', { cache: 'no-store' });
-    if (response.ok) {
-      const result = await response.json() as { profile?: { status: string } | null };
-      if (result.profile) {
-        router.push('/winga/dashboard');
-        return;
+    try {
+      const supabase = getSupabaseBrowser();
+      if (!supabase) throw new Error('Winga sign-in is not configured. Please contact UniSoko support.');
+      const normalizedEmail = email.trim().toLowerCase();
+
+      if (mode === 'signup') {
+        const response = await fetch('/api/winga/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password,
+            fullName,
+            phone: normalizedPhone(),
+            university: university === OTHER_TANZANIA_UNIVERSITY.name ? otherUniversity : university,
+          }),
+        });
+        const result = await response.json() as { error?: string };
+        if (!response.ok) throw new Error(result.error || 'Could not create your Winga account.');
       }
-    }
-    setMessage('Email verified. Complete your Winga application below.');
-    setStep('application');
-  };
 
-  const submitApplication = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    const response = await fetch('/api/winga/applications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fullName,
-        phone: normalizedPhone(),
-        university: university === OTHER_TANZANIA_UNIVERSITY.name ? otherUniversity : university,
-      }),
-    });
-    const result = await response.json() as { error?: string };
-    setIsSubmitting(false);
-    if (!response.ok) {
-      setError(result.error || 'Could not submit your application.');
-      return;
+      if (mode === 'application') {
+        const response = await fetch('/api/winga/applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName,
+            phone: normalizedPhone(),
+            university: university === OTHER_TANZANIA_UNIVERSITY.name ? otherUniversity : university,
+          }),
+        });
+        const result = await response.json() as { error?: string };
+        if (!response.ok) throw new Error(result.error || 'Could not submit your Winga application.');
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (signInError) {
+        if (mode === 'signup') {
+          setMode('signin');
+          setMessage('Your account was created. Sign in with the email and password you just chose.');
+          setError('');
+          return;
+        }
+        throw new Error('Email or password is incorrect. If you have not set a password, reset it using your account email.');
+      }
+
+      if (mode === 'signin') {
+        const profileResponse = await fetch('/api/winga/me', { cache: 'no-store' });
+        const profileResult = await profileResponse.json() as { profile?: unknown; error?: string };
+        if (profileResponse.ok && !profileResult.profile) {
+          setMode('application');
+          setMessage('You are signed in. Complete your Winga profile to continue.');
+          return;
+        }
+      }
+      router.replace('/winga/dashboard');
+      router.refresh();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Could not continue. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setStep('submitted');
-  };
+  }
+
+  const showProfileFields = mode !== 'signin';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans">
+    <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Header />
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-        <section className="rounded-3xl bg-slate-900 p-8 sm:p-12 text-white shadow-2xl text-center max-w-4xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-4 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/30">
-            <Sparkles className="h-4 w-4" />
-            <span>Join the nationwide UniSoko agent network</span>
+      <main className="mx-auto flex-1 w-full max-w-7xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-4xl space-y-4 rounded-3xl bg-slate-900 p-8 text-center text-white shadow-2xl sm:p-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-4 py-1 text-xs font-bold text-emerald-300">
+            <Sparkles className="h-4 w-4" /> Campus Winga network
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight">Become a UniSoko <span className="text-emerald-400">Campus Winga</span></h1>
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Promote UniSoko products and help coordinate campus hand-offs. Winga applications are reviewed by UniSoko; agents are not sellers and do not receive customer payments.
+          <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Become a UniSoko <span className="text-emerald-400">Campus Winga</span></h1>
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
+            Create an account without an email code, then upload your student ID for review. You can access your account right away; you can earn commissions only after UniSoko verifies your student ID.
           </p>
         </section>
 
-        <section className="max-w-xl mx-auto rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-          {step === 'submitted' ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"><Clock3 className="h-8 w-8" /></div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Application received</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">UniSoko will review your application. A promo code and portal access are issued only after approval.</p>
-              <Link href="/winga/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-6 py-3 text-xs font-bold text-slate-800 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800">View application status<ArrowRight className="h-4 w-4" /></Link>
-            </div>
-          ) : step === 'email' ? (
-            <form onSubmit={sendOtp} className="space-y-4">
-              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Apply to become Campus Winga</h2><p className="text-xs text-slate-500 dark:text-slate-400">Verify your email first. UniSoko reviews every application before activation.</p></div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Email address
-                <span className="relative mt-1.5 block"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></span>
+        <section className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+          <div className="mb-5">
+            <h2 className="text-lg font-bold text-slate-950 dark:text-white">
+              {mode === 'signin' ? 'Sign in to your Winga account' : mode === 'application' ? 'Complete your Winga profile' : 'Create your Winga account'}
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+              {mode === 'signin'
+                ? 'Use the email and password you chose when you registered.'
+                : mode === 'application'
+                  ? 'Your account is ready. Add your campus contact information.'
+                  : 'No verification code is needed. Use at least 12 characters for your password.'}
+            </p>
+          </div>
+
+          <form onSubmit={submit} className="space-y-4">
+            {showProfileFields && <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Full name
+              <input type="text" autoComplete="name" required minLength={2} maxLength={120} value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder="Your name as shown on your student ID" />
+            </label>}
+
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Email address
+              <span className="relative mt-1.5 block"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder="you@example.com" /></span>
+            </label>
+
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Password
+              <span className="relative mt-1.5 block"><KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={mode === 'signin' ? undefined : 12} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder={mode === 'signin' ? 'Your password' : 'At least 12 characters'} /></span>
+            </label>
+
+            {showProfileFields && <>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                Mobile-money contact number
+                <input type="tel" autoComplete="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder="+255 712 345 678" />
               </label>
-              <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60"><span className="inline-flex items-center gap-2"><Mail className="h-4 w-4" />{isSubmitting ? 'Sending code…' : 'Send email verification code'}</span></button>
-            </form>
-          ) : step === 'otp' ? (
-            <form onSubmit={verifyOtp} className="space-y-4">
-              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Verify your email</h2><p className="text-xs text-slate-500 dark:text-slate-400">Enter the code sent to {email}.</p></div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Email verification code
-                <span className="relative mt-1.5 block"><KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input inputMode="numeric" autoComplete="one-time-code" required value={otp} onChange={(event) => setOtp(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm tracking-widest text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></span>
-              </label>
-              <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isSubmitting ? 'Verifying…' : 'Verify email'}</button>
-              <button type="button" onClick={() => { setStep('email'); setOtp(''); setMessage(''); }} className="w-full py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600">Change email address</button>
-            </form>
-          ) : (
-            <form onSubmit={submitApplication} className="space-y-4">
-              <div><h2 className="text-lg font-bold text-slate-900 dark:text-white">Winga application</h2><p className="text-xs text-slate-500 dark:text-slate-400">Verified email: {email}. Add your mobile-money contact number below; it is not verified by UniSoko yet.</p></div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Full name<input type="text" autoComplete="name" required minLength={2} maxLength={120} value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="e.g. Kelvin Mwakyusa" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></label>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Mobile-money contact number<input type="tel" autoComplete="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+255 712 345 678" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></label>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">University or campus
-                <select value={university} onChange={(event) => setUniversity(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                University or campus
+                <select value={university} onChange={(event) => setUniversity(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-950 outline-none focus:border-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                   {ALL_UNIVERSITIES.map((item) => <option key={item.id} value={item.name}>{item.name} ({item.shortCode})</option>)}
                 </select>
               </label>
-              {university === OTHER_TANZANIA_UNIVERSITY.name && <input required maxLength={160} value={otherUniversity} onChange={(event) => setOtherUniversity(event.target.value)} placeholder="Enter university and campus" className="w-full rounded-xl p-3 text-sm" />}
-              <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 py-3.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isSubmitting ? 'Submitting…' : 'Submit for UniSoko review'}</button>
-            </form>
-          )}
-          {message && <p role="status" className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-800"><CheckCircle2 className="h-4 w-4 shrink-0" />{message}</p>}
-          {error && <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800"><AlertCircle className="h-4 w-4 shrink-0" />{error}</p>}
-          {searchParams.get('auth') === 'unavailable' && <p role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Winga sign-in is not configured. Please contact UniSoko support.</p>}
-          {searchParams.get('auth') === 'required' && <p role="status" className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">Sign in with your verified email to continue.</p>}
-          {searchParams.get('apply') === '1' && <p role="status" className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">Verify your email to apply or check your application status.</p>}
+              {university === OTHER_TANZANIA_UNIVERSITY.name && <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">University and campus<input required maxLength={160} value={otherUniversity} onChange={(event) => setOtherUniversity(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800" /></label>}
+            </>}
+
+            {error && <p role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><AlertCircle className="h-4 w-4 shrink-0" />{error}</p>}
+            {message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{message}</p>}
+
+            <button disabled={isSubmitting} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60">
+              {isSubmitting ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'application' ? 'Submit Winga profile' : 'Create account'}
+              {!isSubmitting && <ArrowRight className="h-4 w-4" />}
+            </button>
+          </form>
+
+          <button type="button" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); }} className="mt-4 w-full py-2 text-xs font-semibold text-indigo-700 hover:underline dark:text-indigo-300">
+            {mode === 'signin' ? 'New to the Winga network? Create an account' : 'Already have a Winga account? Sign in'}
+          </button>
+          <p className="mt-3 text-center text-[11px] leading-5 text-slate-500 dark:text-slate-400">Student ID photos are private and reviewed by authorized UniSoko staff. Your promo code stays inactive until your student ID is verified.</p>
+          <Link href="/" className="mt-3 inline-block text-xs font-semibold text-slate-500 hover:text-indigo-600">Return to UniSoko</Link>
         </section>
       </main>
       <CartDrawer />

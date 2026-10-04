@@ -10,6 +10,7 @@ export async function GET() {
   const { data: applications, error } = await supabase.from('winga_applications')
     .select('id, full_name, university, promo_code, submitted_at, reviewed_at, student_id_verified')
     .eq('status', 'Approved')
+    .eq('student_id_verified', true)
     .not('promo_code', 'is', null);
   if (error) return NextResponse.json({ error: 'Could not load the Winga leaderboard.' }, { status: 500 });
 

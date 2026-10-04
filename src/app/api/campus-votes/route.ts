@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ALL_UNIVERSITIES } from '@/lib/mockData';
+import { MBEYA_UNIVERSITIES } from '@/lib/mockData';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET() {
@@ -7,7 +7,8 @@ export async function GET() {
   if (!supabase) return NextResponse.json({ votes: {}, configured: false });
   const { data, error } = await supabase.from('campus_votes').select('campus_id');
   if (error) return NextResponse.json({ error: 'Could not load campus votes.' }, { status: 500 });
-  const votes = (data || []).reduce<Record<string, number>>((counts, row) => {
+  const mbeyaCampusIds = new Set(MBEYA_UNIVERSITIES.map((campus) => campus.id));
+  const votes = (data || []).filter((row) => mbeyaCampusIds.has(row.campus_id)).reduce<Record<string, number>>((counts, row) => {
     counts[row.campus_id] = (counts[row.campus_id] || 0) + 1;
     return counts;
   }, {});
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid vote.' }, { status: 400 });
   }
-  if (!body.voterId || !/^[0-9a-f-]{36}$/i.test(body.voterId) || !ALL_UNIVERSITIES.some((campus) => campus.id === body.campusId)) {
+  if (!body.voterId || !/^[0-9a-f-]{36}$/i.test(body.voterId) || !MBEYA_UNIVERSITIES.some((campus) => campus.id === body.campusId)) {
     return NextResponse.json({ error: 'Choose a supported campus.' }, { status: 400 });
   }
 

@@ -9,7 +9,7 @@ function isAdmin(request: NextRequest) {
   return isValidAdminSession(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
 }
 
-function mapOrder(row: Record<string, unknown>, events: OrderStatusEvent[] = [], items: Order['items'] = []): Order {
+function mapOrder(row: Record<string, unknown>, events: OrderStatusEvent[] = [], items: Order['items'] = [], verifiedWingaCodes = new Set<string>()): Order {
   return {
     id: String(row.id),
     productId: String(row.product_id),
@@ -29,6 +29,7 @@ function mapOrder(row: Record<string, unknown>, events: OrderStatusEvent[] = [],
     tradeInInspectionStatus: row.trade_in_inspection_status as Order['tradeInInspectionStatus'],
     totalAmount: Number(row.total_amount),
     wingaCodeUsed: typeof row.winga_code_used === 'string' ? row.winga_code_used : undefined,
+    wingaCommissionEligible: typeof row.winga_code_used === 'string' && verifiedWingaCodes.has(row.winga_code_used.toUpperCase()),
     lipaNambaTxId: String(row.lipa_namba_tx_id),
     itemSerialNumber: typeof row.item_serial_number === 'string' ? row.item_serial_number : undefined,
     warrantyDays: row.warranty_days === 30 || row.warranty_days === 60 || row.warranty_days === 90 ? row.warranty_days : undefined,
@@ -50,6 +51,12 @@ export async function GET(request: NextRequest) {
   const { data: rows, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: 'Could not load orders.' }, { status: 500 });
   if (!rows?.length) return NextResponse.json({ orders: [], configured: true }, { headers: { 'Cache-Control': 'no-store' } });
+  const usedWingaCodes = [...new Set(rows.map((row) => row.winga_code_used).filter((code): code is string => typeof code === 'string' && Boolean(code)))];
+  const { data: verifiedWingaRows, error: wingaError } = usedWingaCodes.length
+    ? await supabase.from('winga_applications').select('promo_code').eq('status', 'Approved').eq('student_id_verified', true).in('promo_code', usedWingaCodes)
+    : { data: [], error: null };
+  if (wingaError) return NextResponse.json({ error: 'Could not load Winga verification status.' }, { status: 500 });
+  const verifiedWingaCodes = new Set((verifiedWingaRows || []).map((row) => row.promo_code?.toUpperCase()).filter((code): code is string => Boolean(code)));
   const [{ data: history, error: historyError }, { data: itemRows, error: itemError }] = await Promise.all([
     supabase
     .from('order_status_history')
@@ -80,7 +87,7 @@ export async function GET(request: NextRequest) {
       quantity: Number(item.quantity),
       unitPrice: Number(item.unit_price),
       lineTotal: Number(item.line_total),
-    }))));
+    })), verifiedWingaCodes));
   return NextResponse.json({ orders, configured: true }, { headers: { 'Cache-Control': 'no-store' } });
 }
 

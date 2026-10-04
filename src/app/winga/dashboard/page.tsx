@@ -4,6 +4,7 @@ import { CheckCircle2, Clock3, ShieldCheck, XCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import WingaSignOutButton from '@/components/WingaSignOutButton';
 import WingaPasswordManager from '@/components/WingaPasswordManager';
+import WingaStudentIdForm from '@/components/WingaStudentIdForm';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -21,7 +22,7 @@ export default async function WingaAgentDashboardPage() {
 
   const { data: application, error } = await serviceClient
     .from('winga_applications')
-    .select('email, full_name, phone, university, status, promo_code, submitted_at, reviewed_at')
+    .select('email, full_name, phone, university, status, promo_code, submitted_at, reviewed_at, student_id_card_path, student_id_verified')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -33,6 +34,7 @@ export default async function WingaAgentDashboardPage() {
   const formattedSubmitted = new Date(application.submitted_at).toLocaleDateString('en-TZ', { dateStyle: 'medium' });
   const isApproved = application.status === 'Approved';
   const isRejected = application.status === 'Rejected';
+  const canEarn = isApproved && application.student_id_verified;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -63,11 +65,15 @@ export default async function WingaAgentDashboardPage() {
             </div>
           </div>
 
-          {isApproved ? (
+          {canEarn ? (
             <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-200"><CheckCircle2 className="h-4 w-4" />UniSoko promo code</p>
               <p className="mt-2 font-mono text-2xl font-extrabold text-slate-900 dark:text-white">{application.promo_code}</p>
               <a className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700" href={`https://wa.me/?text=${encodeURIComponent(`Shop official UniSoko student deals. Use my Winga code ${application.promo_code}: https://unisoko.tz/?ref=${application.promo_code}`)}`} target="_blank" rel="noreferrer">Share UniSoko offer</a>
+            </div>
+          ) : isApproved ? (
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              Your Winga profile is approved. Upload your student ID and wait for verification before sharing a promo code or earning commissions.
             </div>
           ) : isRejected ? (
             <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
@@ -79,10 +85,11 @@ export default async function WingaAgentDashboardPage() {
             </div>
           )}
 
+          <WingaStudentIdForm submitted={Boolean(application.student_id_card_path)} verified={application.student_id_verified} />
           <WingaPasswordManager />
         </section>
 
-        <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga profile is linked to your verified email account. Wallet, commission, KYC, and payout details will appear here only when connected to authoritative UniSoko records.</p>
+        <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your student ID stays in private storage and is shown only to authorized UniSoko reviewers.</p>
         <Link href="/" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-800">Return to UniSoko</Link>
       </main>
     </div>

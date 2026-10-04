@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Copy,
   Check,
+  Download,
   CreditCard,
   User,
   ShieldCheck,
@@ -87,6 +88,7 @@ export default function CheckoutPage() {
   // Completed Order State
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [trackingToken, setTrackingToken] = useState<string | null>(null);
+  const [trackingSaveMessage, setTrackingSaveMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
     const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
   const paymentModalRef = useRef<HTMLDivElement>(null);
@@ -142,6 +144,41 @@ export default function CheckoutPage() {
     navigator.clipboard.writeText(tillToCopy);
     setCopiedTill(true);
     setTimeout(() => setCopiedTill(false), 2000);
+  };
+
+  const getTrackingPath = () => completedOrder && trackingToken
+    ? `/track/${encodeURIComponent(completedOrder.id)}?token=${encodeURIComponent(trackingToken)}`
+    : '';
+
+  const copyTrackingLink = async () => {
+    const path = getTrackingPath();
+    if (!path) return;
+    try {
+      await navigator.clipboard.writeText(new URL(path, window.location.origin).toString());
+      setTrackingSaveMessage('Secure tracking link copied. Save it somewhere private.');
+    } catch {
+      setTrackingSaveMessage('Copy is unavailable in this browser. Download your tracking details below.');
+    }
+  };
+
+  const downloadTrackingDetails = () => {
+    const path = getTrackingPath();
+    if (!completedOrder || !trackingToken || !path) return;
+    const text = [
+      'UniSoko private order tracking details',
+      `Order number: ${completedOrder.id}`,
+      `Tracking access token: ${trackingToken}`,
+      `Private tracking link: ${new URL(path, window.location.origin).toString()}`,
+      '',
+      'Keep this file private. Anyone with this link or token can view your order status.',
+    ].join('\n');
+    const blobUrl = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `unisoko-order-${completedOrder.id}-tracking.txt`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    setTrackingSaveMessage('Tracking details downloaded. Keep the file private.');
   };
 
   const handleStartPayment = (e: React.FormEvent) => {
@@ -384,11 +421,28 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {trackingToken && (
+              <section className="relative z-10 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-left dark:border-emerald-900 dark:bg-emerald-950/30" aria-labelledby="tracking-save-heading">
+                <h2 id="tracking-save-heading" className="text-sm font-bold text-emerald-950 dark:text-emerald-100">Save your private tracking details</h2>
+                <p className="mt-1 text-xs leading-5 text-emerald-900/80 dark:text-emerald-200">Your order number and access token are shown here and are also included in the secure tracking link. Save or screenshot this card so you can track the order later.</p>
+                <dl className="mt-4 grid gap-3 rounded-xl bg-white p-4 text-xs dark:bg-slate-900">
+                  <div><dt className="font-semibold text-slate-500 dark:text-slate-400">Order number</dt><dd className="mt-1 break-all font-mono font-bold text-slate-950 dark:text-white">{completedOrder.id}</dd></div>
+                  <div><dt className="font-semibold text-slate-500 dark:text-slate-400">43-character tracking token</dt><dd className="mt-1 break-all font-mono font-bold text-slate-950 dark:text-white">{trackingToken}</dd></div>
+                </dl>
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <button type="button" onClick={() => void copyTrackingLink()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700"><Copy className="h-4 w-4" />Copy secure tracking link</button>
+                  <button type="button" onClick={downloadTrackingDetails} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-100 dark:hover:bg-emerald-950"><Download className="h-4 w-4" />Download text copy</button>
+                </div>
+                {trackingSaveMessage && <p role="status" className="mt-3 text-xs font-semibold text-emerald-900 dark:text-emerald-200">{trackingSaveMessage}</p>}
+                <p className="mt-3 text-[11px] leading-5 text-emerald-900/80 dark:text-emerald-300">Treat the token like a password. UniSoko staff will never ask you to post it publicly.</p>
+              </section>
+            )}
+
             {/* Action Buttons */}
             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               {trackingToken ? (
                 <Link
-                  href={`/track/${encodeURIComponent(completedOrder.id)}?token=${encodeURIComponent(trackingToken)}`}
+                  href={getTrackingPath()}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-xs font-bold text-white shadow-lg hover:bg-indigo-700 transition-all"
                 >
                   <CheckCircle2 className="h-4 w-4" />

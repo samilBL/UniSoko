@@ -88,6 +88,7 @@ export interface Order {
   cancellationStatus?: 'Not Requested' | 'Pending' | 'Under Review' | 'Approved' | 'Rejected' | 'Completed';
   totalAmount: number;
   wingaCodeUsed?: string;
+  wingaCommissionEligible?: boolean;
   lipaNambaTxId: string;
   itemSerialNumber?: string;
   warrantyDays?: 30 | 60 | 90;
@@ -134,6 +135,7 @@ export interface WingaApplication {
   submittedAt: string;
   reviewedAt?: string;
   studentIdVerified?: boolean;
+  studentIdCardUrl?: string;
 }
 
 export interface UniversityLocation {
