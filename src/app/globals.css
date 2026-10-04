@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --unisoko-primary: #6366F1;
   --unisoko-primary-dark: #4F46E5;
@@ -67,24 +69,7 @@ input:not([type="range"]):not([type="checkbox"]), select, textarea {
   border: 1px solid var(--unisoko-border);
 }
 
-/* OLED surfaces: shared legacy utility classes resolve into the new system too. */
-.bg-white:not(button):not(input):not(select):not(textarea), .bg-white\/80:not(button), .bg-white\/90:not(button), .bg-white\/95:not(button) { background-color: rgba(10, 10, 14, 0.88) !important; }
-.bg-slate-50, .bg-slate-50\/50, .bg-slate-50\/70, .bg-slate-50\/80 { background-color: rgba(10, 10, 14, 0.92) !important; }
-.bg-indigo-50, .bg-indigo-50\/50, .bg-indigo-50\/70, .bg-indigo-50\/80 { background-color: rgba(99, 102, 241, 0.12) !important; }
-.bg-emerald-50, .bg-emerald-50\/70, .bg-emerald-50\/80, .bg-emerald-50\/90 { background-color: rgba(16, 185, 129, 0.10) !important; }
-.bg-amber-50, .bg-amber-50\/70, .bg-amber-50\/80 { background-color: rgba(245, 158, 11, 0.10) !important; }
-.bg-purple-50, .bg-purple-50\/70 { background-color: rgba(168, 85, 247, 0.10) !important; }
-.bg-gradient-to-br { background-image: linear-gradient(135deg, rgba(10, 10, 14, 0.98), rgba(20, 20, 34, 0.96)) !important; }
-.border-slate-200, .border-slate-200\/80, .border-slate-100, .border-slate-300 { border-color: rgba(255, 255, 255, 0.10) !important; }
-.text-slate-950, .text-slate-900 { color: #FFFFFF !important; }
-.text-slate-800, .text-slate-700, .text-slate-600 { color: #CBD5E1 !important; }
-.text-slate-500, .text-slate-400 { color: #94A3B8 !important; }
-.text-slate-300 { color: #CBD5E1 !important; }
-.text-slate-200 { color: #E2E8F0 !important; }
-.text-slate-100 { color: #F8FAFC !important; }
-.text-indigo-950, .text-indigo-900, .text-indigo-800, .text-indigo-700 { color: #C7D2FE !important; }
-.text-emerald-950, .text-emerald-900, .text-emerald-800, .text-emerald-700 { color: #A7F3D0 !important; }
-.text-amber-950, .text-amber-900, .text-amber-800, .text-amber-700 { color: #FDE68A !important; }
+/* Removed hacky overrides that broke Tailwind styling */
 
 @media (max-width: 640px) {
   .oled-surface, .bg-gradient-to-br { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36); }

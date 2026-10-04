@@ -55,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="h-full antialiased"
+      className="h-full antialiased dark"
     >
       <body className="min-h-full flex flex-col bg-black text-white font-sans">
         <StoreProvider>
