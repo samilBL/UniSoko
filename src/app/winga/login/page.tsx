@@ -192,7 +192,7 @@ export default function WingaLoginPage() {
               <span>Campus Ambassador Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Winga Agent Sign In
+              Winga Sign In
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Access your earnings, promo code, and campus referral links.
