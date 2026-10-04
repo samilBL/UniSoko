@@ -51,7 +51,7 @@ export default function Header() {
             </div>
 
             <div className="flex items-center gap-4 text-[11px] sm:text-xs">
-              <button type="button" onClick={openStudentGuide} className="min-h-11 shrink-0 px-1 font-medium transition-colors hover:text-indigo-100">How It Works</button>
+              <button type="button" onClick={openStudentGuide} className="hidden min-h-11 shrink-0 px-1 font-medium transition-colors hover:text-indigo-100 sm:inline-flex sm:items-center">How It Works</button>
               <Link
                 href="/winga/register"
                 className="flex shrink-0 items-center gap-1 whitespace-nowrap font-medium transition-colors hover:text-emerald-200"

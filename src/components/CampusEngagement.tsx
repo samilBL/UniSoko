@@ -77,8 +77,8 @@ export default function CampusEngagement() {
   };
 
   return (
-    <section className="grid gap-5 lg:grid-cols-2" aria-label="Winga earnings and campus expansion">
-      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+    <section className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-2" aria-label="Winga earnings and campus expansion">
+      <div className="min-w-0 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Wallet className="h-5 w-5" /></div>
           <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Winga earnings estimator</p><h3 className="mt-1 text-lg font-extrabold text-slate-950">Your weekly effort, made tangible.</h3></div>
@@ -91,7 +91,7 @@ export default function CampusEngagement() {
         <p className="mt-3 text-xs leading-5 text-slate-500">Illustrative estimate only. Actual commissions depend on approved, completed sales.</p>
       </div>
 
-      <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+      <div className="min-w-0 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"><MapPin className="h-5 w-5" /></div>
           <div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">Tanzania campus expansion</p><h3 className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">Where should UniSoko launch next?</h3></div>
