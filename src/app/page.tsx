@@ -313,23 +313,23 @@ export default function StorefrontHomePage() {
           {/* Wholesale Info Callout */}
           <div
             id="wholesale-info"
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-slate-900 shadow-sm"
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-slate-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100"
           >
             <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100">
-                <Layers className="h-6 w-6 text-emerald-700" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/70">
+                <Layers className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
                   Hostel Pool & Reseller Advantage:
                 </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-700">
+                <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-emerald-100">
                   Combine 3 or more gadgets in your cart or pool with roommates to unlock{' '}
                   <span className="underline decoration-emerald-600 decoration-2">Bei ya Jumla</span> wholesale pricing automatically!
                 </p>
               </div>
             </div>
-            <span className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-emerald-800 shadow-sm">
+            <span className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-emerald-800 shadow-sm dark:bg-emerald-900 dark:text-emerald-100">
               Min 3 Units Required
             </span>
           </div>
