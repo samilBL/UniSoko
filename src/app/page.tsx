@@ -108,44 +108,44 @@ export default function StorefrontHomePage() {
         </section>
 
         {/* Value Props Strip */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
-              <MapPin className="h-5 w-5" />
+        <section className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4" aria-label="UniSoko benefits">
+          <div className="flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-indigo-950 dark:text-indigo-400">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h4 className="text-[11px] font-bold leading-tight text-slate-900 sm:text-xs dark:text-white">
                 Hostel Hand-Off in Mbeya
               </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Direct delivery to {selectedCampus?.shortCode || 'MUST'} hostels
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-              <Layers className="h-5 w-5" />
+          <div className="flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-emerald-950 dark:text-emerald-400">
+              <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h4 className="text-[11px] font-bold leading-tight text-slate-900 sm:text-xs dark:text-white">
                 Bei ya Jumla (Wholesale)
               </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Pool 3+ units for direct supplier discount
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
-              <ShieldCheck className="h-5 w-5" />
+          <div className="flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-amber-950 dark:text-amber-400">
+              <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h4 className="text-[11px] font-bold leading-tight text-slate-900 sm:text-xs dark:text-white">
                 Grade-A Quality Inspected
               </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Battery health & ports fully certified
               </p>
             </div>
@@ -153,16 +153,16 @@ export default function StorefrontHomePage() {
 
           <Link
             href="/sell-device"
-            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 hover:border-indigo-300 transition-all group"
+            className="group flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-300 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 group-hover:scale-105 transition-transform">
-              <DollarSign className="h-5 w-5" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-transform group-hover:scale-105 sm:h-10 sm:w-10 sm:rounded-xl dark:bg-emerald-950 dark:text-emerald-400">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600">
+            <div className="min-w-0">
+              <h4 className="text-[11px] font-bold leading-tight text-slate-900 group-hover:text-indigo-600 sm:text-xs dark:text-white">
                 Sell / Trade-In Device
               </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-[10px] leading-snug text-slate-500 sm:text-[11px] dark:text-slate-400">
                 Instant cash & upgrade credits
               </p>
             </div>
