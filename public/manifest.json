@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "UniSoko — Tanzania Campus Store",
+  "short_name": "UniSoko",
+  "description": "Shop campus gadgets, student gear, and Bei ya Jumla deals across Tanzania.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#4F46E5",
+  "categories": ["shopping", "education"],
+  "icons": [
+    { "src": "/icons/unisoko-pwa.svg", "sizes": "192x192 512x512 any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
