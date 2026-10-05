@@ -19,7 +19,6 @@ import {
   PackageCheck,
   DollarSign,
   ShieldCheck,
-  Layers,
 } from 'lucide-react';
 
 export default function Header() {
@@ -60,6 +59,7 @@ export default function Header() {
                 <Sparkles className="h-3 w-3 text-emerald-300" />
                 <span>Join as Winga</span>
               </Link>
+              <Link href="/seller" className="font-medium hover:text-emerald-200 transition-colors">Become a seller</Link>
             </div>
           </div>
         </div>
@@ -197,6 +197,13 @@ export default function Header() {
             >
               <DollarSign className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <span>Sell / Trade-In</span>
+            </Link>
+            <Link
+              href="/seller"
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all shrink-0 ${pathname.startsWith('/seller') ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white border border-slate-700'}`}
+            >
+              <UserCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <span>Become a Seller</span>
             </Link>
             <Link
               href="/support"

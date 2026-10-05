@@ -45,7 +45,6 @@ import {
   BarChart3,
   Wrench,
   School,
-  AlertTriangle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -728,6 +727,7 @@ export default function AdminPanelPage() {
               </span>
             </div>
             <button onClick={() => { void fetch('/api/admin/logout', { method: 'POST' }).finally(() => router.replace('/admin/login')); }} className="rounded-xl border border-white/20 px-3 py-2.5 font-bold text-white transition hover:bg-white/10">Sign out</button>
+            <button onClick={() => router.push('/admin/sellers')} className="rounded-xl bg-emerald-500 px-3 py-2.5 font-bold text-slate-950 transition hover:bg-emerald-400">Seller applications</button>
           </div>
         </div>
 

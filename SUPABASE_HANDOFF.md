@@ -44,8 +44,11 @@ For a new Supabase environment, apply these in order in the Supabase SQL Editor.
 14. `supabase/migrations/20261009_products_and_universities.sql`
 15. `supabase/migrations/20261010_group_buy_multi_product.sql`
 16. `supabase/migrations/20261011_multivendor_foundation.sql`
+17. `supabase/migrations/20261012_seller_accounts_dashboard.sql`
 
-Migrations 13–16 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15.
+Migrations 13–17 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15.
+
+The Phase 2 seller migration adds server-only transactional functions for submitting and reviewing seller applications. Apply it after the multi-vendor foundation. Seller routes use the existing verified Supabase Auth user and the service-role client only on the server; seller status is read from `seller_profiles`, not user-editable auth metadata. Approval does not start a subscription or free trial; that belongs to Phase 3.
 
 The order-tracking migration creates orders, itemized order lines, and status history; adds uniqueness for payment transaction references; enables RLS; denies direct anonymous/authenticated table access; and grants data access to the server service role. The Winga migration creates applications linked to Supabase Auth users and restricts table access to the service role.
 

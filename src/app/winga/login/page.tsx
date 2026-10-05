@@ -21,6 +21,17 @@ import CartDrawer from '@/components/CartDrawer';
 import { getSupabaseBrowser } from '@/lib/supabaseBrowser';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
+function getPostLoginPath() {
+  const requestedPath = new URLSearchParams(window.location.search).get('next');
+  if (!requestedPath || !requestedPath.startsWith('/') || requestedPath.startsWith('//')) return '/winga/dashboard';
+  const destination = new URL(requestedPath, window.location.origin);
+  return destination.origin === window.location.origin ? `${destination.pathname}${destination.search}${destination.hash}` : '/winga/dashboard';
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export default function WingaLoginPage() {
   const router = useRouter();
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
@@ -72,11 +83,11 @@ export default function WingaLoginPage() {
       }
 
       if (data.session) {
-        router.push('/winga/dashboard');
+        router.push(getPostLoginPath());
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to sign in. Please check your credentials.'));
     } finally {
       setLoading(false);
     }
@@ -110,8 +121,8 @@ export default function WingaLoginPage() {
 
       setOtpSent(true);
       setMessage(`A 6-digit verification code was sent to ${normalizedEmail}. Check your inbox.`);
-    } catch (err: any) {
-      setError(err.message || 'Could not send verification code.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Could not send verification code.'));
     } finally {
       setLoading(false);
     }
@@ -140,11 +151,11 @@ export default function WingaLoginPage() {
       if (verifyError) throw verifyError;
 
       if (data.session) {
-        router.push('/winga/dashboard');
+        router.push(getPostLoginPath());
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message || 'Invalid or expired verification code.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Invalid or expired verification code.'));
     } finally {
       setLoading(false);
     }
@@ -172,8 +183,8 @@ export default function WingaLoginPage() {
       });
       if (resetError) throw resetError;
       setMessage(`Password reset link sent to ${normalizedEmail}. Follow the link in your email to set a new password.`);
-    } catch (err: any) {
-      setError(err.message || 'Could not send password reset email.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Could not send password reset email.'));
     } finally {
       setLoading(false);
     }
@@ -189,13 +200,13 @@ export default function WingaLoginPage() {
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
               <ShieldCheck className="h-3.5 w-3.5" />
-              <span>Campus Ambassador Portal</span>
+              <span>UniSoko Account</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Winga Sign In
+              UniSoko Account Sign In
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Access your earnings, promo code, and campus referral links.
+              Sign in once to continue to your Winga or seller account.
             </p>
           </div>
 
