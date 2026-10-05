@@ -107,6 +107,11 @@ export default function StorefrontHomePage() {
           <HeroCarousel />
         </section>
 
+        <Link href="/group-buy" className="group flex items-center justify-between gap-4 rounded-2xl border border-emerald-300 bg-linear-to-r from-emerald-700 to-teal-700 p-4 text-white shadow-lg shadow-emerald-950/15 transition hover:-translate-y-0.5 hover:shadow-xl sm:p-5">
+          <div className="flex min-w-0 items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15"><Layers className="h-5 w-5" /></span><span className="min-w-0"><span className="block text-sm font-black sm:text-base">Bring your campus squad. Save together.</span><span className="mt-0.5 block text-xs leading-5 text-emerald-50 sm:text-sm">Start a group, choose products, and unlock Bei ya Jumla at the member target.</span></span></div>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-extrabold text-emerald-900 sm:px-4">Explore groups <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+        </Link>
+
         {/* Value Props Strip */}
         <section className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4" aria-label="UniSoko benefits">
           <Link href="/hostels" className="group relative flex min-w-0 items-start gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:border-indigo-400 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:items-center sm:gap-3 sm:rounded-2xl sm:p-4 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-indigo-950/40">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
@@ -44,6 +44,16 @@ export default function ProductDetailsPage() {
   const [groupBuyError, setGroupBuyError] = useState('');
   const [createdGroupBuyId, setCreatedGroupBuyId] = useState('');
   const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const savedId = localStorage.getItem(`unisoko_product_group_buy_${productId}`);
+        if (savedId) setCreatedGroupBuyId(savedId);
+      } catch { /* Group-buy status remains available from its invite link. */ }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [productId]);
 
   if (!product) {
     return (
@@ -113,6 +123,7 @@ export default function ProductDetailsPage() {
       if (!response.ok || !result.id) throw new Error(result.error || 'Unable to create a group buy.');
       setCreatedGroupBuyId(result.id);
       localStorage.setItem('unisoko_last_group_buy', result.id);
+      localStorage.setItem(`unisoko_product_group_buy_${product.id}`, result.id);
       localStorage.setItem(`unisoko_group_buy_${result.id}_joined`, 'true');
     } catch (error) {
       setGroupBuyError(error instanceof Error ? error.message : 'Unable to create a group buy.');

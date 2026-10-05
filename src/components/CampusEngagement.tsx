@@ -81,14 +81,14 @@ export default function CampusEngagement() {
       <div className="min-w-0 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Wallet className="h-5 w-5" /></div>
-          <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Winga earnings estimator</p><h3 className="mt-1 text-lg font-extrabold text-slate-950">Your weekly effort, made tangible.</h3></div>
+          <div><p className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300">Winga earnings estimator</p><h3 className="mt-1 text-lg font-extrabold text-slate-950 dark:text-white">Your weekly effort, made tangible.</h3></div>
         </div>
         <div className="mt-7 rounded-2xl bg-slate-950 p-5 text-white">
           <div className="flex items-center justify-between gap-3"><label htmlFor="weekly-sales" className="text-sm font-medium text-slate-300">Estimated weekly sales</label><span className="text-sm font-bold">{formatTZS(weeklySales)}</span></div>
           <input id="weekly-sales" type="range" min="100000" max="5000000" step="50000" value={weeklySales} onChange={(event) => setWeeklySales(Number(event.target.value))} className="mt-5 w-full accent-emerald-400" />
           <div className="mt-5 flex items-end justify-between gap-3"><div><p className="text-xs text-slate-400">Projected commission · 5%</p><p className="mt-1 text-3xl font-extrabold tracking-tight text-emerald-300">{formatTZS(projectedEarnings)}</p></div><TrendingUp className="mb-1 h-7 w-7 text-emerald-400" /></div>
         </div>
-        <p className="mt-3 text-xs leading-5 text-slate-500">Illustrative estimate only. Actual commissions depend on approved, completed sales.</p>
+        <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-300">Illustrative estimate only. Actual commissions depend on approved, completed sales.</p>
       </div>
 
       <div className="min-w-0 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8 dark:border-slate-800 dark:bg-slate-900">

@@ -52,8 +52,8 @@ export default function StudentOnboardingModal({ isOpen, onClose }: StudentOnboa
           <motion.section initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: 0.98 }} transition={{ type: 'spring', damping: 26, stiffness: 260 }} className="relative my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-3xl border border-white/70 bg-white/90 p-4 shadow-2xl shadow-indigo-950/30 backdrop-blur-xl sm:p-9">
             <button aria-label="Close walkthrough" onClick={onClose} className="absolute right-5 top-5 rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"><X className="h-4 w-4" /></button>
             <div className="pr-10">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Your UniSoko field guide</p>
-              <h2 id="walkthrough-title" className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Campus shopping, made simple.</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">Your UniSoko field guide</p>
+              <h2 id="walkthrough-title" className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-3xl">Campus shopping, made simple.</h2>
             </div>
             <div className="mt-6 flex gap-2" aria-label={`Step ${activeStep + 1} of ${steps.length}`}>
               {steps.map((item, index) => <button key={item.eyebrow} onClick={() => setActiveStep(index)} aria-label={`Go to step ${index + 1}`} className={`h-1.5 flex-1 rounded-full transition-colors ${index <= activeStep ? 'bg-indigo-600' : 'bg-slate-200'}`} />)}
@@ -69,10 +69,10 @@ export default function StudentOnboardingModal({ isOpen, onClose }: StudentOnboa
                   <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/20" />
                 </div>
                 <div className="flex flex-col justify-center py-1">
-                  <p className="text-xs font-bold tracking-widest text-indigo-600">{step.eyebrow}</p>
-                  <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950 sm:text-2xl">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{step.description}</p>
-                  <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500"><Check className="h-4 w-4 text-emerald-600" /> Transparent campus-first experience</div>
+                  <p className="text-xs font-bold tracking-widest text-indigo-600 dark:text-indigo-300">{step.eyebrow}</p>
+                  <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950 dark:text-white sm:text-2xl">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{step.description}</p>
+                  <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-300"><Check className="h-4 w-4 text-emerald-600" /> Transparent campus-first experience</div>
                   <div className="mt-6 flex flex-wrap items-center gap-3">
                     <Link href={step.action.href} onClick={onClose} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700">{step.action.label}<ArrowRight className="h-4 w-4" /></Link>
                     <div className="ml-auto flex gap-2">
@@ -83,7 +83,7 @@ export default function StudentOnboardingModal({ isOpen, onClose }: StudentOnboa
                 </div>
               </motion.div>
             </AnimatePresence>
-            <div className="mt-6 flex items-center justify-between border-t border-slate-200/80 pt-4 text-xs text-slate-500"><span>Step {activeStep + 1} of 3</span><span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-emerald-600" /> Students across Tanzania</span></div>
+            <div className="mt-6 flex items-center justify-between border-t border-slate-200/80 pt-4 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-300"><span>Step {activeStep + 1} of 3</span><span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-emerald-600" /> Students across Tanzania</span></div>
           </motion.section>
         </div>
       )}

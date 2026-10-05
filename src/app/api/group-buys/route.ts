@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     expires_at: expiresAt,
   });
   if (error) return NextResponse.json({ error: 'Could not create this group buy.' }, { status: 500 });
-  const { error: participantError } = await supabase.from('group_buy_participants').insert({ group_id: id, participant_token: body.participantToken });
+  const { error: participantError } = await supabase.from('group_buy_participants').insert({
+    group_id: id, participant_token: body.participantToken, product_id: product.id,
+    product_title: product.title, retail_price: product.priceRetail, wholesale_price: product.priceWholesale,
+  });
   if (participantError) return NextResponse.json({ error: 'Could not start the group buy.' }, { status: 500 });
 
   return NextResponse.json({ id, productId: product.id, productTitle: product.title, retailPrice: product.priceRetail, wholesalePrice: product.priceWholesale, minimumQuantity: product.minWholesaleQty || 3, participantCount: 1, expiresAt }, { status: 201 });
