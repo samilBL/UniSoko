@@ -17,19 +17,26 @@ type Profile = {
   created_at: string;
   updated_at: string;
 };
-type SellerProduct = { id: string; name: string; category: string; category_id: string | null; price: number | string; description: string; listing_status: string; created_at: string; updated_at: string };
+type SellerProduct = { id: string; name: string; category: string; category_id: string | null; subcategory_id: string | null; product_condition_id: string | null; price: number | string; description: string; specs: Record<string, unknown>; images: string[]; imageUrls: string[]; listing_status: string; created_at: string; updated_at: string };
 type Category = { id: string; name: string };
+type Subcategory = { id: string; category_id: string; name: string };
+type Condition = { id: string; name: string; description: string };
+type DynamicAttribute = { id: string; category_id: string | null; subcategory_id: string | null; product_condition_id: string | null; name: string; attribute_key: string; input_type: 'text' | 'number' | 'boolean' | 'select' | 'multiselect'; is_required: boolean; validation_rules: Record<string, unknown>; product_attribute_options: { id: string; value: string; label: string; is_active?: boolean }[] };
 type Plan = { id: string; name: string; description: string; plan_type: string; price: number; currency: string; duration_days: number; product_limit: number | null; is_popular: boolean; slug: string; subscription_plan_features?: { feature_key: string; label: string; description: string; is_enabled: boolean }[] };
 type PaymentMethod = { id: string; name: string; instructions: string; public_details: Record<string, unknown> };
 type Subscription = { id: string; status: string; plan_snapshot: Record<string, unknown>; expires_at: string | null };
 type Tab = 'overview' | 'products' | 'profile';
 
 const inputClass = 'mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white';
+const emptyProductDraft = { name: '', categoryId: '', subcategoryId: '', conditionId: '', price: '', description: '', specs: {} as Record<string, unknown>, images: [] as string[] };
 
 export default function SellerDashboard({ email, initialProfile }: { email: string; initialProfile: Profile }) {
   const [profile, setProfile] = useState(initialProfile);
   const [products, setProducts] = useState<SellerProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [conditions, setConditions] = useState<Condition[]>([]);
+  const [attributes, setAttributes] = useState<DynamicAttribute[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -46,7 +53,10 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ name: '', categoryId: '', price: '', description: '' });
+  const [draft, setDraft] = useState(emptyProductDraft);
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
+  const [productStep, setProductStep] = useState(0);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [profileForm, setProfileForm] = useState({ displayName: initialProfile.display_name, university: initialProfile.university, campus: initialProfile.campus || '', phone: typeof initialProfile.contact_options.phone === 'string' ? initialProfile.contact_options.phone : '', description: initialProfile.description });
 
   const load = useCallback(async () => {
@@ -56,7 +66,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
       fetch('/api/seller/subscriptions', { cache: 'no-store' }),
     ]);
     const profileResult = await profileResponse.json() as { profile?: Profile; verification?: { status?: string }; error?: string };
-    const productsResult = await productsResponse.json() as { products?: SellerProduct[]; categories?: Category[]; error?: string };
+    const productsResult = await productsResponse.json() as { products?: SellerProduct[]; categories?: Category[]; subcategories?: Subcategory[]; conditions?: Condition[]; attributes?: DynamicAttribute[]; error?: string };
     const subscriptionResult = await subscriptionResponse.json() as { plans?: Plan[]; paymentMethods?: PaymentMethod[]; subscription?: Subscription | null; payment?: Record<string, unknown> | null; error?: string };
     if (!profileResponse.ok) throw new Error(profileResult.error || 'Could not load your seller profile.');
     if (!productsResponse.ok) throw new Error(productsResult.error || 'Could not load your seller products.');
@@ -68,6 +78,9 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     setVerification(profileResult.verification?.status || 'unverified');
     setProducts(productsResult.products || []);
     setCategories(productsResult.categories || []);
+    setSubcategories(productsResult.subcategories || []);
+    setConditions(productsResult.conditions || []);
+    setAttributes(productsResult.attributes || []);
     setPlans(subscriptionResult.plans || []);
     setPaymentMethods(subscriptionResult.paymentMethods || []);
     setSubscription(subscriptionResult.subscription || null);
@@ -76,6 +89,18 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     if (subscriptionResult.paymentMethods?.length) setSelectedMethod((current) => current || subscriptionResult.paymentMethods?.[0].id || '');
     setCurrentTime(Date.now());
   }, []);
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      const storageKey = `unisoko:seller-product-draft:${initialProfile.id}`;
+      try { const saved = localStorage.getItem(storageKey); if (saved) { const parsed: unknown = JSON.parse(saved); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) { const restored = parsed as Partial<typeof emptyProductDraft> & { imagePreviews?: Record<string, string> }; setDraft({ ...emptyProductDraft, ...restored }); setImagePreviews(restored.imagePreviews || {}); } } } catch { localStorage.removeItem(storageKey); }
+    });
+  }, [initialProfile.id]);
+
+  useEffect(() => {
+    const storageKey = `unisoko:seller-product-draft:${profile.id}`;
+    if (!editingId && (draft.name || draft.categoryId || draft.description || draft.images.length)) localStorage.setItem(storageKey, JSON.stringify({ ...draft, imagePreviews }));
+  }, [draft, editingId, imagePreviews, profile.id]);
 
   useEffect(() => {
     let active = true;
@@ -100,12 +125,44 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
       });
       const result = await response.json() as { product?: SellerProduct; error?: string };
       if (!response.ok) throw new Error(result.error || 'Could not save product draft.');
+      if (editingId) {
+        const previousImages = products.find((product) => product.id === editingId)?.images || [];
+        const removedImages = previousImages.filter((image) => !draft.images.includes(image) && image.startsWith(`${profile.id}/`));
+        await Promise.all(removedImages.map((path) => fetch('/api/seller/products/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) })));
+      }
       await load();
-      setDraft({ name: '', categoryId: '', price: '', description: '' });
+      setDraft(emptyProductDraft);
       setEditingId(null);
-      setMessage('Draft saved. It is private and is not visible in the marketplace.');
+      setProductStep(0); setImagePreviews({}); localStorage.removeItem(`unisoko:seller-product-draft:${profile.id}`);
+      setMessage('Draft saved privately. It is not visible in the marketplace.');
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not save product draft.'); }
     finally { setBusy(false); }
+  };
+
+  const uploadImages = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const remaining = 8 - draft.images.length;
+    if (files.length > remaining) { setError(`You can add ${remaining} more image${remaining === 1 ? '' : 's'} (maximum 8).`); return; }
+    setUploadingImages(true); setError('');
+    try {
+      const uploaded: string[] = [];
+      for (const file of Array.from(files)) {
+        const form = new FormData(); form.append('image', file);
+        const response = await fetch('/api/seller/products/images', { method: 'POST', body: form });
+        const result = await response.json() as { path?: string; url?: string; error?: string };
+        if (!response.ok || !result.path) throw new Error(result.error || 'Could not upload a product image.');
+        uploaded.push(result.path);
+        setImagePreviews((current) => ({ ...current, [result.path as string]: result.url || '' }));
+      }
+      setDraft((current) => ({ ...current, images: [...current.images, ...uploaded] }));
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not upload the selected images.'); }
+    finally { setUploadingImages(false); }
+  };
+
+  const removeImage = async (path: string) => {
+    setDraft((current) => ({ ...current, images: current.images.filter((image) => image !== path) }));
+    setImagePreviews((current) => { const next = { ...current }; delete next[path]; return next; });
+    if (!path.startsWith('http') && !products.some((product) => product.images.includes(path))) await fetch('/api/seller/products/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
   };
 
   const archiveProduct = async (product: SellerProduct) => {
@@ -143,9 +200,17 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
 
   const startEdit = (product: SellerProduct) => {
     setEditingId(product.id);
-    setDraft({ name: product.name, categoryId: product.category_id || '', price: String(product.price), description: product.description || '' });
+    const images = (product.images || []).filter((path) => path.startsWith(`${profile.id}/`));
+    setDraft({ name: product.name, categoryId: product.category_id || '', subcategoryId: product.subcategory_id || '', conditionId: product.product_condition_id || '', price: String(product.price), description: product.description || '', specs: product.specs || {}, images });
+    setImagePreviews(Object.fromEntries(images.map((path, index) => [path, product.imageUrls[index] || ''])));
+    setProductStep(0);
     setTab('products');
   };
+
+  const applicableAttributes = attributes.filter((attribute) =>
+    (!attribute.category_id || attribute.category_id === draft.categoryId) &&
+    (!attribute.subcategory_id || attribute.subcategory_id === draft.subcategoryId) &&
+    (!attribute.product_condition_id || attribute.product_condition_id === draft.conditionId));
 
   const approved = profile.status === 'approved';
   const statusClass = profile.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : profile.status === 'rejected' ? 'bg-rose-100 text-rose-800' : profile.status === 'suspended' ? 'bg-slate-200 text-slate-800' : 'bg-amber-100 text-amber-900';
@@ -190,14 +255,16 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
       {!loading && tab === 'products' && <div className="mt-5 space-y-5">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-extrabold">Product drafts</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Drafts are private and will not appear in marketplace search.</p></div><div className="flex flex-wrap gap-2">{['all', 'draft', 'pending_approval', 'approved', 'rejected', 'changes_requested', 'archived'].map((status) => <button type="button" key={status} onClick={() => setFilter(status)} className={`min-h-9 rounded-full px-3 text-[11px] font-bold capitalize ${filter === status ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'}`}>{status === 'all' ? `All (${products.length})` : `${status.replaceAll('_', ' ')} (${counts[status] || 0})`}</button>)}</div></div>
-          {approved ? <form onSubmit={saveProduct} className="mt-5 grid gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70 sm:grid-cols-2">
-            <div className="sm:col-span-2"><h3 className="font-bold">{editingId ? 'Edit draft' : 'Create a product draft'}</h3><p className="mt-1 text-xs text-slate-500">This basic draft form is temporary. Phase 4 adds category-specific fields and product images.</p></div>
-            <label className="text-xs font-bold">Product name<input className={inputClass} required minLength={2} maxLength={300} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-            <label className="text-xs font-bold">Category<select className={inputClass} required value={draft.categoryId} onChange={(event) => setDraft({ ...draft, categoryId: event.target.value })}><option value="">Choose category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
-            <label className="text-xs font-bold">Price (TZS)<input className={inputClass} required type="number" inputMode="decimal" min="1" step="1" value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })} /></label>
-            <label className="text-xs font-bold sm:col-span-2">Description<textarea className={`${inputClass} min-h-24 py-3`} maxLength={4000} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label>
-            {categories.length === 0 && <p className="text-xs text-amber-700 sm:col-span-2">No active marketplace categories are available. Ask an administrator to configure categories.</p>}
-            <div className="flex flex-wrap gap-2 sm:col-span-2"><button type="submit" disabled={busy || !categories.length} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"><Save className="h-4 w-4" />{busy ? 'Saving…' : 'Save private draft'}</button>{editingId && <button type="button" onClick={() => { setEditingId(null); setDraft({ name: '', categoryId: '', price: '', description: '' }); }} className="min-h-11 rounded-xl border border-slate-300 px-4 text-xs font-bold">Cancel edit</button>}</div>
+          {approved ? <form onSubmit={saveProduct} className="mt-5 space-y-5 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
+            <div><h3 className="font-bold">{editingId ? 'Edit product draft' : 'Create a product draft'}</h3><p className="mt-1 text-xs text-slate-500">Your progress is saved in this browser while you work. Saving creates a private draft.</p></div>
+            <ol className="grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Product creation steps">{['Category', 'Condition', 'Specifications', 'Images', 'Description', 'Preview'].map((label, index) => <li key={label}><button type="button" onClick={() => { if (index <= productStep) setProductStep(index); }} className={`min-h-10 w-full rounded-lg px-2 text-[11px] font-bold ${productStep === index ? 'bg-indigo-600 text-white' : index < productStep ? 'bg-indigo-100 text-indigo-800' : 'bg-white text-slate-500 dark:bg-slate-900'}`}>{index + 1}. {label}</button></li>)}</ol>
+            {productStep === 0 && <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Category<select className={inputClass} required value={draft.categoryId} onChange={(event) => setDraft({ ...draft, categoryId: event.target.value, subcategoryId: '', specs: {} })}><option value="">Choose category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="text-xs font-bold">Subcategory <span className="font-normal text-slate-500">(optional)</span><select className={inputClass} value={draft.subcategoryId} disabled={!draft.categoryId} onChange={(event) => setDraft({ ...draft, subcategoryId: event.target.value, specs: {} })}><option value="">Choose subcategory</option>{subcategories.filter((item) => item.category_id === draft.categoryId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{categories.length === 0 && <p className="text-xs text-amber-700 sm:col-span-2">No active categories are configured yet. Ask an administrator to add marketplace categories.</p>}</div>}
+            {productStep === 1 && <div className="grid gap-3 sm:grid-cols-2">{conditions.map((condition) => <label key={condition.id} className={`cursor-pointer rounded-xl border p-4 ${draft.conditionId === condition.id ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}><input className="mr-2" type="radio" name="productCondition" value={condition.id} checked={draft.conditionId === condition.id} onChange={() => setDraft({ ...draft, conditionId: condition.id, specs: {} })}/><b className="text-sm">{condition.name}</b><p className="mt-1 pl-6 text-xs text-slate-500">{condition.description}</p></label>)}</div>}
+            {productStep === 2 && <div className="grid gap-4 sm:grid-cols-2">{!draft.categoryId || !draft.conditionId ? <p className="text-sm text-amber-700 sm:col-span-2">Choose a category and condition first.</p> : applicableAttributes.length === 0 ? <p className="text-sm text-slate-600 sm:col-span-2">No extra specifications are configured for this category and condition.</p> : applicableAttributes.map((attribute) => <label key={attribute.id} className="text-xs font-bold">{attribute.name}{attribute.is_required && <span className="text-rose-600"> *</span>}{attribute.input_type === 'text' && <input className={inputClass} required={attribute.is_required} maxLength={Number(attribute.validation_rules.maxLength || 500)} value={String(draft.specs[attribute.attribute_key] ?? '')} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value } })}/>}{attribute.input_type === 'number' && <input className={inputClass} required={attribute.is_required} type="number" min={typeof attribute.validation_rules.min === 'number' ? attribute.validation_rules.min : undefined} max={typeof attribute.validation_rules.max === 'number' ? attribute.validation_rules.max : undefined} value={typeof draft.specs[attribute.attribute_key] === 'number' ? String(draft.specs[attribute.attribute_key]) : ''} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value === '' ? '' : Number(event.target.value) } })}/>}{attribute.input_type === 'boolean' && <select required={attribute.is_required} className={inputClass} value={draft.specs[attribute.attribute_key] === true ? 'true' : draft.specs[attribute.attribute_key] === false ? 'false' : ''} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value === '' ? '' : event.target.value === 'true' } })}><option value="">Choose</option><option value="true">Yes</option><option value="false">No</option></select>}{attribute.input_type === 'select' && <select required={attribute.is_required} className={inputClass} value={String(draft.specs[attribute.attribute_key] ?? '')} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value } })}><option value="">Choose option</option>{attribute.product_attribute_options.filter((option) => option.is_active !== false).map((option) => <option key={option.id} value={option.value}>{option.label}</option>)}</select>}{attribute.input_type === 'multiselect' && <select required={attribute.is_required} multiple className={`${inputClass} min-h-28`} value={Array.isArray(draft.specs[attribute.attribute_key]) ? draft.specs[attribute.attribute_key] as string[] : []} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: Array.from(event.target.selectedOptions, (option) => option.value) } })}>{attribute.product_attribute_options.filter((option) => option.is_active !== false).map((option) => <option key={option.id} value={option.value}>{option.label}</option>)}</select>}</label>)}</div>}
+            {productStep === 3 && <div><label className="block text-xs font-bold">Product images <span className="font-normal text-slate-500">(1–8, JPG/PNG/WebP, up to 5 MB each)</span><input className={`${inputClass} py-2`} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={uploadingImages || draft.images.length >= 8} onChange={(event) => { void uploadImages(event.target.files); event.currentTarget.value = ''; }}/></label>{uploadingImages && <p className="mt-2 text-xs text-indigo-600">Uploading images…</p>}<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{draft.images.map((path) => <article key={path} className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"><img className="aspect-square w-full object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product upload preview"/><button type="button" onClick={() => void removeImage(path)} className="w-full p-2 text-xs font-bold text-rose-700">Remove image</button></article>)}</div></div>}
+            {productStep === 4 && <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Product name<input className={inputClass} required minLength={2} maxLength={300} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}/></label><label className="text-xs font-bold">Price (TZS)<input className={inputClass} required type="number" inputMode="decimal" min="1" step="1" value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })}/></label><label className="text-xs font-bold sm:col-span-2">Description <span className="font-normal text-slate-500">({draft.description.length}/4,000)</span><textarea className={`${inputClass} min-h-32 py-3`} required minLength={10} maxLength={4000} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })}/></label></div>}
+            {productStep === 5 && <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"><h4 className="text-lg font-black">{draft.name || 'Product preview'}</h4><p className="mt-1 text-sm text-slate-600">{categories.find((item) => item.id === draft.categoryId)?.name}{draft.subcategoryId ? ` · ${subcategories.find((item) => item.id === draft.subcategoryId)?.name || ''}` : ''} · {conditions.find((item) => item.id === draft.conditionId)?.name || 'Condition not selected'}</p><p className="mt-2 text-lg font-bold">TZS {Number(draft.price || 0).toLocaleString('en-TZ')}</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{draft.images.map((path) => <img key={path} className="aspect-square w-full rounded-lg object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product preview"/>)}</div><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{draft.description || 'Add a product description.'}</p>{Object.keys(draft.specs).length > 0 && <dl className="mt-4 grid gap-2 sm:grid-cols-2">{Object.entries(draft.specs).filter(([, value]) => value !== '' && value !== undefined).map(([key, value]) => <div key={key} className="rounded-lg bg-slate-50 p-2 text-xs dark:bg-slate-800"><dt className="font-bold">{applicableAttributes.find((attribute) => attribute.attribute_key === key)?.name || key}</dt><dd>{Array.isArray(value) ? value.join(', ') : String(value)}</dd></div>)}</dl>}<p className="mt-4 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">This preview will be saved as a private draft. Product submission for moderation is part of the next phase.</p></div>}
+            <div className="flex flex-wrap justify-between gap-2"><div className="flex gap-2">{productStep > 0 && <button type="button" onClick={() => { setProductStep((step) => Math.max(0, step - 1)); }} className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold">Back</button>}{productStep < 5 && <button type="button" onClick={() => { if (productStep === 0 && !draft.categoryId) { setError('Choose a category to continue.'); return; } if (productStep === 1 && !draft.conditionId) { setError('Choose a product condition to continue.'); return; } if (productStep === 2 && applicableAttributes.some((attribute) => attribute.is_required && (draft.specs[attribute.attribute_key] === undefined || draft.specs[attribute.attribute_key] === '' || (Array.isArray(draft.specs[attribute.attribute_key]) && !(draft.specs[attribute.attribute_key] as unknown[]).length)))) { setError('Complete each required specification to continue.'); return; } if (productStep === 3 && draft.images.length === 0) { setError('Add at least one product image to continue.'); return; } if (productStep === 4 && (!draft.name.trim() || Number(draft.price) <= 0 || draft.description.trim().length < 10)) { setError('Add the product name, a positive price, and a description of at least 10 characters.'); return; } setError(''); setProductStep((step) => step + 1); }} className="min-h-10 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white dark:bg-white dark:text-slate-900">Continue</button>}</div><div className="flex gap-2">{editingId && <button type="button" onClick={() => { setEditingId(null); setDraft(emptyProductDraft); setImagePreviews({}); setProductStep(0); }} className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold">Cancel edit</button>}{productStep === 5 && <button type="submit" disabled={busy || uploadingImages || !draft.images.length} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white disabled:opacity-50"><Save className="h-4 w-4"/>{busy ? 'Saving…' : 'Save private draft'}</button>}</div></div>
           </form> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">Your application must be approved before you can create product drafts.</p>}
         </section>
         <section className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900" aria-label="Seller products">

@@ -46,10 +46,13 @@ For a new Supabase environment, apply these in order in the Supabase SQL Editor.
 16. `supabase/migrations/20261011_multivendor_foundation.sql`
 17. `supabase/migrations/20261012_seller_accounts_dashboard.sql`
 18. `supabase/migrations/20261013_seller_subscriptions.sql`
+19. `supabase/migrations/20261014_intelligent_product_creation.sql`
 
-Migrations 13–18 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15. Phase 1–3 migrations have not been applied or verified in the connected project as part of this work.
+Migrations 13–19 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15. Phase 1–4 migrations have not been applied or verified in the connected project as part of this work.
 
 The Phase 2 seller migration adds server-only transactional functions for submitting and reviewing seller applications. Phase 3 adds configurable trial and paid plans, seller payment requests and payment-review functions, and seeds initial plan rows. Apply it after Phase 2. Seller routes use the existing verified Supabase Auth user and the service-role client only on the server; seller status is read from `seller_profiles`, not user-editable auth metadata. Approved sellers receive one configured trial. Set up the LIPA instructions and public payment details in `/admin/subscriptions` before sellers submit payments; no provider verifies references automatically. Existing approved sellers are backfilled one trial by migration, if they have no subscription history.
+
+Phase 4 product drafts load active categories, subcategories, conditions, and scoped attributes/options from the database. Product images upload to the public `seller-product-images` bucket through the authenticated seller API; the browser never receives the service-role key. Apply migration 19 after the multivendor, seller, and subscription migrations. Dynamic attribute definitions still need to be populated by an administrator/database operator until Phase 6 provides a management interface. Seller draft creation remains private; moderation/submission is Phase 5.
 
 The order-tracking migration creates orders, itemized order lines, and status history; adds uniqueness for payment transaction references; enables RLS; denies direct anonymous/authenticated table access; and grants data access to the server service role. The Winga migration creates applications linked to Supabase Auth users and restricts table access to the service role.
 

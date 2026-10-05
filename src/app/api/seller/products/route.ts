@@ -2,10 +2,60 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSellerActor, getSellerProfile } from '@/lib/sellerAuth';
 import { entitlementAllows, getSellerEntitlement } from '@/lib/sellerEntitlements';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const productFields = 'id, name, category, category_id, price, description, listing_status, created_at, updated_at';
+const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, created_at, updated_at';
+
+function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value && typeof value === 'object' && !Array.isArray(value)); }
+
+async function validateProductConfiguration(client: SupabaseClient, sellerId: string, body: Record<string, unknown>) {
+  const categoryId = typeof body.categoryId === 'string' ? body.categoryId : '';
+  const subcategoryId = typeof body.subcategoryId === 'string' && body.subcategoryId ? body.subcategoryId : null;
+  const conditionId = typeof body.conditionId === 'string' ? body.conditionId : '';
+  const rawSpecs = isRecord(body.specs) ? body.specs : {};
+  const rawImages = Array.isArray(body.images) ? body.images : [];
+  const { data: categories, error: categoryError } = await client.from('marketplace_categories').select('id,name').eq('id', categoryId).eq('is_active', true).maybeSingle();
+  if (categoryError || !categories) return { error: 'Choose an active marketplace category.', status: 400 as const };
+  if (subcategoryId) {
+    const { data: subcategory, error } = await client.from('marketplace_subcategories').select('id').eq('id', subcategoryId).eq('category_id', categoryId).eq('is_active', true).maybeSingle();
+    if (error || !subcategory) return { error: 'Choose a subcategory from the selected category.', status: 400 as const };
+  }
+  const { data: condition, error: conditionError } = await client.from('product_conditions').select('id').eq('id', conditionId).eq('is_active', true).maybeSingle();
+  if (conditionError || !condition) return { error: 'Choose an active product condition.', status: 400 as const };
+  const { data: allAttributes, error: attributeError } = await client.from('product_attributes')
+    .select('id,category_id,subcategory_id,product_condition_id,name,attribute_key,input_type,is_required,validation_rules,product_attribute_options(value,label,is_active)')
+    .eq('is_active', true).order('display_order');
+  if (attributeError) return { error: 'Product specifications are unavailable. Confirm the Phase 1 marketplace migration has been applied.', status: 503 as const };
+  const attributes = (allAttributes || []).filter((attribute) =>
+    (!attribute.category_id || attribute.category_id === categoryId) &&
+    (!attribute.subcategory_id || attribute.subcategory_id === subcategoryId) &&
+    (!attribute.product_condition_id || attribute.product_condition_id === conditionId));
+  const allowedKeys = new Set(attributes.map((attribute) => attribute.attribute_key));
+  if (Object.keys(rawSpecs).some((key) => !allowedKeys.has(key))) return { error: 'Remove specifications that are not available for this product category and condition.', status: 400 as const };
+  const validatedSpecs: Record<string, unknown> = {};
+  for (const attribute of attributes) {
+    const value = rawSpecs[attribute.attribute_key];
+    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+    if (empty) {
+      if (attribute.is_required) return { error: `${attribute.name} is required.`, status: 400 as const };
+      continue;
+    }
+    const rules = isRecord(attribute.validation_rules) ? attribute.validation_rules : {};
+    if (attribute.input_type === 'text' && (typeof value !== 'string' || value.length > Number(rules.maxLength || 500))) return { error: `${attribute.name} must be text under ${Number(rules.maxLength || 500)} characters.`, status: 400 as const };
+    if (attribute.input_type === 'number' && (typeof value !== 'number' || !Number.isFinite(value) || (typeof rules.min === 'number' && value < rules.min) || (typeof rules.max === 'number' && value > rules.max))) return { error: `Enter a valid value for ${attribute.name}.`, status: 400 as const };
+    if (attribute.input_type === 'boolean' && typeof value !== 'boolean') return { error: `Choose yes or no for ${attribute.name}.`, status: 400 as const };
+    const options = (attribute.product_attribute_options || []).filter((option) => option.is_active).map((option) => option.value);
+    if (attribute.input_type === 'select' && (typeof value !== 'string' || !options.includes(value))) return { error: `Choose an available ${attribute.name} option.`, status: 400 as const };
+    if (attribute.input_type === 'multiselect' && (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || !options.includes(item)))) return { error: `Choose available ${attribute.name} options.`, status: 400 as const };
+    validatedSpecs[attribute.attribute_key] = value;
+  }
+  if (rawImages.length < 1 || rawImages.length > 8 || rawImages.some((image) => typeof image !== 'string' || !image.startsWith(`${sellerId}/`) || image.includes('..'))) return { error: 'Upload between 1 and 8 product images using your seller account.', status: 400 as const };
+  const imagePaths = rawImages as string[];
+  const imageUrls = imagePaths.map((path) => client.storage.from('seller-product-images').getPublicUrl(path).data.publicUrl);
+  return { category: categories, subcategoryId, conditionId, specs: validatedSpecs, images: imagePaths, imageUrls };
+}
 
 function readBody(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -23,18 +73,27 @@ async function currentSeller() {
 export async function GET() {
   const seller = await currentSeller();
   if ('response' in seller) return seller.response;
-  const [{ data: products, error: productError }, { data: categories, error: categoryError }] = await Promise.all([
+  const [{ data: products, error: productError }, { data: categories, error: categoryError }, { data: subcategories, error: subcategoryError }, { data: conditions, error: conditionError }, { data: attributes, error: attributeError }] = await Promise.all([
     seller.actor.serviceClient.from('products').select(productFields)
       .eq('seller_profile_id', seller.profile.id)
       .order('created_at', { ascending: false }),
     seller.actor.serviceClient.from('marketplace_categories').select('id, name')
       .eq('is_active', true).order('display_order', { ascending: true }).order('name', { ascending: true }),
+    seller.actor.serviceClient.from('marketplace_subcategories').select('id,category_id,name').eq('is_active', true).order('display_order'),
+    seller.actor.serviceClient.from('product_conditions').select('id,name,description').eq('is_active', true).order('display_order'),
+    seller.actor.serviceClient.from('product_attributes').select('id,category_id,subcategory_id,product_condition_id,name,attribute_key,input_type,is_required,display_order,validation_rules,product_attribute_options(id,value,label,is_active)').eq('is_active', true).order('display_order'),
   ]);
-  if (productError || categoryError) return NextResponse.json({ error: 'Seller marketplace data is not ready. Confirm that the marketplace migrations have been applied.' }, { status: 503 });
+  if (productError || categoryError || subcategoryError || conditionError || attributeError) return NextResponse.json({ error: 'Seller marketplace data is not ready. Confirm that the marketplace migrations have been applied.' }, { status: 503 });
   const { entitlement } = await getSellerEntitlement(seller.actor.serviceClient, seller.profile.id);
   return NextResponse.json({
-    products: products || [],
+    products: (products || []).map((product) => ({
+      ...product,
+      imageUrls: (Array.isArray(product.images) ? product.images : []).map((path) => typeof path === 'string' && path.startsWith(`${seller.profile.id}/`) ? seller.actor.serviceClient.storage.from('seller-product-images').getPublicUrl(path).data.publicUrl : typeof path === 'string' && /^https?:\/\//i.test(path) ? path : '/favicon.svg'),
+    })),
     categories: categories || [],
+    subcategories: subcategories || [],
+    conditions: conditions || [],
+    attributes: attributes || [],
     sellerStatus: seller.profile.status,
     entitlement,
   }, { headers: { 'Cache-Control': 'no-store' } });
@@ -59,32 +118,30 @@ export async function POST(request: NextRequest) {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const price = typeof body.price === 'number' ? body.price : Number(body.price);
-  const categoryId = typeof body.categoryId === 'string' ? body.categoryId.trim() : '';
-  if (name.length < 2 || name.length > 300 || description.length > 4000 || !Number.isFinite(price) || price <= 0 || !categoryId) {
-    return NextResponse.json({ error: 'Add a product name, category, positive price, and description under 4,000 characters.' }, { status: 400 });
+  if (name.length < 2 || name.length > 300 || description.trim().length < 10 || description.length > 4000 || !Number.isFinite(price) || price <= 0) {
+    return NextResponse.json({ error: 'Add a product name, positive price, and description between 10 and 4,000 characters.' }, { status: 400 });
   }
-
-  const { data: category, error: categoryError } = await seller.actor.serviceClient.from('marketplace_categories')
-    .select('id, name').eq('id', categoryId).eq('is_active', true).maybeSingle();
-  if (categoryError) return NextResponse.json({ error: 'Could not validate the selected category.' }, { status: 500 });
-  if (!category) return NextResponse.json({ error: 'Choose an active marketplace category.' }, { status: 400 });
+  const configured = await validateProductConfiguration(seller.actor.serviceClient, seller.profile.id, body);
+  if ('error' in configured) return NextResponse.json({ error: configured.error }, { status: configured.status });
 
   const { data, error } = await seller.actor.serviceClient.from('products').insert({
     id: `seller-${randomUUID()}`,
     seller_profile_id: seller.profile.id,
-    category_id: category.id,
-    category: category.name,
+    category_id: configured.category.id,
+    subcategory_id: configured.subcategoryId,
+    product_condition_id: configured.conditionId,
+    category: configured.category.name,
     name,
     description,
     price,
     original_price: null,
     wholesale_price: null,
     wholesale_min_qty: 3,
-    image: '/favicon.svg',
-    images: ['/favicon.svg'],
+    image: configured.imageUrls[0] || '/favicon.svg',
+    images: configured.images,
+    specs: configured.specs,
     in_stock: false,
     stock_count: 0,
-    specs: {},
     is_featured: false,
     is_bundle_eligible: false,
     is_active: false,
@@ -134,17 +191,14 @@ export async function PATCH(request: NextRequest) {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const price = typeof body.price === 'number' ? body.price : Number(body.price);
-  const categoryId = typeof body.categoryId === 'string' ? body.categoryId.trim() : '';
-  if (name.length < 2 || name.length > 300 || description.length > 4000 || !Number.isFinite(price) || price <= 0 || !categoryId) {
-    return NextResponse.json({ error: 'Add a product name, category, positive price, and description under 4,000 characters.' }, { status: 400 });
+  if (name.length < 2 || name.length > 300 || description.trim().length < 10 || description.length > 4000 || !Number.isFinite(price) || price <= 0) {
+    return NextResponse.json({ error: 'Add a product name, positive price, and description between 10 and 4,000 characters.' }, { status: 400 });
   }
-  const { data: category, error: categoryError } = await seller.actor.serviceClient.from('marketplace_categories')
-    .select('id, name').eq('id', categoryId).eq('is_active', true).maybeSingle();
-  if (categoryError) return NextResponse.json({ error: 'Could not validate the selected category.' }, { status: 500 });
-  if (!category) return NextResponse.json({ error: 'Choose an active marketplace category.' }, { status: 400 });
+  const configured = await validateProductConfiguration(seller.actor.serviceClient, seller.profile.id, body);
+  if ('error' in configured) return NextResponse.json({ error: configured.error }, { status: configured.status });
 
   const { data, error } = await seller.actor.serviceClient.from('products')
-    .update({ name, description, price, category_id: category.id, category: category.name, listing_status: 'draft', is_active: false, updated_at: new Date().toISOString() })
+    .update({ name, description, price, category_id: configured.category.id, subcategory_id: configured.subcategoryId, product_condition_id: configured.conditionId, category: configured.category.name, specs: configured.specs, images: configured.images, image: configured.imageUrls[0] || '/favicon.svg', listing_status: 'draft', is_active: false, updated_at: new Date().toISOString() })
     .eq('id', id).eq('seller_profile_id', seller.profile.id).eq('listing_status', current.listing_status)
     .select(productFields).maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not save product changes.' }, { status: 500 });
