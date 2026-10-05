@@ -52,6 +52,7 @@ export async function PATCH(request: NextRequest) {
   const { data, error } = await supabase.from('products').update({
     listing_status: nextStatus,
     is_active: action === 'approve',
+    ...(action === 'approve' ? { in_stock: true } : {}),
     moderation_notes: action === 'approve' ? '' : notes,
     reviewed_at: now,
     reviewed_by: process.env.ADMIN_USERNAME || 'admin',

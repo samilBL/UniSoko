@@ -23,7 +23,7 @@ import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 function getPostLoginPath() {
   const requestedPath = new URLSearchParams(window.location.search).get('next');
-  if (!requestedPath || !requestedPath.startsWith('/') || requestedPath.startsWith('//')) return '/winga/dashboard';
+  if (!requestedPath || !requestedPath.startsWith('/winga/') || requestedPath.startsWith('//')) return '/winga/dashboard';
   const destination = new URL(requestedPath, window.location.origin);
   return destination.origin === window.location.origin ? `${destination.pathname}${destination.search}${destination.hash}` : '/winga/dashboard';
 }
@@ -200,13 +200,13 @@ export default function WingaLoginPage() {
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
               <ShieldCheck className="h-3.5 w-3.5" />
-              <span>UniSoko Account</span>
+              <span>Winga Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              UniSoko Account Sign In
+              Winga Sign In
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Sign in once to continue to your Winga or seller account.
+              Sign in to your Campus Winga account and dashboard.
             </p>
           </div>
 

@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, UserPlus, Share2, Wallet, CheckCircle2 } from 'lucide-react';
-import { MOCK_WINGA_AGENTS, formatTZS } from '@/lib/mockData';
 import { openStudentGuide } from '@/lib/studentGuide';
 
 export default function WingaRecruitmentBanner() {
@@ -24,8 +23,8 @@ export default function WingaRecruitmentBanner() {
     },
     {
       step: '03',
-      title: 'Earn 5% Instant Commission',
-      description: 'When students buy with your code, your commission is credited instantly and paid to M-Pesa / Tigo Pesa.',
+      title: 'Earn on approved sales',
+      description: 'Earn 5% on referred UniSoko products, plus seller-selected rates on products whose sellers enable Winga campaigns. Commissions become payable after verified payment and delivery.',
       icon: <Wallet className="h-6 w-6 text-amber-400" />,
       highlight: 'Same-day cashout',
     },
@@ -52,7 +51,7 @@ export default function WingaRecruitmentBanner() {
               </span>
             </h2>
             <p className="mt-2 text-sm text-slate-300 max-w-xl">
-              Join from any Tanzanian university. Outside Mbeya, manage a local campus hub, receive bulk stock from UniSoko, coordinate in-person delivery, and earn commission on successful sales.
+              Join from any Tanzanian university. Promote UniSoko products and seller-enabled campaigns, coordinate campus hand-offs, and track payable commissions in your Winga portal.
             </p>
           </div>
 
@@ -122,7 +121,7 @@ export default function WingaRecruitmentBanner() {
                 Active Wingas in Mbeya:
               </p>
               <p className="text-[11px] text-slate-400">
-                {MOCK_WINGA_AGENTS[0].fullName} ({MOCK_WINGA_AGENTS[0].promoCode}) earned {formatTZS(MOCK_WINGA_AGENTS[0].totalEarnings)} this semester!
+                Approved Wingas share UniSoko products and seller-enabled campaigns.
               </p>
             </div>
           </div>

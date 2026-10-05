@@ -11,7 +11,7 @@ export default async function SellerDashboardPage() {
   const authClient = await getSupabaseServer();
   if (!authClient) return <Unavailable />;
   const { data: { user }, error } = await authClient.auth.getUser();
-  if (error || !user || !user.email_confirmed_at) redirect('/winga/login?next=%2Fseller%2Fdashboard');
+  if (error || !user || !user.email_confirmed_at) redirect('/seller/login');
   const serviceClient = getSupabaseAdmin();
   if (!serviceClient) return <Unavailable />;
   const { data: profile, error: profileError } = await getSellerProfile(serviceClient, user.id);

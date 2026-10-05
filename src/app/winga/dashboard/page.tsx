@@ -2,8 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CheckCircle2, Clock3, ShieldCheck, XCircle } from 'lucide-react';
 import Header from '@/components/Header';
-import WingaSignOutButton from '@/components/WingaSignOutButton';
+import AccountSignOutButton from '@/components/AccountSignOutButton';
 import WingaPasswordManager from '@/components/WingaPasswordManager';
+import WingaMarketplaceEarnings from '@/components/WingaMarketplaceEarnings';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -43,7 +44,7 @@ export default async function WingaAgentDashboardPage() {
             <p className="text-xs font-bold uppercase tracking-wider text-indigo-600">UniSoko Winga</p>
             <h1 className="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">Agent portal</h1>
           </div>
-          <WingaSignOutButton />
+          <AccountSignOutButton returnTo="/winga/login" />
         </div>
 
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8">
@@ -82,7 +83,9 @@ export default async function WingaAgentDashboardPage() {
           <WingaPasswordManager />
         </section>
 
-        <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga profile is linked to your verified email account. Wallet, commission, KYC, and payout details will appear here only when connected to authoritative UniSoko records.</p>
+        {isApproved && <WingaMarketplaceEarnings />}
+
+        <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga portal is separate from seller accounts. Commission balances reflect orders marked payment verified and delivered; money transfers are still processed by UniSoko outside this portal.</p>
         <Link href="/" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-800">Return to UniSoko</Link>
       </main>
     </div>

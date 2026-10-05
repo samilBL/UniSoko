@@ -9,9 +9,10 @@ export default function SellerLandingPage() {
         <section className="overflow-hidden rounded-3xl bg-slate-950 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-14">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">UniSoko Marketplace</p>
           <h1 className="mt-4 max-w-3xl text-3xl font-black tracking-tight sm:text-5xl">Build your student shop on campus.</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Apply with your existing UniSoko account. Our team reviews seller applications before activating a shop. Approved sellers can prepare private product drafts while marketplace tools are introduced in stages.</p>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Apply through the seller portal. Our team reviews applications before activating a shop. Approved sellers can list products, offer Winga commissions, and open group buys from their dashboard.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/seller/apply" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-400 px-6 text-sm font-extrabold text-slate-950 transition hover:bg-emerald-300">Apply to become a seller</Link>
+            <Link href="/seller/login" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-6 text-sm font-bold text-white transition hover:bg-white/10">Seller sign in</Link>
             <Link href="/seller/dashboard" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-6 text-sm font-bold text-white transition hover:bg-white/10">Open seller dashboard</Link>
           </div>
         </section>

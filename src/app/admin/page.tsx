@@ -694,6 +694,7 @@ export default function AdminPanelPage() {
           <a href="/admin/sellers" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Seller accounts</a>
           <a href="/admin/subscriptions" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Plans & payments</a>
           <a href="/admin/product-moderation" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Product approvals</a>
+          <a href="/admin/winga-commissions" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Winga commissions</a>
         </nav>
         {/* Admin Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl">

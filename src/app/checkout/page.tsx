@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { useStore } from '@/context/StoreContext';
@@ -137,6 +137,16 @@ export default function CheckoutPage() {
       setPromoError('Invalid promo code. Try WINGA-SAM or WINGA-MARY.');
     }
   };
+
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      const code = localStorage.getItem('unisoko_winga_referral')?.trim().toUpperCase();
+      if (!code || !/^WINGA-[A-F0-9]{6}$/.test(code)) return;
+      setPromoInput(code);
+      setAppliedPromo({ code, agentName: 'Campus Student Ambassador', university: safeCampus.shortCode || 'Uni', discountAmount: 5000 });
+      setPromoSuccess(`Winga code ${code} was added from your shared product link. UniSoko verifies codes when an order is submitted.`);
+    });
+  }, [safeCampus.shortCode]);
 
   const handleCopyTill = (tillToCopy: string = paymentMethods[0].tillNumber) => {
     navigator.clipboard.writeText(tillToCopy);
@@ -285,6 +295,7 @@ export default function CheckoutPage() {
         totalAmount: result.totalAmount as number,
       };
       setTrackingToken(result.trackingToken);
+      localStorage.removeItem('unisoko_winga_referral');
       clearCart();
       setCompletedOrder(acceptedOrder);
       orderCreated = true;

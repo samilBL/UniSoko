@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
@@ -28,6 +28,7 @@ import ProductCard from '@/components/ProductCard';
 import { getProductSpecEntries } from '@/lib/productSpecs';
 import TradeInModal from '@/components/TradeInModal';
 import type { TradeInQuoteAttachment } from '@/lib/types';
+import type { Product } from '@/lib/types';
 
 export default function ProductDetailsPage() {
   const params = useParams();
@@ -35,7 +36,8 @@ export default function ProductDetailsPage() {
   const { addToCart, selectedCampus, tradeInQuote, setTradeInQuote } = useStore();
 
   const productId = params?.id as string;
-  const product = MOCK_PRODUCTS.find((p) => p.id === productId);
+  const [remoteProduct, setRemoteProduct] = useState<Product | null>(null);
+  const product = MOCK_PRODUCTS.find((p) => p.id === productId) || remoteProduct;
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -43,6 +45,17 @@ export default function ProductDetailsPage() {
   const [isStartingGroupBuy, setIsStartingGroupBuy] = useState(false);
   const [groupBuyError, setGroupBuyError] = useState('');
   const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
+
+  useEffect(() => {
+    const referral = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase();
+    if (referral && /^WINGA-[A-F0-9]{6}$/.test(referral)) localStorage.setItem('unisoko_winga_referral', referral);
+    if (MOCK_PRODUCTS.some((item) => item.id === productId)) return;
+    let active = true;
+    fetch('/api/products', { cache: 'no-store' }).then(async (response) => response.ok ? await response.json() as { products?: Product[] } : null)
+      .then((result) => { if (active) setRemoteProduct(result?.products?.find((item) => item.id === productId) || null); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [productId]);
 
   if (!product) {
     return (
@@ -392,13 +405,14 @@ export default function ProductDetailsPage() {
                     <span>Order via WhatsApp</span>
                   </button>
                 </div>
-                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
+                {(!product.sellerProfileId || product.sellerGroupBuyEnabled) && <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div><p className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><Users className="h-4 w-4 text-indigo-600" />Start Group-Buy (Split Wholesale)</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Share a 24-hour invite. {minWholesale} participants unlock this product’s wholesale rate.</p></div>
                     <button onClick={() => void handleStartGroupBuy()} disabled={isStartingGroupBuy} className="min-h-11 shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isStartingGroupBuy ? 'Starting…' : 'Start group'}</button>
                   </div>
-                  {groupBuyError && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{groupBuyError}</p>}
-                </div>
+                {product.sellerProfileId && <p className="mt-2 text-xs text-slate-500">Sold by {product.sellerDisplayName || 'Marketplace seller'}</p>}
+                {groupBuyError && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{groupBuyError}</p>}
+                </div>}
               </div>
             </div>
 

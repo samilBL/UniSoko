@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, submitted_at, moderation_notes, reviewed_at, created_at, updated_at';
+const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, submitted_at, moderation_notes, reviewed_at, created_at, updated_at, seller_winga_campaign_enabled, seller_winga_commission_rate, seller_group_buy_enabled, seller_wholesale_price, seller_group_buy_minimum';
 
 function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value && typeof value === 'object' && !Array.isArray(value)); }
 

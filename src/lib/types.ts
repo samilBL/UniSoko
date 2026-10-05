@@ -56,6 +56,11 @@ export interface Product {
   warrantyDays?: number;
   minWholesaleQty?: number;
   featured?: boolean;
+  sellerProfileId?: string;
+  sellerDisplayName?: string;
+  sellerWingaCampaignEnabled?: boolean;
+  sellerWingaCommissionRate?: number;
+  sellerGroupBuyEnabled?: boolean;
 }
 
 export interface OrderItem {
@@ -65,6 +70,8 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  sellerProfileId?: string | null;
+  wingaCommissionRate?: number;
 }
 
 export interface Order {

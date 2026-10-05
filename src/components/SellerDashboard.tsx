@@ -3,7 +3,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, ClipboardList, Package, Pencil, Save, ShieldCheck, Store } from 'lucide-react';
 import Link from 'next/link';
-import WingaSignOutButton from '@/components/WingaSignOutButton';
+import AccountSignOutButton from '@/components/AccountSignOutButton';
 
 type Profile = {
   id: string;
@@ -17,7 +17,7 @@ type Profile = {
   created_at: string;
   updated_at: string;
 };
-type SellerProduct = { id: string; name: string; category: string; category_id: string | null; subcategory_id: string | null; product_condition_id: string | null; price: number | string; description: string; specs: Record<string, unknown>; images: string[]; imageUrls: string[]; listing_status: string; submitted_at: string | null; moderation_notes: string; created_at: string; updated_at: string };
+type SellerProduct = { id: string; name: string; category: string; category_id: string | null; subcategory_id: string | null; product_condition_id: string | null; price: number | string; description: string; specs: Record<string, unknown>; images: string[]; imageUrls: string[]; listing_status: string; submitted_at: string | null; moderation_notes: string; created_at: string; updated_at: string; seller_winga_campaign_enabled?: boolean; seller_winga_commission_rate?: number | string; seller_group_buy_enabled?: boolean; seller_wholesale_price?: number | string | null; seller_group_buy_minimum?: number };
 type Category = { id: string; name: string };
 type Subcategory = { id: string; category_id: string; name: string };
 type Condition = { id: string; name: string; description: string };
@@ -230,7 +230,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     <main className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 sm:py-10">
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
         <div><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Seller dashboard</p><h1 className="mt-1 text-2xl font-black sm:text-3xl">Welcome, {profile.display_name}</h1><p className="mt-1 text-xs text-slate-500">{email}</p></div>
-        <WingaSignOutButton />
+        <AccountSignOutButton returnTo="/seller/login" />
       </div>
       <nav aria-label="Seller dashboard sections" className="mt-5 flex gap-2 overflow-x-auto border-b border-slate-200 pb-2 dark:border-slate-800">
         {([['overview', 'Overview'], ['products', 'Products'], ['profile', 'Seller profile']] as const).map(([key, label]) => <button key={key} type="button" onClick={() => setTab(key)} className={`min-h-10 shrink-0 rounded-xl px-4 text-xs font-bold ${tab === key ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}>{label}</button>)}
@@ -253,6 +253,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
           <StatCard icon={<Package className="h-5 w-5" />} label="Product drafts" value={String(counts.draft || 0)} />
           <StatCard icon={<ClipboardList className="h-5 w-5" />} label="Products total" value={String(products.length)} />
         </section>
+        {profile.status === 'approved' && <SellerCommissionSummary />}
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-indigo-100 bg-indigo-50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30"><h2 className="font-bold">Subscription</h2>{subscription ? <><p className="mt-2 text-sm font-semibold capitalize">{String(subscription.plan_snapshot.name || subscription.status)} · {subscription.status.replaceAll('_', ' ')}</p><p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{subscription.expires_at ? `${Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - currentTime) / 86400000))} days remaining · Expires ${new Date(subscription.expires_at).toLocaleDateString()}` : 'No expiry date'}</p>{subscription.expires_at && (new Date(subscription.expires_at).getTime() - currentTime) < 7 * 86400000 && <p className="mt-2 text-xs font-bold text-amber-700">Your plan expires soon. Choose a plan below to continue.</p>}</> : <p className="mt-2 text-sm leading-6">{profile.status === 'approved' ? 'Your trial has expired or is not active. Choose a paid plan to continue.' : 'Subscription access starts after your seller application is approved.'}</p>}
             {profile.status === 'approved' && plans.filter((plan) => plan.plan_type === 'paid').map((plan) => { const currentKeys = Array.isArray(subscription?.plan_snapshot.features) ? (subscription?.plan_snapshot.features as { key?: string; enabled?: boolean }[]).filter((feature) => feature.enabled).map((feature) => feature.key) : []; const locked = (plan.subscription_plan_features || []).filter((feature) => feature.is_enabled && !currentKeys.includes(feature.feature_key)); return locked.length ? <p key={plan.id} className="mt-2 text-xs text-slate-600 dark:text-slate-300"><b>{plan.name} unlocks:</b> {locked.map((feature) => feature.label).join(', ')}</p> : null; })}
@@ -279,7 +280,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
           </form> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">Your application must be approved before you can create product drafts.</p>}
         </section>
         <section className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900" aria-label="Seller products">
-          {visibleProducts.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No products in this status.</p> : visibleProducts.map((product) => <article key={product.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h3 className="truncate text-sm font-bold">{product.name}</h3><p className="mt-1 text-xs text-slate-500">{product.category}{product.subcategory_id ? ` · ${subcategories.find((subcategory) => subcategory.id === product.subcategory_id)?.name || ''}` : ''} · TZS {Number(product.price).toLocaleString('en-TZ')} · <span className="capitalize">{product.listing_status.replaceAll('_', ' ')}</span></p><p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{product.description}</p>{product.moderation_notes && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">Admin feedback: {product.moderation_notes}</p>}</div><div className="flex shrink-0 gap-2">{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void submitProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">Submit for review</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" onClick={() => startEdit(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold"><Pencil className="h-3.5 w-3.5" />Edit</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void archiveProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button>}</div></article>)}
+        {visibleProducts.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No products in this status.</p> : visibleProducts.map((product) => <article key={product.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h3 className="truncate text-sm font-bold">{product.name}</h3><p className="mt-1 text-xs text-slate-500">{product.category}{product.subcategory_id ? ` · ${subcategories.find((subcategory) => subcategory.id === product.subcategory_id)?.name || ''}` : ''} · TZS {Number(product.price).toLocaleString('en-TZ')} · <span className="capitalize">{product.listing_status.replaceAll('_', ' ')}</span></p><p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{product.description}</p>{product.listing_status === 'approved' && <SellerPromotionSettings product={product} onSaved={() => void load().catch(() => undefined)} />}{product.moderation_notes && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">Admin feedback: {product.moderation_notes}</p>}</div><div className="flex shrink-0 gap-2">{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void submitProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">Submit for review</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" onClick={() => startEdit(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold"><Pencil className="h-3.5 w-3.5" />Edit</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void archiveProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button>}</div></article>)}
         </section>
       </div>}
 
@@ -292,6 +293,35 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
       </form>}
     </main>
   );
+}
+
+function SellerPromotionSettings({ product, onSaved }: { product: SellerProduct; onSaved: () => void }) {
+  const [wingaEnabled, setWingaEnabled] = useState(Boolean(product.seller_winga_campaign_enabled));
+  const [rate, setRate] = useState(Number(product.seller_winga_commission_rate || 0.05) * 100);
+  const [groupBuyEnabled, setGroupBuyEnabled] = useState(Boolean(product.seller_group_buy_enabled));
+  const [wholesalePrice, setWholesalePrice] = useState(Number(product.seller_wholesale_price || 0));
+  const [minimum, setMinimum] = useState(Number(product.seller_group_buy_minimum || 3));
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const save = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(''); setMessage('');
+    try {
+      const response = await fetch('/api/seller/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: product.id, wingaEnabled, wingaRatePercent: rate, groupBuyEnabled, wholesalePrice, groupBuyMinimum: minimum }) });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error || 'Could not save promotion settings.');
+      setMessage('Promotion settings saved.'); onSaved();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not save promotion settings.'); }
+    finally { setBusy(false); }
+  };
+  return <form onSubmit={save} className="mt-3 max-w-2xl rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/20"><p className="text-xs font-bold">Promote this product</p><div className="mt-2 grid gap-3 sm:grid-cols-2"><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={wingaEnabled} onChange={(e) => setWingaEnabled(e.target.checked)}/><span>Allow Campus Wingas to promote this product and earn a seller-funded commission.</span></label>{wingaEnabled && <label className="text-xs font-semibold">Winga commission rate (%)<input type="number" min="1" max="30" step="0.5" required value={rate} onChange={(e) => setRate(Number(e.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950"/></label>}<label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={groupBuyEnabled} onChange={(e) => setGroupBuyEnabled(e.target.checked)}/><span>Offer this product through group buying.</span></label>{groupBuyEnabled && <><label className="text-xs font-semibold">Group price per unit (TZS)<input type="number" min="1" max={Number(product.price) - 1} required value={wholesalePrice || ''} onChange={(e) => setWholesalePrice(Number(e.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950"/></label><label className="text-xs font-semibold">Students needed<input type="number" min="2" max="100" required value={minimum} onChange={(e) => setMinimum(Number(e.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950"/></label></>}</div><p className="mt-2 text-[11px] text-slate-500">Commission is calculated on the referred item amount after discount and becomes payable after payment verification and delivery. UniSoko records settlement for manual payment.</p>{error && <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p>}{message && <p role="status" className="mt-2 text-xs text-emerald-700">{message}</p>}<button disabled={busy} className="mt-3 min-h-9 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save promotion settings'}</button></form>;
+}
+
+function SellerCommissionSummary() {
+  const [summary, setSummary] = useState<{ payable: number; paid: number } | null>(null);
+  useEffect(() => { void Promise.resolve().then(async () => { const response = await fetch('/api/seller/marketing', { cache: 'no-store' }); if (response.ok) { const result = await response.json() as { totals?: { payable: number; paid: number } }; setSummary(result.totals || null); } }).catch(() => undefined); }, []);
+  if (!summary) return null;
+  return <section className="grid gap-3 sm:grid-cols-2"><StatCard icon={<Store className="h-5 w-5"/>} label="Winga commissions payable" value={`TZS ${summary.payable.toLocaleString('en-TZ')}`}/><StatCard icon={<ShieldCheck className="h-5 w-5"/>} label="Winga commissions paid" value={`TZS ${summary.paid.toLocaleString('en-TZ')}`}/></section>;
 }
 
 function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {

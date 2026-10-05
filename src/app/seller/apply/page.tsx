@@ -89,8 +89,8 @@ export default function SellerApplyPage() {
 
           {loading ? <p className="mt-8 text-sm text-slate-500" role="status">Checking your account…</p> : !email ? (
             <div className="mt-8 rounded-2xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-900 dark:bg-indigo-950/40">
-              <h2 className="font-bold">Sign in to apply</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Continue with the same email account you use for UniSoko.</p>
-              <Link href="/winga/login?next=%2Fseller%2Fapply" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700">Sign in to UniSoko<ArrowRight className="h-4 w-4" /></Link>
+              <h2 className="font-bold">Sign in to apply</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Use the seller portal to verify your email and submit your shop application.</p>
+              <Link href="/seller/login" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700">Sign in to seller portal<ArrowRight className="h-4 w-4" /></Link>
             </div>
           ) : applicationPending ? (
             <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950/40">
@@ -111,7 +111,7 @@ export default function SellerApplyPage() {
                 <label className="text-xs font-bold">Buyer contact phone (optional)<input className={inputClass} maxLength={32} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+255…" autoComplete="tel" /></label>
               </div>
               <label className="block text-xs font-bold">About your shop (optional)<textarea className={`${inputClass} min-h-28 resize-y py-3`} maxLength={2000} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="What do you plan to sell to students?" /></label>
-              {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}{error.startsWith('Sign in') && <Link href="/winga/login?next=%2Fseller%2Fapply" className="ml-1 font-bold underline">Sign in</Link>}</p>}
+              {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}{error.startsWith('Sign in') && <Link href="/seller/login" className="ml-1 font-bold underline">Sign in</Link>}</p>}
               <button type="submit" disabled={saving} className="min-h-12 w-full rounded-xl bg-emerald-600 px-5 text-sm font-extrabold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60 sm:w-auto">{saving ? 'Submitting…' : rejected ? 'Resubmit application' : 'Submit seller application'}</button>
             </form>
           )}

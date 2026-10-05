@@ -3,12 +3,13 @@ import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_UNIVERSITIES, MOCK_PRODUCTS } from '@/lib/mockData';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import type { DeliverySpotType, OrderItem } from '@/lib/types';
+import type { DeliverySpotType, OrderItem, Product } from '@/lib/types';
 import { STUDENT_BUNDLES } from '@/lib/studentBundles';
 
 const DELIVERY_SPOTS = new Set<DeliverySpotType>(['Hostel', 'Landmark', 'Off-Campus', 'Courier']);
 const MAX_TEXT_LENGTH = 500;
 const WINGA_DISCOUNT = 5000;
+type SellerOrderSettings = { seller_profile_id: string; seller_wholesale_price: number | string | null; seller_group_buy_minimum: number | null; seller_winga_campaign_enabled: boolean; seller_winga_commission_rate: number | string };
 
 function readText(value: unknown, maxLength = MAX_TEXT_LENGTH) {
   return typeof value === 'string' && value.trim() && value.length <= maxLength ? value.trim() : null;
@@ -66,8 +67,22 @@ export async function POST(request: NextRequest) {
   const items: OrderItem[] = [];
   for (const [productId, quantity] of quantities) {
     if (quantity > 100) return NextResponse.json({ error: 'Item quantity exceeds the checkout limit.' }, { status: 400 });
-    const product = MOCK_PRODUCTS.find((candidate) => candidate.id === productId)
+    let product = MOCK_PRODUCTS.find((candidate) => candidate.id === productId)
       || STUDENT_BUNDLES.find((candidate) => candidate.id === productId);
+    let sellerSettings: SellerOrderSettings | null = null;
+    if (!product) {
+      const { data: sellerRow, error: sellerProductError } = await supabase.from('products')
+        .select('id,name,description,category,price,seller_profile_id,seller_wholesale_price,seller_group_buy_minimum,seller_winga_campaign_enabled,seller_winga_commission_rate,in_stock,listing_status,is_active')
+        .eq('id', productId).not('seller_profile_id', 'is', null).eq('listing_status', 'approved').eq('is_active', true).eq('in_stock', true).maybeSingle();
+      if (sellerProductError) return NextResponse.json({ error: 'Seller product checkout is unavailable. Apply the latest marketplace migration.' }, { status: 503 });
+      if (sellerRow?.seller_profile_id) {
+        const { data: seller } = await supabase.from('seller_profiles').select('status').eq('id', sellerRow.seller_profile_id).maybeSingle();
+        if (seller?.status === 'approved') {
+          sellerSettings = sellerRow as SellerOrderSettings;
+          product = { id: sellerRow.id, title: sellerRow.name, description: sellerRow.description || '', category: sellerRow.category as Product['category'], priceRetail: Number(sellerRow.price), priceWholesale: Number(sellerRow.seller_wholesale_price || sellerRow.price), condition: 'Brand New', stockStatus: 'In Stock', images: [], minWholesaleQty: Number(sellerRow.seller_group_buy_minimum || 3) };
+        }
+      }
+    }
     if (!product) return NextResponse.json({ error: 'A product in your cart is no longer available.' }, { status: 409 });
     if (product.stockStatus === 'Coming Soon') return NextResponse.json({ error: `${product.title} is not currently available.` }, { status: 409 });
     const minimumWholesaleQuantity = product.minWholesaleQty || 3;
@@ -79,10 +94,15 @@ export async function POST(request: NextRequest) {
       quantity,
       unitPrice,
       lineTotal: unitPrice * quantity,
+      sellerProfileId: sellerSettings?.seller_profile_id || null,
+      wingaCommissionRate: sellerSettings ? sellerSettings.seller_winga_campaign_enabled ? Number(sellerSettings.seller_winga_commission_rate) : 0 : 0.05,
     });
   }
 
   const subtotalAmount = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  if (wingaCodeUsed && items.some((item) => item.sellerProfileId && !(Number(item.wingaCommissionRate) > 0))) {
+    return NextResponse.json({ error: 'A Winga code can only be used with seller products whose owners have enabled a promotion campaign.' }, { status: 400 });
+  }
   const shippingFee = campus.isMbeya ? 0 : 7000;
   let promoDiscount = 0;
   if (wingaCodeUsed) {
@@ -170,6 +190,8 @@ export async function POST(request: NextRequest) {
     quantity: item.quantity,
     unit_price: item.unitPrice,
     line_total: item.lineTotal,
+    seller_profile_id: item.sellerProfileId || null,
+    winga_commission_rate: item.wingaCommissionRate ?? 0.05,
   })));
   if (itemError) {
     await supabase.from('orders').delete().eq('id', orderId);

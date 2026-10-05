@@ -143,6 +143,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setHasHydrated(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    let active = true;
+    fetch('/api/products', { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) return null;
+      return await response.json() as { products?: Product[] };
+    }).then((result) => {
+      if (!active || !result?.products) return;
+      const sellerProducts = result.products.filter((product) => Boolean(product.sellerProfileId));
+      if (sellerProducts.length) setProducts((current) => [...current.filter((product) => !sellerProducts.some((sellerProduct) => sellerProduct.id === product.id)), ...sellerProducts]);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [hasHydrated]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
