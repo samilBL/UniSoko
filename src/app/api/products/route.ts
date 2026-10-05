@@ -16,6 +16,7 @@ interface ProductRow {
   specs: unknown;
   wholesale_min_qty: number | null;
   is_featured: boolean;
+  seller_profile_id?: string | null;
 }
 
 export async function GET() {
@@ -35,7 +36,16 @@ export async function GET() {
     return NextResponse.json({ products: MOCK_PRODUCTS, source: 'fallback' });
   }
 
-  const formatted: Product[] = data.map((p: ProductRow) => ({
+  const sellerIds = [...new Set(data.map((product) => product.seller_profile_id).filter((id): id is string => Boolean(id)))];
+  let visibleRows = data as ProductRow[];
+  if (sellerIds.length) {
+    const { data: approvedSellers, error: sellerError } = await supabase.from('seller_profiles').select('id').in('id', sellerIds).eq('status', 'approved');
+    if (sellerError) return NextResponse.json({ products: MOCK_PRODUCTS, source: 'fallback' });
+    const approvedIds = new Set((approvedSellers || []).map((seller) => seller.id));
+    visibleRows = visibleRows.filter((product) => !product.seller_profile_id || approvedIds.has(product.seller_profile_id));
+  }
+
+  const formatted: Product[] = visibleRows.map((p: ProductRow) => ({
     id: p.id,
     title: p.name,
     description: p.description || '',

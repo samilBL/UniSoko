@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, created_at, updated_at';
+const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, submitted_at, moderation_notes, reviewed_at, created_at, updated_at';
 
 function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value && typeof value === 'object' && !Array.isArray(value)); }
 
@@ -168,7 +168,7 @@ export async function PATCH(request: NextRequest) {
   if (!id || id.length > 120) return NextResponse.json({ error: 'A valid product ID is required.' }, { status: 400 });
 
   const { data: current, error: lookupError } = await seller.actor.serviceClient.from('products')
-    .select('id, listing_status')
+    .select('id, name, category_id, subcategory_id, product_condition_id, price, description, specs, images, listing_status')
     .eq('id', id)
     .eq('seller_profile_id', seller.profile.id)
     .maybeSingle();
@@ -184,6 +184,24 @@ export async function PATCH(request: NextRequest) {
       .eq('id', id).eq('seller_profile_id', seller.profile.id).eq('listing_status', current.listing_status)
       .select(productFields).maybeSingle();
     if (error) return NextResponse.json({ error: 'Could not archive this draft.' }, { status: 500 });
+    if (!data) return NextResponse.json({ error: 'Product status changed. Refresh and try again.' }, { status: 409 });
+    return NextResponse.json({ product: data }, { headers: { 'Cache-Control': 'no-store' } });
+  }
+
+  if (body.action === 'submit') {
+    const description = typeof current.description === 'string' ? current.description.trim() : '';
+    if (current.name.trim().length < 2 || description.length < 10 || description.length > 4000 || Number(current.price) <= 0) return NextResponse.json({ error: 'Complete the product name, price, and description before submitting.' }, { status: 400 });
+    const configured = await validateProductConfiguration(seller.actor.serviceClient, seller.profile.id, {
+      categoryId: current.category_id,
+      subcategoryId: current.subcategory_id,
+      conditionId: current.product_condition_id,
+      specs: current.specs,
+      images: current.images,
+    });
+    if ('error' in configured) return NextResponse.json({ error: configured.error }, { status: configured.status });
+    const { data, error } = await seller.actor.serviceClient.from('products').update({ listing_status: 'pending_approval', submitted_at: new Date().toISOString(), reviewed_at: null, reviewed_by: null, approved_at: null, approved_by: null, is_active: false, moderation_notes: '', updated_at: new Date().toISOString() })
+      .eq('id', id).eq('seller_profile_id', seller.profile.id).eq('listing_status', current.listing_status).select(productFields).maybeSingle();
+    if (error) return NextResponse.json({ error: 'Could not submit this product for review.' }, { status: 500 });
     if (!data) return NextResponse.json({ error: 'Product status changed. Refresh and try again.' }, { status: 409 });
     return NextResponse.json({ product: data }, { headers: { 'Cache-Control': 'no-store' } });
   }

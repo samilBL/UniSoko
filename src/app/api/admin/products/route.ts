@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from('products')
     .select('*')
+    .is('seller_profile_id', null)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -51,9 +52,13 @@ export async function POST(req: NextRequest) {
   }
 
   const id = (typeof body.id === 'string' ? body.id.trim() : '') || `prod-${Date.now()}`;
+  const { data: existing, error: existingError } = await supabase.from('products').select('seller_profile_id').eq('id', id).maybeSingle();
+  if (existingError) return NextResponse.json({ error: 'Could not verify product ownership.' }, { status: 503 });
+  if (existing?.seller_profile_id) return NextResponse.json({ error: 'Seller listings must be reviewed in the product moderation queue.' }, { status: 409 });
   const image = typeof body.image === 'string' ? body.image : '/images/products/generic.webp';
   const newProduct = {
     id,
+    seller_profile_id: null,
     name: String(body.name).trim().slice(0, 300),
     category: String(body.category).trim().slice(0, 100),
     price: Number(body.price),
@@ -116,6 +121,7 @@ export async function PATCH(req: NextRequest) {
     .from('products')
     .update(updates)
     .eq('id', body.id.trim())
+    .is('seller_profile_id', null)
     .select()
     .single();
 
