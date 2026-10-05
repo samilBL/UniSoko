@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     is_featured: Boolean(body.isFeatured),
     is_bundle_eligible: body.isBundleEligible !== undefined ? Boolean(body.isBundleEligible) : true,
     is_active: body.isActive !== undefined ? Boolean(body.isActive) : true,
+    listing_status: 'approved',
   };
 
   const { data, error } = await supabase
