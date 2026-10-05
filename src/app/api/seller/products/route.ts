@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSellerActor, getSellerProfile } from '@/lib/sellerAuth';
+import { entitlementAllows, getSellerEntitlement } from '@/lib/sellerEntitlements';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,10 +31,12 @@ export async function GET() {
       .eq('is_active', true).order('display_order', { ascending: true }).order('name', { ascending: true }),
   ]);
   if (productError || categoryError) return NextResponse.json({ error: 'Seller marketplace data is not ready. Confirm that the marketplace migrations have been applied.' }, { status: 503 });
+  const { entitlement } = await getSellerEntitlement(seller.actor.serviceClient, seller.profile.id);
   return NextResponse.json({
     products: products || [],
     categories: categories || [],
     sellerStatus: seller.profile.status,
+    entitlement,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
@@ -41,6 +44,14 @@ export async function POST(request: NextRequest) {
   const seller = await currentSeller();
   if ('response' in seller) return seller.response;
   if (seller.profile.status !== 'approved') return NextResponse.json({ error: 'Your seller application must be approved before you can create product drafts.' }, { status: 403 });
+  const { entitlement } = await getSellerEntitlement(seller.actor.serviceClient, seller.profile.id);
+  if (!entitlementAllows(entitlement, 'product_listings')) return NextResponse.json({ error: 'An active trial or paid plan with product listing access is required.' }, { status: 402 });
+  const productLimit = typeof entitlement?.plan_snapshot.product_limit === 'number' ? entitlement.plan_snapshot.product_limit : null;
+  if (productLimit !== null) {
+    const { count, error: countError } = await seller.actor.serviceClient.from('products').select('id', { count: 'exact', head: true }).eq('seller_profile_id', seller.profile.id).neq('listing_status', 'archived');
+    if (countError) return NextResponse.json({ error: 'Could not check your plan product limit.' }, { status: 503 });
+    if ((count || 0) >= productLimit) return NextResponse.json({ error: `Your current plan allows up to ${productLimit} products. Choose a higher plan to add more.` }, { status: 403 });
+  }
 
   let body: Record<string, unknown> | null;
   try { body = readBody(await request.json()); } catch { body = null; }
@@ -90,6 +101,8 @@ export async function PATCH(request: NextRequest) {
   const seller = await currentSeller();
   if ('response' in seller) return seller.response;
   if (seller.profile.status !== 'approved') return NextResponse.json({ error: 'Only approved sellers can manage product drafts.' }, { status: 403 });
+  const { entitlement } = await getSellerEntitlement(seller.actor.serviceClient, seller.profile.id);
+  if (!entitlementAllows(entitlement, 'product_listings')) return NextResponse.json({ error: 'An active trial or paid plan with product listing access is required.' }, { status: 402 });
 
   let body: Record<string, unknown> | null;
   try { body = readBody(await request.json()); } catch { body = null; }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Check, RefreshCw, ShieldAlert, X } from 'lucide-react';
+import Link from 'next/link';
 
 type Application = {
   id: string;
@@ -55,7 +56,7 @@ export default function AdminSellerApplications() {
   const pending = applications.filter((application) => application.status === 'pending');
 
   return <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Marketplace administration</p><h1 className="mt-1 text-2xl font-black">Seller applications</h1><p className="mt-1 text-sm text-slate-600">Review applicant details and manage seller access.</p></div><button type="button" onClick={() => void load().catch((err: unknown) => setError(err instanceof Error ? err.message : 'Could not refresh.'))} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-300 px-3 text-xs font-bold"><RefreshCw className="h-4 w-4" />Refresh</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Marketplace administration</p><h1 className="mt-1 text-2xl font-black">Seller applications</h1><p className="mt-1 text-sm text-slate-600">Review applicant details and manage seller access.</p></div><div className="flex gap-2"><Link href="/admin/subscriptions" className="inline-flex min-h-10 items-center rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white">Plans and payments</Link><button type="button" onClick={() => void load().catch((err: unknown) => setError(err instanceof Error ? err.message : 'Could not refresh.'))} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-300 px-3 text-xs font-bold"><RefreshCw className="h-4 w-4" />Refresh</button></div></div>
     <a href="/admin" className="mt-3 inline-block text-xs font-bold text-indigo-600 hover:underline">← Admin dashboard</a>
     {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {message && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}

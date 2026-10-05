@@ -45,10 +45,11 @@ For a new Supabase environment, apply these in order in the Supabase SQL Editor.
 15. `supabase/migrations/20261010_group_buy_multi_product.sql`
 16. `supabase/migrations/20261011_multivendor_foundation.sql`
 17. `supabase/migrations/20261012_seller_accounts_dashboard.sql`
+18. `supabase/migrations/20261013_seller_subscriptions.sql`
 
-Migrations 13–17 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15.
+Migrations 13–18 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15. Phase 1–3 migrations have not been applied or verified in the connected project as part of this work.
 
-The Phase 2 seller migration adds server-only transactional functions for submitting and reviewing seller applications. Apply it after the multi-vendor foundation. Seller routes use the existing verified Supabase Auth user and the service-role client only on the server; seller status is read from `seller_profiles`, not user-editable auth metadata. Approval does not start a subscription or free trial; that belongs to Phase 3.
+The Phase 2 seller migration adds server-only transactional functions for submitting and reviewing seller applications. Phase 3 adds configurable trial and paid plans, seller payment requests and payment-review functions, and seeds initial plan rows. Apply it after Phase 2. Seller routes use the existing verified Supabase Auth user and the service-role client only on the server; seller status is read from `seller_profiles`, not user-editable auth metadata. Approved sellers receive one configured trial. Set up the LIPA instructions and public payment details in `/admin/subscriptions` before sellers submit payments; no provider verifies references automatically. Existing approved sellers are backfilled one trial by migration, if they have no subscription history.
 
 The order-tracking migration creates orders, itemized order lines, and status history; adds uniqueness for payment transaction references; enables RLS; denies direct anonymous/authenticated table access; and grants data access to the server service role. The Winga migration creates applications linked to Supabase Auth users and restricts table access to the service role.
 
