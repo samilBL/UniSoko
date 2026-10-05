@@ -37,9 +37,10 @@ export async function POST(request: NextRequest) {
   });
   if (error || !data.user) {
     const isDuplicate = Boolean(error?.message.toLowerCase().includes('already') || error?.message.toLowerCase().includes('registered'));
+    const serviceMessage = error?.message.replace(/\s+/g, ' ').slice(0, 220);
     return NextResponse.json({ error: isDuplicate
       ? 'A Winga account may already exist for this email. Sign in instead.'
-      : 'Account creation is temporarily unavailable. Please try again shortly.' }, {
+      : serviceMessage ? `Could not create the account: ${serviceMessage}` : 'Account creation is temporarily unavailable. Please try again shortly.' }, {
       status: isDuplicate ? 409 : 503,
       headers: { 'Cache-Control': 'no-store' },
     });
@@ -60,7 +61,9 @@ export async function POST(request: NextRequest) {
     await supabase.auth.admin.deleteUser(data.user.id);
     return NextResponse.json({ error: profileError.code === '23505'
       ? 'A Winga account already exists for this email. Sign in instead.'
-      : 'Could not save your Winga account. Please retry.' }, { status: profileError.code === '23505' ? 409 : 500 });
+      : profileError.code === '42703' || profileError.code === '42P01'
+        ? 'Winga account storage needs its latest database migration. Please contact UniSoko support.'
+        : `Could not save your Winga profile: ${profileError.message.replace(/\s+/g, ' ').slice(0, 180)}` }, { status: profileError.code === '23505' ? 409 : 500 });
   }
 
   return NextResponse.json({ ok: true }, { status: 201, headers: { 'Cache-Control': 'no-store' } });

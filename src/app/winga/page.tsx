@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { ALL_UNIVERSITIES, OTHER_TANZANIA_UNIVERSITY } from '@/lib/mockData';
 import { getSupabaseBrowser } from '@/lib/supabaseBrowser';
+import { readApiResponse } from '@/lib/apiResponse';
 
 type AccessMode = 'signup' | 'signin' | 'application';
 
@@ -55,11 +56,11 @@ export default function WingaLandingPage() {
             university: university === OTHER_TANZANIA_UNIVERSITY.name ? otherUniversity : university,
           }),
         });
-        const result = await response.json() as { error?: string };
+        const result = await readApiResponse<{ error?: string }>(response);
         if (!response.ok) {
           if (response.status === 409) {
             setMode('signin');
-            setMessage('An account may already exist for this email. Sign in with your password or use Forgot password.');
+            setMessage(`${result.error || 'A Winga account already exists for this email.'} Sign in or use Forgot password.`);
             return;
           }
           throw new Error(result.error || 'Could not create your Winga account.');
@@ -76,7 +77,7 @@ export default function WingaLandingPage() {
             university: university === OTHER_TANZANIA_UNIVERSITY.name ? otherUniversity : university,
           }),
         });
-        const result = await response.json() as { error?: string };
+        const result = await readApiResponse<{ error?: string }>(response);
         if (!response.ok) throw new Error(result.error || 'Could not submit your Winga application.');
       }
 
@@ -84,16 +85,21 @@ export default function WingaLandingPage() {
       if (signInError) {
         if (mode === 'signup') {
           setMode('signin');
-          setMessage('Your account was created. Sign in with the email and password you just chose.');
+          setMessage(`Your account was created, but automatic sign-in failed: ${signInError.message}. Sign in with the same email and password.`);
           setError('');
           return;
         }
-        throw new Error('Email or password is incorrect. If you have not set a password, reset it using your account email.');
+        const authMessage = signInError.message.toLowerCase().includes('invalid login credentials')
+          ? 'Email or password is incorrect. If you forgot your password, use Forgot password.'
+          : signInError.message.toLowerCase().includes('email not confirmed')
+            ? 'Your email needs confirmation before sign-in. Contact UniSoko support to help activate your Winga account.'
+            : `Could not sign in: ${signInError.message}`;
+        throw new Error(authMessage);
       }
 
       if (mode === 'signin') {
         const profileResponse = await fetch('/api/winga/me', { cache: 'no-store' });
-        const profileResult = await profileResponse.json() as { profile?: unknown; error?: string };
+        const profileResult = await readApiResponse<{ profile?: unknown; error?: string }>(profileResponse);
         if (profileResponse.ok && !profileResult.profile) {
           setMode('application');
           setMessage('You are signed in. Complete your Winga profile to continue.');

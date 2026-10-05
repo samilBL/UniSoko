@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (['/winga', '/winga/leaderboard', '/winga/login', '/winga/register', '/api/winga/leaderboard'].includes(pathname)) {
+  if (['/winga', '/winga/leaderboard', '/winga/login', '/winga/register', '/api/winga/leaderboard', '/api/winga/accounts'].includes(pathname)) {
     return NextResponse.next();
   }
 

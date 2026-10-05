@@ -3,6 +3,11 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, ImagePlus, LoaderCircle, ShieldCheck } from 'lucide-react';
+import { getSupabaseBrowser } from '@/lib/supabaseBrowser';
+import { readApiResponse } from '@/lib/apiResponse';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export default function WingaStudentIdForm({ submitted, verified }: { submitted: boolean; verified: boolean }) {
   const router = useRouter();
@@ -19,18 +24,50 @@ export default function WingaStudentIdForm({ submitted, verified }: { submitted:
       setError('Choose a clear photo of your current student ID.');
       return;
     }
-    const formData = new FormData();
-    formData.set('studentId', file);
+    if (!ACCEPTED_TYPES.includes(file.type) || file.size < 128 || file.size > MAX_FILE_SIZE) {
+      setError('Choose a JPG, PNG, or WebP student ID photo between 128 bytes and 5 MB.');
+      return;
+    }
     setIsSubmitting(true);
+    let pendingUploadPath = '';
     try {
-      const response = await fetch('/api/winga/kyc', { method: 'POST', body: formData });
-      const result = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(result.error || 'Could not submit your student ID.');
+      const supabase = getSupabaseBrowser();
+      if (!supabase) throw new Error('Secure ID upload is not configured. Contact UniSoko support.');
+
+      const prepareResponse = await fetch('/api/winga/kyc', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'prepare', size: file.size, contentType: file.type }),
+      });
+      const prepared = await readApiResponse<{ path?: string; token?: string; error?: string }>(prepareResponse);
+      if (!prepareResponse.ok || !prepared.path || !prepared.token) throw new Error(prepared.error || 'Could not prepare your private ID upload.');
+      pendingUploadPath = prepared.path;
+
+      const { error: uploadError } = await supabase.storage.from('winga-student-ids').uploadToSignedUrl(
+        prepared.path, prepared.token, file, { contentType: file.type, upsert: false, cacheControl: '0' },
+      );
+      if (uploadError) throw new Error(`Secure upload failed: ${uploadError.message}. Check your connection and retry.`);
+
+      const uploadedPath = pendingUploadPath;
+      pendingUploadPath = '';
+      const completeResponse = await fetch('/api/winga/kyc', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'complete', path: uploadedPath }),
+      });
+      const result = await readApiResponse<{ error?: string }>(completeResponse);
+      if (!completeResponse.ok) {
+        await fetch('/api/winga/kyc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'discard', path: uploadedPath }) }).catch(() => undefined);
+        throw new Error(result.error || 'Could not submit your student ID.');
+      }
       setFile(null);
       setMessage('Student ID submitted. UniSoko will review it before you can earn commissions.');
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Could not submit your student ID.');
+      if (pendingUploadPath) {
+        try {
+          await fetch('/api/winga/kyc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'discard', path: pendingUploadPath }) });
+        } catch { /* Leave the signed object private if cleanup cannot reach the server. */ }
+      }
     } finally {
       setIsSubmitting(false);
     }

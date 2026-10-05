@@ -84,7 +84,7 @@ export default function StorefrontHomePage() {
       <Header />
 
       {/* Main Content Area */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-10">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-5 space-y-6">
         {/* Top Onboarding & Campus Alert Banner */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl bg-indigo-50/80 px-4 py-2.5 text-xs text-indigo-950 dark:bg-indigo-950/40 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-900/60 shadow-xs">
           <div className="flex items-center gap-2">
@@ -111,6 +111,78 @@ export default function StorefrontHomePage() {
           <div className="flex min-w-0 items-center gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15"><Layers className="h-5 w-5" /></span><span className="min-w-0"><span className="block text-sm font-black sm:text-base">Bring your campus squad. Save together.</span><span className="mt-0.5 block text-xs leading-5 text-emerald-50 sm:text-sm">Start a group, choose products, and unlock Bei ya Jumla at the member target.</span></span></div>
           <span className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-extrabold text-emerald-900 sm:px-4">Explore groups <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
         </Link>
+
+        {/* Product Catalog Section */}
+        <section id="products-section" className="space-y-6 pt-2">
+          {/* Section Header & Filter Chips */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Featured Gadget Listings
+                </h2>
+                <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                  {filteredProducts.length} Available
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Delivering directly to {selectedCampus?.name || 'Mbeya Campuses'} ({selectedCampus?.shortCode || 'MUST'})
+              </p>
+            </div>
+
+            {/* Filter Chips Bar */}
+            <FilterChips
+              selectedFilter={selectedFilter}
+              onSelectFilter={setSelectedFilter}
+              counts={filterCounts}
+            />
+          </div>
+
+          {/* Wholesale Info Callout */}
+          <div
+            id="wholesale-info"
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-slate-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/70">
+                <Layers className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
+                  Hostel Pool & Reseller Advantage:
+                </p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-emerald-100">
+                  Combine 3 or more gadgets in your cart or pool with roommates to unlock{' '}
+                  <span className="underline decoration-emerald-600 decoration-2">Bei ya Jumla</span> wholesale pricing automatically!
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-emerald-800 shadow-sm dark:bg-emerald-900 dark:text-emerald-100">
+              Min 3 Units Required
+            </span>
+          </div>
+
+          {/* Product Grid */}
+          {filteredProducts.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800">
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+                No gadgets found matching your selection.
+              </p>
+              <button
+                onClick={() => setSelectedFilter('All')}
+                className="mt-3 text-xs font-bold text-indigo-600 hover:underline"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Value Props Strip */}
         <section className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4" aria-label="UniSoko benefits">
@@ -292,78 +364,6 @@ export default function StorefrontHomePage() {
         </section>
 
         <HomepageBanners />
-
-        {/* Product Catalog Section */}
-        <section id="products-section" className="space-y-6 pt-2">
-          {/* Section Header & Filter Chips */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Featured Gadget Listings
-                </h2>
-                <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                  {filteredProducts.length} Available
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Delivering directly to {selectedCampus?.name || 'Mbeya Campuses'} ({selectedCampus?.shortCode || 'MUST'})
-              </p>
-            </div>
-
-            {/* Filter Chips Bar */}
-            <FilterChips
-              selectedFilter={selectedFilter}
-              onSelectFilter={setSelectedFilter}
-              counts={filterCounts}
-            />
-          </div>
-
-          {/* Wholesale Info Callout */}
-          <div
-            id="wholesale-info"
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-slate-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-100"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/70">
-                <Layers className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-200">
-                  Hostel Pool & Reseller Advantage:
-                </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-emerald-100">
-                  Combine 3 or more gadgets in your cart or pool with roommates to unlock{' '}
-                  <span className="underline decoration-emerald-600 decoration-2">Bei ya Jumla</span> wholesale pricing automatically!
-                </p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-emerald-800 shadow-sm dark:bg-emerald-900 dark:text-emerald-100">
-              Min 3 Units Required
-            </span>
-          </div>
-
-          {/* Product Grid */}
-          {filteredProducts.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800">
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-                No gadgets found matching your selection.
-              </p>
-              <button
-                onClick={() => setSelectedFilter('All')}
-                className="mt-3 text-xs font-bold text-indigo-600 hover:underline"
-              >
-                Reset Filters
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* Sell / Trade-In Banner */}
         <section className="rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
