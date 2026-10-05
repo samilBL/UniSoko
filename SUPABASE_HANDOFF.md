@@ -36,9 +36,16 @@ For a new Supabase environment, apply these in order in the Supabase SQL Editor.
 6. `supabase/migrations/20261002_winga_leaderboard.sql`
 7. `supabase/migrations/20261003_hostels_bounties.sql`
 8. `supabase/migrations/20261004_promotional_banners.sql`
-9. `supabase/migrations/20261005_developer_profile.sql`
-10. `supabase/migrations/20261006_order_cancellations.sql`
-11. `supabase/migrations/20261007_admin_audit_logs.sql`
+9. `supabase/migrations/20261004_winga_student_id_storage.sql`
+10. `supabase/migrations/20261005_developer_profile.sql`
+11. `supabase/migrations/20261006_order_cancellations.sql`
+12. `supabase/migrations/20261007_admin_audit_logs.sql`
+13. `supabase/migrations/20261008_support_warranty_issues.sql`
+14. `supabase/migrations/20261009_products_and_universities.sql`
+15. `supabase/migrations/20261010_group_buy_multi_product.sql`
+16. `supabase/migrations/20261011_multivendor_foundation.sql`
+
+Migrations 13–16 were added after the connected-project verification noted above. Confirm their deployment state before applying them to an existing environment. The multi-vendor migration depends on the products table from migration 14 and must be applied after it and migration 15.
 
 The order-tracking migration creates orders, itemized order lines, and status history; adds uniqueness for payment transaction references; enables RLS; denies direct anonymous/authenticated table access; and grants data access to the server service role. The Winga migration creates applications linked to Supabase Auth users and restricts table access to the service role.
 
