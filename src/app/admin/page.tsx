@@ -689,6 +689,12 @@ export default function AdminPanelPage() {
       <Header />
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <nav className="flex flex-wrap gap-2" aria-label="Multi-vendor marketplace administration">
+          <a href="/admin/marketplace" className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white">Marketplace control center</a>
+          <a href="/admin/sellers" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Seller accounts</a>
+          <a href="/admin/subscriptions" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Plans & payments</a>
+          <a href="/admin/product-moderation" className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm">Product approvals</a>
+        </nav>
         {/* Admin Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl bg-slate-900 p-6 sm:p-8 text-white shadow-xl">
           <div>
