@@ -9,6 +9,10 @@ function sessionSecret() {
   return secret && secret.length >= 32 ? secret : null;
 }
 
+export function isAdminAuthConfigured() {
+  return Boolean(process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD && sessionSecret());
+}
+
 function sign(payload: string, secret: string) {
   return createHmac('sha256', secret).update(payload).digest('hex');
 }
@@ -16,7 +20,7 @@ function sign(payload: string, secret: string) {
 export function verifyAdminCredentials(username: string, password: string) {
   const expectedUsername = process.env.ADMIN_USERNAME;
   const expectedPassword = process.env.ADMIN_PASSWORD;
-  if (!expectedUsername || !expectedPassword || !sessionSecret()) return false;
+  if (!isAdminAuthConfigured() || !expectedUsername || !expectedPassword) return false;
 
   const safeEqual = (left: string, right: string) => {
     const leftBuffer = Buffer.from(left);
