@@ -7,6 +7,13 @@
 - Public reports require a signed-in Supabase user and enter `marketplace_reports` for admin review.
 - Product attribute values are loaded from the existing dynamic attribute tables. Confirm the Phase 1 marketplace foundation migration is installed.
 
+## Phase 9 Trust, Moderation, and Analytics
+
+- Apply `supabase/migrations/20261018_seller_notifications_analytics.sql` to add seller notification storage and moderation-decision notifications.
+- Seller insights include listing status counts, asking-price value of approved listings, and Winga commission ledger totals. Asking-price totals are not sales revenue.
+- Admin marketplace controls now include reporting, verification review, audit history, marketplace totals, and featured status controls for active approved listings.
+- Product/seller reports require signed-in customer accounts and are processed manually in the admin queue.
+
 This handoff records database- and provider-dependent work from the production-readiness sequence. No credentials are included.
 
 ## Connection Status

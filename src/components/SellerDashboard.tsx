@@ -4,6 +4,7 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useSta
 import { Archive, ClipboardList, Package, Pencil, Save, ShieldCheck, Store } from 'lucide-react';
 import Link from 'next/link';
 import AccountSignOutButton from '@/components/AccountSignOutButton';
+import SellerMarketplaceInsights from '@/components/SellerMarketplaceInsights';
 
 type Profile = {
   id: string;
@@ -241,6 +242,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
       {loading && <p className="py-8 text-sm text-slate-500" role="status">Loading seller dashboard…</p>}
 
       {!loading && tab === 'overview' && <div className="mt-5 space-y-5">
+        {approved && <SellerMarketplaceInsights />}
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Seller account</p><h2 className="mt-1 text-xl font-extrabold">{profile.display_name}</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{profile.university}{profile.campus ? ` · ${profile.campus}` : ''}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-bold capitalize ${statusClass}`}>{profile.status}</span></div>
           {profile.status === 'pending' && <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">Your application is waiting for UniSoko review. You’ll be able to manage product drafts after approval.</p>}
