@@ -58,7 +58,10 @@ export default function CampusEngagement() {
         setVoteError('A vote has already been recorded from this browser.');
         return;
       }
-      if (!response.ok) throw new Error('Could not record your vote. Please retry.');
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(result?.error || 'Could not record your vote. Please retry.');
+      }
       const nextVotes = { ...votes, [campusId]: (votes[campusId] || 0) + 1 };
       setVotes(nextVotes);
       setVoted(true);
@@ -76,9 +79,9 @@ export default function CampusEngagement() {
       <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl sm:p-8">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700"><MapPin className="h-5 w-5" /></div>
-          <div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">Campus expansion vote</p><h3 className="mt-1 text-lg font-extrabold text-slate-950">Where should UniSoko launch next?</h3></div>
+          <div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">For university communities across Tanzania</p><h3 className="mt-1 text-lg font-extrabold text-slate-950">Bring UniSoko to your campus</h3></div>
         </div>
-        <p className="mt-3 text-sm leading-6 text-slate-600">Tell us where students want local campus delivery and Winga hub support next.</p>
+        <p className="mt-3 text-sm leading-6 text-slate-600">UniSoko is built for students at every university. Choose your campus to help us prioritize local delivery and Winga support where students need it most.</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <select aria-label="Choose a university campus" value={campusId} onChange={(event) => setCampusId(event.target.value)} className="min-w-0 flex-1 rounded-xl px-3 py-3 text-sm">
             {ALL_UNIVERSITIES.map((campus) => <option key={campus.id} value={campus.id}>{campus.shortCode} · {campus.city}</option>)}

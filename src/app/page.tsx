@@ -30,10 +30,28 @@ export default function StorefrontHomePage() {
   const { selectedCampus, products, storeSettings, searchQuery, setSearchQuery } = useStore();
   const developerProfile = { ...DEVELOPER_PROFILE_DEFAULTS, ...storeSettings.developerProfile };
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
+  const [appliedFilter, setAppliedFilter] = useState<FilterCategory>('All');
   const [showDev, setShowDev] = useState(false);
   const [maxPrice, setMaxPrice] = useState('');
   const [sellerFilter, setSellerFilter] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState('');
+  const [appliedSellerFilter, setAppliedSellerFilter] = useState('all');
+  const [appliedSortBy, setAppliedSortBy] = useState('featured');
+
+  const applyFilters = () => {
+    setAppliedFilter(selectedFilter);
+    setAppliedMaxPrice(maxPrice);
+    setAppliedSellerFilter(sellerFilter);
+    setAppliedSortBy(sortBy);
+  };
+  const resetFilters = () => {
+    setSelectedFilter('All'); setAppliedFilter('All');
+    setMaxPrice(''); setAppliedMaxPrice('');
+    setSellerFilter('all'); setAppliedSellerFilter('all');
+    setSortBy('featured'); setAppliedSortBy('featured');
+    setSearchQuery('');
+  };
 
   // Calculate counts for chips
   const filterCounts = useMemo(() => {
@@ -58,26 +76,26 @@ export default function StorefrontHomePage() {
     return products.filter((product) => {
       // Search filter
       if (searchQuery.trim() && !matchesProductSearch(product, searchQuery)) return false;
-      if (maxPrice && product.priceRetail > Number(maxPrice)) return false;
-      if (sellerFilter === 'verified' && !product.sellerVerified) return false;
-      if (sellerFilter === 'official' && !product.officialUniSoko) return false;
+      if (appliedMaxPrice && product.priceRetail > Number(appliedMaxPrice)) return false;
+      if (appliedSellerFilter === 'verified' && !product.sellerVerified) return false;
+      if (appliedSellerFilter === 'official' && !product.officialUniSoko) return false;
 
       // Category chip filter
-      if (selectedFilter === 'All') return true;
-      if (selectedFilter === 'Laptops') return product.category === 'Laptops' || product.category === 'Laptops & Computers';
-      if (selectedFilter === 'Laptops & Computers') return product.category === 'Laptops' || product.category === 'Laptops & Computers';
-      if (selectedFilter === 'Phones') return product.category === 'Phones' || product.category === 'Smart Phones & Accessories';
-      if (selectedFilter === 'Smart Phones & Accessories') return product.category === 'Phones' || product.category === 'Smart Phones & Accessories';
-      if (selectedFilter === 'Accessories') return product.category === 'Accessories';
-      if (selectedFilter === 'Power & Audio') return product.category === 'Power & Audio';
-      if (selectedFilter === 'Room Gear') return product.category === 'Room Gear';
-      if (selectedFilter === 'Student Lifestyle Gear') return product.category === 'Student Lifestyle Gear' || product.category === 'Campus Essentials';
-      if (selectedFilter === 'Campus Essentials') return product.category === 'Campus Essentials';
-      if (selectedFilter === 'Trending') return product.stockStatus === 'Trending';
-      if (selectedFilter === 'Bei ya Jumla') return product.priceWholesale > 0;
+      if (appliedFilter === 'All') return true;
+      if (appliedFilter === 'Laptops') return product.category === 'Laptops' || product.category === 'Laptops & Computers';
+      if (appliedFilter === 'Laptops & Computers') return product.category === 'Laptops' || product.category === 'Laptops & Computers';
+      if (appliedFilter === 'Phones') return product.category === 'Phones' || product.category === 'Smart Phones & Accessories';
+      if (appliedFilter === 'Smart Phones & Accessories') return product.category === 'Phones' || product.category === 'Smart Phones & Accessories';
+      if (appliedFilter === 'Accessories') return product.category === 'Accessories';
+      if (appliedFilter === 'Power & Audio') return product.category === 'Power & Audio';
+      if (appliedFilter === 'Room Gear') return product.category === 'Room Gear';
+      if (appliedFilter === 'Student Lifestyle Gear') return product.category === 'Student Lifestyle Gear' || product.category === 'Campus Essentials';
+      if (appliedFilter === 'Campus Essentials') return product.category === 'Campus Essentials';
+      if (appliedFilter === 'Trending') return product.stockStatus === 'Trending';
+      if (appliedFilter === 'Bei ya Jumla') return product.priceWholesale > 0;
       return true;
-        }).sort((a, b) => sortBy === 'price-low' ? a.priceRetail - b.priceRetail : sortBy === 'price-high' ? b.priceRetail - a.priceRetail : Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
-  }, [products, selectedFilter, searchQuery, maxPrice, sellerFilter, sortBy]);
+        }).sort((a, b) => appliedSortBy === 'price-low' ? a.priceRetail - b.priceRetail : appliedSortBy === 'price-high' ? b.priceRetail - a.priceRetail : Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+  }, [products, appliedFilter, searchQuery, appliedMaxPrice, appliedSellerFilter, appliedSortBy]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans">
@@ -110,7 +128,7 @@ export default function StorefrontHomePage() {
         </section>
 
         <section aria-label="Quick actions" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <button type="button" onClick={() => { setSelectedFilter('Bei ya Jumla'); document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' }); }} className="group flex min-h-28 items-center justify-between rounded-2xl border border-indigo-200 bg-indigo-700 p-5 text-left text-white shadow-lg shadow-indigo-900/10 transition hover:-translate-y-0.5 hover:bg-indigo-800">
+          <button type="button" onClick={() => { setSelectedFilter('Bei ya Jumla'); setAppliedFilter('Bei ya Jumla'); document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' }); }} className="group flex min-h-28 items-center justify-between rounded-2xl border border-indigo-200 bg-indigo-700 p-5 text-left text-white shadow-lg shadow-indigo-900/10 transition hover:-translate-y-0.5 hover:bg-indigo-800">
             <span><span className="block text-xs font-bold uppercase tracking-wider text-indigo-200">Save together</span><span className="mt-1 block text-lg font-black">Explore group buys</span><span className="mt-1 block text-xs text-indigo-100">Find a product and invite your campus</span></span><ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-1"/>
           </button>
           <Link href="/seller/apply" className="group flex min-h-28 items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-white dark:hover:bg-emerald-950/70">
@@ -129,10 +147,10 @@ export default function StorefrontHomePage() {
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Hostel Hand-Off in Mbeya
+                Made for students across Tanzania
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Direct delivery to {selectedCampus?.shortCode || 'MUST'} hostels
+                Discover campus-ready offers wherever you study
               </p>
             </div>
           </div>
@@ -183,7 +201,7 @@ export default function StorefrontHomePage() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Delivering directly to {selectedCampus?.name || 'Mbeya Campuses'} ({selectedCampus?.shortCode || 'MUST'})
+                Student deals for universities across Tanzania · currently viewing {selectedCampus?.name || 'your campus'}
               </p>
             </div>
 
@@ -198,7 +216,7 @@ export default function StorefrontHomePage() {
             <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Maximum price <span className="font-normal text-slate-500">(TZS)</span><input type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Any price" className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"/></label>
             <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Seller<select value={sellerFilter} onChange={(event) => setSellerFilter(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="all">All sellers</option><option value="official">Official UniSoko</option><option value="verified">Verified sellers</option></select></label>
             <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Sort by<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
-            <button type="button" onClick={() => { setMaxPrice(''); setSellerFilter('all'); setSortBy('featured'); setSelectedFilter('All'); setSearchQuery(''); }} className="min-h-11 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Clear filters</button>
+            <div className="flex gap-2"><button type="button" onClick={applyFilters} className="min-h-11 flex-1 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-700">Apply filters</button><button type="button" onClick={resetFilters} className="min-h-11 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Reset</button></div>
           </div>
 
           {/* Wholesale Info Callout */}
@@ -212,7 +230,7 @@ export default function StorefrontHomePage() {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">
-                  Hostel Pool & Reseller Advantage
+                Group-buy savings for every campus
                 </p>
                 <p className="mt-1 text-sm font-medium leading-6 text-white">
                   Pool your order with roommates or buy 3+ units to unlock{' '}
@@ -232,7 +250,7 @@ export default function StorefrontHomePage() {
                 No gadgets found matching your selection.
               </p>
               <button
-                onClick={() => setSelectedFilter('All')}
+                onClick={resetFilters}
                 className="mt-3 text-xs font-bold text-indigo-600 hover:underline"
               >
                 Reset Filters
@@ -290,7 +308,7 @@ export default function StorefrontHomePage() {
                 UniSoko <span className="text-indigo-600">Tanzania</span>
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                The Dedicated Campus Tech Marketplace for Mbeya Universities (MUST, TEKU, TIA, Mzumbe, CUoM) & Regional Shipping.
+                A student marketplace connecting university communities across Tanzania with campus-ready deals, group buys, and local sellers.
               </p>
             </div>
 

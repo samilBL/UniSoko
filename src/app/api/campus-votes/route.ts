@@ -6,7 +6,10 @@ export async function GET() {
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ votes: {}, configured: false });
   const { data, error } = await supabase.from('campus_votes').select('campus_id');
-  if (error) return NextResponse.json({ error: 'Could not load campus votes.' }, { status: 500 });
+  if (error) {
+    console.error('Campus vote load failed:', { code: error.code });
+    return NextResponse.json({ error: 'Campus voting is temporarily unavailable. Please try again later.' }, { status: 503 });
+  }
   const votes = (data || []).reduce<Record<string, number>>((counts, row) => {
     counts[row.campus_id] = (counts[row.campus_id] || 0) + 1;
     return counts;
@@ -29,6 +32,10 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase.from('campus_votes').insert({ voter_id: body.voterId, campus_id: body.campusId });
   if (error?.code === '23505') return NextResponse.json({ error: 'A vote has already been recorded from this browser.' }, { status: 409 });
-  if (error) return NextResponse.json({ error: 'Could not record campus vote.' }, { status: 500 });
+  if (error) {
+    console.error('Campus vote insert failed:', { code: error.code });
+    const missingTable = error.code === '42P01' || error.code === 'PGRST205';
+    return NextResponse.json({ error: missingTable ? 'Campus voting is not set up yet. Please try again later.' : 'We could not save your vote just now. Please try again.' }, { status: missingTable ? 503 : 500 });
+  }
   return NextResponse.json({ ok: true }, { status: 201 });
 }
