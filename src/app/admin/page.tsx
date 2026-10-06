@@ -126,6 +126,7 @@ export default function AdminPanelPage() {
   const [removeDeveloperImage, setRemoveDeveloperImage] = useState(false);
   const [developerProfileError, setDeveloperProfileError] = useState('');
   const [developerProfileMessage, setDeveloperProfileMessage] = useState('');
+  const [uploadingPartnerIndex, setUploadingPartnerIndex] = useState<number | null>(null);
   const [cancellationRequests, setCancellationRequests] = useState<AdminCancellation[]>([]);
   const [cancellationForms, setCancellationForms] = useState<Record<string, { status: AdminCancellation['status']; refundAmount: number; refundReference: string; adminNotes: string }>>({});
   const [cancellationError, setCancellationError] = useState('');
@@ -538,6 +539,23 @@ export default function AdminPanelPage() {
     }
     setSettingsSavedToast(true);
     setTimeout(() => setSettingsSavedToast(false), 3500);
+  };
+
+  const uploadPartnerLogo = async (index: number, file: File) => {
+    setUploadingPartnerIndex(index);
+    setSettingsSaveWarning('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await fetch('/api/admin/trusted-logos', { method: 'POST', body: formData });
+      const result = await response.json() as { url?: string; error?: string };
+      if (!response.ok || !result.url) throw new Error(result.error || 'Could not upload this logo.');
+      setSettingsForm((current) => ({ ...current, partnerBadges: current.partnerBadges.map((partner, itemIndex) => itemIndex === index ? { ...partner, logoUrl: result.url } : partner) }));
+    } catch (cause) {
+      setSettingsSaveWarning(cause instanceof Error ? cause.message : 'Could not upload this logo.');
+    } finally {
+      setUploadingPartnerIndex(null);
+    }
   };
 
   const handleSaveDeveloperProfile = async () => {
@@ -2145,18 +2163,18 @@ export default function AdminPanelPage() {
                 <div><label className="mb-1 block text-xs font-bold text-slate-700">Official WhatsApp numbers (comma-separated)</label><input value={(settingsForm.officialWhatsAppNumbers || []).join(', ')} onChange={(event) => setSettingsForm({ ...settingsForm, officialWhatsAppNumbers: event.target.value.split(',').map((number) => number.trim()).filter(Boolean) })} className="w-full rounded-xl p-2.5 text-xs" placeholder="0616961511" /></div>
               </div>
 
-              {/* Partner Badges & Sponsor Logos */}
+              {/* Trusted-by institutions and partner logos */}
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                   <Building className="h-5 w-5 text-indigo-600" />
                   <h4 className="text-sm font-bold text-slate-900">
-                    Institutional Partners & Verified Badges
+                    Trusted By · Institutions & Partners
                   </h4>
                 </div>
 
                 <div className="space-y-3 text-xs">
                   <p className="text-slate-500">
-                    Verified campus unions and financial sponsors displayed across the homepage footer and checkout guarantee cards.
+                    Add the organizations students recognize. Upload a JPG, PNG, or WebP logo (up to 3 MB), add a destination link if useful, then save store settings. These logos appear in the homepage “Trusted by” section.
                   </p>
                   <div className="space-y-3">
                     {settingsForm.partnerBadges?.map((partner, idx: number) => (
@@ -2166,9 +2184,10 @@ export default function AdminPanelPage() {
                         <input aria-label="Logo image URL" value={partner.logoUrl || ''} onChange={(event) => setSettingsForm({ ...settingsForm, partnerBadges: settingsForm.partnerBadges.map((item, i) => i === idx ? { ...item, logoUrl: event.target.value } : item) })} className="rounded-xl p-2 text-xs" placeholder="Logo image URL" />
                         <input aria-label="Partner website or social link" value={partner.url || ''} onChange={(event) => setSettingsForm({ ...settingsForm, partnerBadges: settingsForm.partnerBadges.map((item, i) => i === idx ? { ...item, url: event.target.value } : item) })} className="rounded-xl p-2 text-xs" placeholder="Website / social link" />
                         <div className="flex gap-2"><input aria-label="Partner type" value={partner.category} onChange={(event) => setSettingsForm({ ...settingsForm, partnerBadges: settingsForm.partnerBadges.map((item, i) => i === idx ? { ...item, category: event.target.value } : item) })} className="min-w-0 flex-1 rounded-xl p-2 text-xs" placeholder="Type" /><button type="button" onClick={() => setSettingsForm({ ...settingsForm, partnerBadges: settingsForm.partnerBadges.filter((_, i) => i !== idx) })} className="rounded-xl px-3 text-red-700 hover:bg-red-50" aria-label={`Remove ${partner.name}`}><X className="h-4 w-4" /></button></div>
+                        <label className="flex min-h-10 items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-xs text-slate-600 md:col-span-5">{uploadingPartnerIndex === idx ? 'Uploading logo…' : partner.logoUrl ? 'Replace uploaded logo' : 'Upload institution logo'}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingPartnerIndex !== null} onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ''; if (file) void uploadPartnerLogo(idx, file); }} className="max-w-52 text-[11px] file:mr-2 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-2 file:py-1.5 file:text-xs file:font-bold file:text-indigo-700 disabled:opacity-50" /></label>
                       </div>
                     ))}
-                    <button type="button" onClick={() => setSettingsForm({ ...settingsForm, partnerBadges: [...settingsForm.partnerBadges, { name: '', shortCode: '', category: 'Sponsor', logoUrl: '', url: '' }] })} className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><Plus className="h-4 w-4" />Add partner / sponsor</button>
+                    <button type="button" onClick={() => setSettingsForm({ ...settingsForm, partnerBadges: [...settingsForm.partnerBadges, { name: '', shortCode: '', category: 'Institution', logoUrl: '', url: '' }] })} className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><Plus className="h-4 w-4" />Add trusted institution or partner</button>
                   </div>
                 </div>
               </div>

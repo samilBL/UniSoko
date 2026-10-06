@@ -8,6 +8,7 @@ import ProductCard from '@/components/ProductCard';
 import WingaRecruitmentBanner from '@/components/WingaRecruitmentBanner';
 import CampusEngagement from '@/components/CampusEngagement';
 import HomepageBanners from '@/components/HomepageBanners';
+import TrustedBySection from '@/components/TrustedBySection';
 import { openStudentGuide } from '@/lib/studentGuide';
 import CartDrawer from '@/components/CartDrawer';
 import { useStore } from '@/context/StoreContext';
@@ -26,7 +27,7 @@ import { matchesProductSearch } from '@/lib/productSpecs';
 import { DEVELOPER_PROFILE_DEFAULTS, UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function StorefrontHomePage() {
-  const { selectedCampus, products, storeSettings, searchQuery } = useStore();
+  const { selectedCampus, products, storeSettings, searchQuery, setSearchQuery } = useStore();
   const developerProfile = { ...DEVELOPER_PROFILE_DEFAULTS, ...storeSettings.developerProfile };
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
   const [showDev, setShowDev] = useState(false);
@@ -38,16 +39,16 @@ export default function StorefrontHomePage() {
   const filterCounts = useMemo(() => {
     return {
       All: products.length,
-      Laptops: products.filter((p) => p.category === 'Laptops').length,
+      Laptops: products.filter((p) => p.category === 'Laptops' || p.category === 'Laptops & Computers').length,
       'Laptops & Computers': products.filter((p) => p.category === 'Laptops' || p.category === 'Laptops & Computers').length,
-      Phones: products.filter((p) => p.category === 'Phones').length,
+      Phones: products.filter((p) => p.category === 'Phones' || p.category === 'Smart Phones & Accessories').length,
       'Smart Phones & Accessories': products.filter((p) => p.category === 'Phones' || p.category === 'Smart Phones & Accessories').length,
       Accessories: products.filter((p) => p.category === 'Accessories').length,
       'Power & Audio': products.filter((p) => p.category === 'Power & Audio').length,
       'Room Gear': products.filter((p) => p.category === 'Room Gear').length,
       'Student Lifestyle Gear': products.filter((p) => p.category === 'Student Lifestyle Gear' || p.category === 'Campus Essentials').length,
       'Campus Essentials': products.filter((p) => p.category === 'Campus Essentials').length,
-      'Bei ya Jumla': products.length,
+      'Bei ya Jumla': products.filter((p) => p.priceWholesale > 0).length,
       Trending: products.filter((p) => p.stockStatus === 'Trending').length,
     };
   }, [products]);
@@ -63,9 +64,9 @@ export default function StorefrontHomePage() {
 
       // Category chip filter
       if (selectedFilter === 'All') return true;
-      if (selectedFilter === 'Laptops') return product.category === 'Laptops';
+      if (selectedFilter === 'Laptops') return product.category === 'Laptops' || product.category === 'Laptops & Computers';
       if (selectedFilter === 'Laptops & Computers') return product.category === 'Laptops' || product.category === 'Laptops & Computers';
-      if (selectedFilter === 'Phones') return product.category === 'Phones';
+      if (selectedFilter === 'Phones') return product.category === 'Phones' || product.category === 'Smart Phones & Accessories';
       if (selectedFilter === 'Smart Phones & Accessories') return product.category === 'Phones' || product.category === 'Smart Phones & Accessories';
       if (selectedFilter === 'Accessories') return product.category === 'Accessories';
       if (selectedFilter === 'Power & Audio') return product.category === 'Power & Audio';
@@ -75,7 +76,7 @@ export default function StorefrontHomePage() {
       if (selectedFilter === 'Trending') return product.stockStatus === 'Trending';
       if (selectedFilter === 'Bei ya Jumla') return product.priceWholesale > 0;
       return true;
-    }).sort((a, b) => sortBy === 'price-low' ? a.priceRetail - b.priceRetail : sortBy === 'price-high' ? b.priceRetail - a.priceRetail : sortBy === 'newest' ? 0 : Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+        }).sort((a, b) => sortBy === 'price-low' ? a.priceRetail - b.priceRetail : sortBy === 'price-high' ? b.priceRetail - a.priceRetail : Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
   }, [products, selectedFilter, searchQuery, maxPrice, sellerFilter, sortBy]);
 
   return (
@@ -86,7 +87,7 @@ export default function StorefrontHomePage() {
       {/* Main Content Area */}
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-10">
         {/* Top Onboarding & Campus Alert Banner */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl bg-indigo-50/80 px-4 py-2.5 text-xs text-indigo-950 dark:bg-indigo-950/40 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-900/60 shadow-xs">
+        <div className="flex flex-col gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/80 px-4 py-3 text-xs text-indigo-950 shadow-xs dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
             <span className="font-semibold">
@@ -94,11 +95,6 @@ export default function StorefrontHomePage() {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" aria-label="Marketplace filters">
-            <label className="text-xs font-semibold">Max price (TZS)<input type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Any" className="ml-2 w-28 rounded-lg border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950"/></label>
-            <label className="text-xs font-semibold">Seller<select value={sellerFilter} onChange={(event) => setSellerFilter(event.target.value)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950"><option value="all">All sellers</option><option value="official">Official UniSoko</option><option value="verified">Verified sellers</option></select></label>
-            <label className="text-xs font-semibold">Sort<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="newest">Newest</option></select></label>
-          </div>
           <button
             onClick={openStudentGuide}
             className="inline-flex items-center gap-1.5 font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline underline-offset-4 shrink-0"
@@ -113,8 +109,20 @@ export default function StorefrontHomePage() {
           <HeroCarousel />
         </section>
 
+        <section aria-label="Quick actions" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <button type="button" onClick={() => { setSelectedFilter('Bei ya Jumla'); document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' }); }} className="group flex min-h-28 items-center justify-between rounded-2xl border border-indigo-200 bg-indigo-700 p-5 text-left text-white shadow-lg shadow-indigo-900/10 transition hover:-translate-y-0.5 hover:bg-indigo-800">
+            <span><span className="block text-xs font-bold uppercase tracking-wider text-indigo-200">Save together</span><span className="mt-1 block text-lg font-black">Explore group buys</span><span className="mt-1 block text-xs text-indigo-100">Find a product and invite your campus</span></span><ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-1"/>
+          </button>
+          <Link href="/seller/apply" className="group flex min-h-28 items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-white dark:hover:bg-emerald-950/70">
+            <span><span className="block text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">For local businesses</span><span className="mt-1 block text-lg font-black">Join as a seller</span><span className="mt-1 block text-xs text-slate-700 dark:text-emerald-100">Create your account and apply in one step</span></span><ArrowRight className="h-5 w-5 shrink-0 text-emerald-800 transition group-hover:translate-x-1 dark:text-emerald-300"/>
+          </Link>
+          <Link href="/winga/register" className="group flex min-h-28 items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-5 text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/40 dark:text-white dark:hover:bg-amber-950/70 sm:col-span-2 lg:col-span-1">
+            <span><span className="block text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">Earn on campus</span><span className="mt-1 block text-lg font-black">Become a Winga</span><span className="mt-1 block text-xs text-slate-700 dark:text-amber-100">Apply for a reviewed campus role</span></span><ArrowRight className="h-5 w-5 shrink-0 text-amber-900 transition group-hover:translate-x-1 dark:text-amber-300"/>
+          </Link>
+        </section>
+
         {/* Value Props Strip */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
               <MapPin className="h-5 w-5" />
@@ -164,7 +172,7 @@ export default function StorefrontHomePage() {
         {/* Product Catalog Section */}
         <section id="products-section" className="space-y-6 pt-2">
           {/* Section Header & Filter Chips */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+          <div className="border-b border-slate-200 pb-4 dark:border-slate-800">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -179,35 +187,41 @@ export default function StorefrontHomePage() {
               </p>
             </div>
 
-            {/* Filter Chips Bar */}
-            <FilterChips
+            <div className="mt-4"><p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">Browse categories</p><FilterChips
               selectedFilter={selectedFilter}
               onSelectFilter={setSelectedFilter}
               counts={filterCounts}
-            />
+            /></div>
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr_auto] lg:items-end" aria-label="Refine product results">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Maximum price <span className="font-normal text-slate-500">(TZS)</span><input type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Any price" className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"/></label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Seller<select value={sellerFilter} onChange={(event) => setSellerFilter(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="all">All sellers</option><option value="official">Official UniSoko</option><option value="verified">Verified sellers</option></select></label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Sort by<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
+            <button type="button" onClick={() => { setMaxPrice(''); setSellerFilter('all'); setSortBy('featured'); setSelectedFilter('All'); setSearchQuery(''); }} className="min-h-11 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Clear filters</button>
           </div>
 
           {/* Wholesale Info Callout */}
           <div
             id="wholesale-info"
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-slate-900 shadow-sm"
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-3xl border border-emerald-800 bg-emerald-950 p-5 text-white shadow-lg shadow-emerald-950/10 sm:p-6"
           >
             <div className="flex items-center gap-3.5">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100">
                 <Layers className="h-6 w-6 text-emerald-700" />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                  Hostel Pool & Reseller Advantage:
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">
+                  Hostel Pool & Reseller Advantage
                 </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-700">
-                  Combine 3 or more gadgets in your cart or pool with roommates to unlock{' '}
-                  <span className="underline decoration-emerald-600 decoration-2">Bei ya Jumla</span> wholesale pricing automatically!
+                <p className="mt-1 text-sm font-medium leading-6 text-white">
+                  Pool your order with roommates or buy 3+ units to unlock{' '}
+                  <span className="font-extrabold text-emerald-200 underline decoration-emerald-300 decoration-2 underline-offset-2">Bei ya Jumla</span> pricing.
                 </p>
               </div>
             </div>
-            <span className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black text-emerald-800 shadow-sm">
-              Min 3 Units Required
+            <span className="shrink-0 rounded-xl border border-emerald-300/30 bg-emerald-800 px-4 py-2 text-xs font-extrabold text-white shadow-sm">
+              Save together · 3+ units
             </span>
           </div>
 
@@ -263,6 +277,7 @@ export default function StorefrontHomePage() {
         </section>
 
         <CampusEngagement />
+        <TrustedBySection partners={storeSettings.partnerBadges || []} />
 
       </main>
 

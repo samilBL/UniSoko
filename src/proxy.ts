@@ -24,14 +24,14 @@ export async function proxy(request: NextRequest) {
   if (!supabaseUrl || !supabaseKey) {
     if (pathname.startsWith('/api/seller')) return NextResponse.json({ error: 'Seller authentication is not configured.' }, { status: 503 });
     if (pathname.startsWith('/seller/dashboard')) {
-      const signInUrl = new URL('/winga/login', request.url);
+      const signInUrl = new URL('/seller/login', request.url);
       signInUrl.searchParams.set('auth', 'unavailable');
       signInUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(signInUrl);
     }
     if (pathname === '/winga' || pathname === '/api/winga/applications') return NextResponse.next();
     if (pathname.startsWith('/api/winga')) return NextResponse.json({ error: 'Winga access is not configured.' }, { status: 503 });
-    const signInUrl = new URL('/winga', request.url);
+    const signInUrl = new URL(pathname.startsWith('/seller') ? '/seller/login' : '/winga/login', request.url);
     signInUrl.searchParams.set('auth', 'unavailable');
     return NextResponse.redirect(signInUrl);
   }
@@ -52,7 +52,7 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (pathname.startsWith('/seller/dashboard') && !user) {
-    const signInUrl = new URL('/winga/login', request.url);
+    const signInUrl = new URL('/seller/login', request.url);
     signInUrl.searchParams.set('auth', 'required');
     signInUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(signInUrl);
@@ -61,7 +61,7 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/winga' || user) return response;
 
   if (pathname.startsWith('/api/winga')) return NextResponse.json({ error: 'Sign in to your Winga account.' }, { status: 401 });
-  const signInUrl = new URL('/winga', request.url);
+  const signInUrl = new URL('/winga/login', request.url);
   signInUrl.searchParams.set('auth', 'required');
   return NextResponse.redirect(signInUrl);
 }
