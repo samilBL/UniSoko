@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Laptop, Users, Layers, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Laptop, Layers, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 interface Slide {
@@ -38,22 +38,6 @@ const SLIDES: Slide[] = [
     accentColor: 'text-indigo-400',
     icon: <Laptop className="h-6 w-6 text-indigo-400" />,
     tags: ['Grade A Tested', 'Free Hostel Delivery', 'Lipa Namba Ready'],
-  },
-  {
-    id: 'winga-hero',
-    badge: 'Earn While You Learn 💰',
-    title: 'Become a UniSoko',
-    highlight: 'Campus Winga',
-    description:
-      'Zero startup capital. Get your unique promo code (e.g. WINGA-SAM), share gadget deals with classmates, and earn 5% instant cash on every successful order.',
-    ctaText: 'Become Campus Winga',
-    ctaLink: '/winga/register',
-    secondaryCtaText: 'Winga Dashboard',
-    secondaryCtaLink: '/winga/login',
-    bgColor: 'from-slate-900 via-slate-900 to-slate-900',
-    accentColor: 'text-emerald-400',
-    icon: <Users className="h-6 w-6 text-emerald-400" />,
-    tags: ['5% Commission', 'Instant M-Pesa Payout', 'Campus Leaderboard'],
   },
   {
     id: 'wholesale-hero',

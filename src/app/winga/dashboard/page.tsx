@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import AccountSignOutButton from '@/components/AccountSignOutButton';
 import WingaPasswordManager from '@/components/WingaPasswordManager';
 import WingaMarketplaceEarnings from '@/components/WingaMarketplaceEarnings';
+import WingaEarningsEstimator from '@/components/WingaEarningsEstimator';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -84,6 +85,7 @@ export default async function WingaAgentDashboardPage() {
         </section>
 
         {isApproved && <WingaMarketplaceEarnings />}
+        {isApproved && <WingaEarningsEstimator />}
 
         <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga portal is separate from seller accounts. Commission balances reflect orders marked payment verified and delivered; money transfers are still processed by UniSoko outside this portal.</p>
         <Link href="/" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-800">Return to UniSoko</Link>

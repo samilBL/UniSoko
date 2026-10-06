@@ -18,12 +18,6 @@ import {
   ArrowRight,
   PlayCircle,
   DollarSign,
-  Award,
-  GraduationCap,
-  BedDouble,
-  PackageCheck,
-  Sparkles,
-  ArrowUpRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -163,135 +157,6 @@ export default function StorefrontHomePage() {
             </div>
           </div>
 
-          <Link
-            href="/sell-device"
-            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 hover:border-indigo-300 transition-all group"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 group-hover:scale-105 transition-transform">
-              <DollarSign className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600">
-                Sell / Trade-In Device
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Instant cash & upgrade credits
-              </p>
-            </div>
-          </Link>
-        </section>
-
-        {/* Student Services Quick-Launch Hub */}
-        <section aria-label="Campus Student Services" className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                <Sparkles className="h-3.5 w-3.5" />
-              </span>
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                Campus Student Services
-              </h2>
-            </div>
-            <span className="text-[11px] font-semibold text-slate-500">Tailored for {selectedCampus.shortCode}</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {/* Service 1: Grad Clearance */}
-            <Link
-              href="/grad-clearance"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md dark:border-amber-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/20"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
-                  <GraduationCap className="h-5 w-5" />
-                </div>
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                  Rush Season
-                </span>
-              </div>
-              <div className="mt-3">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 flex items-center gap-1">
-                  Graduation Clearance
-                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
-                  Sell your room gear & gadgets before leaving, or buy clearance items from seniors.
-                </p>
-              </div>
-            </Link>
-
-            {/* Service 2: Student Bundles */}
-            <Link
-              href="/bundles"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-white to-indigo-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-400 hover:shadow-md dark:border-indigo-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-400">
-                  <PackageCheck className="h-5 w-5" />
-                </div>
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-black text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
-                  Save 25%
-                </span>
-              </div>
-              <div className="mt-3">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 flex items-center gap-1">
-                  Student Starter Bundles
-                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
-                  Laptop + wireless mouse + bag + flash combos at subsidized semester prices.
-                </p>
-              </div>
-            </Link>
-
-            {/* Service 3: Find a Hostel */}
-            <Link
-              href="/hostels"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-purple-200/80 bg-gradient-to-br from-purple-50/70 via-white to-purple-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-400 hover:shadow-md dark:border-purple-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-purple-950/20"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-400/10 dark:text-purple-400">
-                  <BedDouble className="h-5 w-5" />
-                </div>
-                <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-black text-purple-800 dark:bg-purple-950 dark:text-purple-300">
-                  Verified
-                </span>
-              </div>
-              <div className="mt-3">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 flex items-center gap-1">
-                  Hostel & Room Finder
-                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
-                  Verified off-campus hostels & private rooms near {selectedCampus.shortCode} with photos & direct terms.
-                </p>
-              </div>
-            </Link>
-
-            {/* Service 4: Sell / Trade-In */}
-            <Link
-              href="/sell-device"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30 p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  Instant Cash
-                </span>
-              </div>
-              <div className="mt-3">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 flex items-center gap-1">
-                  Device Trade-In / Sell
-                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
-                  Get instant valuation for your laptop or phone with hostel doorstep inspection.
-                </p>
-              </div>
-            </Link>
-          </div>
         </section>
 
         <HomepageBanners />
@@ -399,36 +264,6 @@ export default function StorefrontHomePage() {
 
         <CampusEngagement />
 
-        {/* Institutional Partners & Badges */}
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Award className="h-4 w-4 text-indigo-600" />
-                Institutional Partners & Payment Gateways
-              </h3>
-              <p className="text-xs text-slate-500">
-                Verified campus operations across higher learning institutions in Tanzania
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-            {(storeSettings?.partnerBadges || []).map((badge, idx) => (
-              <a
-                key={idx}
-                href={badge.url && /^https?:\/\//i.test(badge.url) ? badge.url : undefined}
-                target={badge.url && /^https?:\/\//i.test(badge.url) ? '_blank' : undefined}
-                rel={badge.url && /^https?:\/\//i.test(badge.url) ? 'noreferrer' : undefined}
-                className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50 p-3 text-center transition hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-800/60"
-              >
-                {badge.logoUrl ? <Image src={badge.logoUrl} alt={`${badge.name} logo`} width={120} height={32} unoptimized className="h-8 max-w-full object-contain" /> : <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400">{badge.shortCode}</span>}
-                <span className="line-clamp-1 text-[11px] font-semibold text-slate-800 dark:text-slate-200">{badge.name}</span>
-                <span className="text-[10px] text-slate-400">{badge.category}</span>
-              </a>
-            ))}
-          </div>
-        </section>
       </main>
 
       {/* Footer */}
@@ -467,19 +302,6 @@ export default function StorefrontHomePage() {
               </a>
             </div>
           </div>
-
-          {(storeSettings?.partnerBadges || []).length > 0 && (
-            <div className="border-t border-white/10 pt-5">
-              <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">Campus partners &amp; sponsors</p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {storeSettings.partnerBadges.map((partner, index) => (
-                  <a key={`${partner.shortCode}-${index}`} href={partner.url && /^https?:\/\//i.test(partner.url) ? partner.url : undefined} target={partner.url && /^https?:\/\//i.test(partner.url) ? '_blank' : undefined} rel={partner.url && /^https?:\/\//i.test(partner.url) ? 'noreferrer' : undefined} className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-indigo-500 hover:text-white transition-colors">
-                    {partner.logoUrl && <Image src={partner.logoUrl} alt="" width={20} height={20} unoptimized className="h-5 w-5 object-contain" />}{partner.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Legal & Compliance Links */}
           <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
