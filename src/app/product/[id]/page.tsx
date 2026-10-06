@@ -25,6 +25,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
+import MarketplaceReportButton from '@/components/MarketplaceReportButton';
 import { getProductSpecEntries } from '@/lib/productSpecs';
 import TradeInModal from '@/components/TradeInModal';
 import type { TradeInQuoteAttachment } from '@/lib/types';
@@ -410,11 +411,12 @@ export default function ProductDetailsPage() {
                     <div><p className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white"><Users className="h-4 w-4 text-indigo-600" />Start Group-Buy (Split Wholesale)</p><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Share a 24-hour invite. {minWholesale} participants unlock this product’s wholesale rate.</p></div>
                     <button onClick={() => void handleStartGroupBuy()} disabled={isStartingGroupBuy} className="min-h-11 shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{isStartingGroupBuy ? 'Starting…' : 'Start group'}</button>
                   </div>
-                {product.sellerProfileId && <p className="mt-2 text-xs text-slate-500">Sold by {product.sellerDisplayName || 'Marketplace seller'}</p>}
+                {product.sellerProfileId && <p className="mt-2 text-xs text-slate-500">Sold by <Link className="font-bold text-indigo-600 hover:underline" href={`/seller/${product.sellerProfileId}`}>{product.sellerDisplayName || 'Marketplace seller'}</Link>{product.sellerVerified && <span className="ml-2 font-bold text-emerald-700">✓ {product.sellerVerificationLabel || 'Verified'}</span>}</p>}
                 {groupBuyError && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{groupBuyError}</p>}
                 </div>}
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-3">{product.officialUniSoko && <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">Official UniSoko product</span>}{product.sellerProfileId && <MarketplaceReportButton productId={product.id} sellerProfileId={product.sellerProfileId}/>}</div>
 
             {/* Campus Delivery Location Notice */}
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 flex items-start gap-3">

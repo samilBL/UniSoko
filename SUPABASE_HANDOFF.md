@@ -1,5 +1,12 @@
 # Supabase Handoff
 
+## Phase 7 Public Marketplace
+
+- Apply `supabase/migrations/20261017_public_marketplace_trust.sql` before deploying this phase. It adds the official UniSoko product flag and labels existing first-party listings.
+- Public seller profiles expose only approved seller identity/profile fields and verified status. Contact options and private verification notes remain server-side.
+- Public reports require a signed-in Supabase user and enter `marketplace_reports` for admin review.
+- Product attribute values are loaded from the existing dynamic attribute tables. Confirm the Phase 1 marketplace foundation migration is installed.
+
 This handoff records database- and provider-dependent work from the production-readiness sequence. No credentials are included.
 
 ## Connection Status

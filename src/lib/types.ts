@@ -58,6 +58,9 @@ export interface Product {
   featured?: boolean;
   sellerProfileId?: string;
   sellerDisplayName?: string;
+  sellerVerified?: boolean;
+  sellerVerificationLabel?: string;
+  officialUniSoko?: boolean;
   sellerWingaCampaignEnabled?: boolean;
   sellerWingaCommissionRate?: number;
   sellerGroupBuyEnabled?: boolean;

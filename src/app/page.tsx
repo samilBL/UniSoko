@@ -36,6 +36,9 @@ export default function StorefrontHomePage() {
   const developerProfile = { ...DEVELOPER_PROFILE_DEFAULTS, ...storeSettings.developerProfile };
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
   const [showDev, setShowDev] = useState(false);
+  const [maxPrice, setMaxPrice] = useState('');
+  const [sellerFilter, setSellerFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('featured');
 
   // Calculate counts for chips
   const filterCounts = useMemo(() => {
@@ -60,6 +63,9 @@ export default function StorefrontHomePage() {
     return products.filter((product) => {
       // Search filter
       if (searchQuery.trim() && !matchesProductSearch(product, searchQuery)) return false;
+      if (maxPrice && product.priceRetail > Number(maxPrice)) return false;
+      if (sellerFilter === 'verified' && !product.sellerVerified) return false;
+      if (sellerFilter === 'official' && !product.officialUniSoko) return false;
 
       // Category chip filter
       if (selectedFilter === 'All') return true;
@@ -75,8 +81,8 @@ export default function StorefrontHomePage() {
       if (selectedFilter === 'Trending') return product.stockStatus === 'Trending';
       if (selectedFilter === 'Bei ya Jumla') return product.priceWholesale > 0;
       return true;
-    });
-  }, [products, selectedFilter, searchQuery]);
+    }).sort((a, b) => sortBy === 'price-low' ? a.priceRetail - b.priceRetail : sortBy === 'price-high' ? b.priceRetail - a.priceRetail : sortBy === 'newest' ? 0 : Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+  }, [products, selectedFilter, searchQuery, maxPrice, sellerFilter, sortBy]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans">
@@ -92,6 +98,12 @@ export default function StorefrontHomePage() {
             <span className="font-semibold">
               {storeSettings?.bannerNotice || 'Semester Rush: Group wholesale discounts unlock automatically at 3+ units!'}
             </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" aria-label="Marketplace filters">
+            <label className="text-xs font-semibold">Max price (TZS)<input type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Any" className="ml-2 w-28 rounded-lg border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950"/></label>
+            <label className="text-xs font-semibold">Seller<select value={sellerFilter} onChange={(event) => setSellerFilter(event.target.value)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950"><option value="all">All sellers</option><option value="official">Official UniSoko</option><option value="verified">Verified sellers</option></select></label>
+            <label className="text-xs font-semibold">Sort<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-950"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="newest">Newest</option></select></label>
           </div>
           <button
             onClick={openStudentGuide}

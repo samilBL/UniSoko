@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Product } from '@/lib/types';
 import { formatTZS } from '@/lib/mockData';
 import { useStore } from '@/context/StoreContext';
-import { ShoppingBag, MessageCircle, Check, Sparkles, ArrowUpRight, ShieldCheck, Zap } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Check, Sparkles, ArrowUpRight, ShieldCheck, Zap, BadgeCheck, Store } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getProductSpecEntries } from '@/lib/productSpecs';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
@@ -16,7 +16,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, selectedCampus, storeSettings } = useStore();
+  const { addToCart, selectedCampus } = useStore();
   const [isAdded, setIsAdded] = useState(false);
   const isAvailable = product.stockStatus !== 'Coming Soon';
   const productSpecEntries = getProductSpecEntries(product);
@@ -83,6 +83,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
         </div>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {product.officialUniSoko && <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"><BadgeCheck className="h-3 w-3"/>Official UniSoko</span>}
+          {product.sellerVerified && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><BadgeCheck className="h-3 w-3"/>{product.sellerVerificationLabel || 'Verified seller'}</span>}
+        </div>
 
         {/* Product Image */}
         <Link href={`/product/${product.id}`} className="block relative aspect-4/3 w-full overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 mb-3.5 border border-slate-100 dark:border-slate-800">
@@ -106,6 +110,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.title}
           </h3>
         </Link>
+        {product.sellerProfileId && <Link href={`/seller/${product.sellerProfileId}`} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-indigo-600"><Store className="h-3 w-3"/>{product.sellerDisplayName || 'Marketplace seller'}</Link>}
 
         {/* Quick Specs Snippet */}
         {productSpecEntries.length > 0 && (

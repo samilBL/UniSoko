@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
     description: String(body.description || '').trim(),
     specs: typeof body.specs === 'object' && body.specs ? body.specs : {},
     is_featured: Boolean(body.isFeatured),
+    is_official_unisoko: body.isOfficialUniSoko !== undefined ? Boolean(body.isOfficialUniSoko) : true,
     is_bundle_eligible: body.isBundleEligible !== undefined ? Boolean(body.isBundleEligible) : true,
     is_active: body.isActive !== undefined ? Boolean(body.isActive) : true,
     listing_status: 'approved',
@@ -114,6 +115,7 @@ export async function PATCH(req: NextRequest) {
   if (body.inStock !== undefined) updates.in_stock = Boolean(body.inStock);
   if (body.stockCount !== undefined) updates.stock_count = Number(body.stockCount);
   if (body.isFeatured !== undefined) updates.is_featured = Boolean(body.isFeatured);
+  if (body.isOfficialUniSoko !== undefined) updates.is_official_unisoko = Boolean(body.isOfficialUniSoko);
   if (body.isActive !== undefined) updates.is_active = Boolean(body.isActive);
   if (body.name !== undefined) updates.name = String(body.name).trim().slice(0, 300);
 
