@@ -38,8 +38,8 @@ export default function SplashScreen() {
   useEffect(() => {
     // Show once per session
     if (sessionStorage.getItem('unisoko_splash_seen')) {
-      setVisible(false);
-      return;
+      const hideTimer = setTimeout(() => setVisible(false), 0);
+      return () => clearTimeout(hideTimer);
     }
     sessionStorage.setItem('unisoko_splash_seen', 'true');
 

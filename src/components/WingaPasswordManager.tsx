@@ -47,8 +47,8 @@ export default function WingaPasswordManager() {
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setIsOpen(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Could not update password.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not update password.');
     } finally {
       setLoading(false);
     }

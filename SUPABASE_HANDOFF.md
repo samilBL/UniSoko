@@ -14,6 +14,14 @@
 - Admin marketplace controls now include reporting, verification review, audit history, marketplace totals, and featured status controls for active approved listings.
 - Product/seller reports require signed-in customer accounts and are processed manually in the admin queue.
 
+## Phase 10 Security and Regression Test Handoff
+
+- `npm run lint`, `npx tsc --noEmit`, and `npm run build` passed after replacing existing `any` catches/types and correcting the splash-screen effect lint error. Three image optimization warnings remain for seller/admin image previews.
+- No unit or integration test runner is configured in `package.json`.
+- Local unauthenticated admin API requests redirect to `/admin/login`; unauthenticated seller API routes return 503 because Supabase Auth is not configured in this checkout. Do not interpret that as a successful signed-in seller flow.
+- The local public, seller login, Winga application/login/leaderboard, and admin login pages returned HTTP 200. A narrow browser view showed the horizontal Campus Hub navigation; dynamic auth/payment/moderation flows and role matrix remain unverified without test accounts and a configured non-production Supabase project.
+- Local browser logs observed an Unsplash image URL returning 404 for the sample power bank listing. Replace it with a verified asset before using that sample listing in production.
+
 This handoff records database- and provider-dependent work from the production-readiness sequence. No credentials are included.
 
 ## Connection Status

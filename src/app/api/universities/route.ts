@@ -25,7 +25,7 @@ export async function GET() {
   }
 
   // Format database rows into UniversityLocation shape
-  const formatted = data.map((u: any) => ({
+  const formatted = (data as { id: string; name: string; short_name: string; city: string; landmarks: unknown; delivery_fee: number | string | null; estimated_delivery_time: string | null; hostels: unknown }[]).map((u) => ({
     id: u.id,
     name: u.name,
     shortCode: u.short_name,

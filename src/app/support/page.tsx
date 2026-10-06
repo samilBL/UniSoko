@@ -61,8 +61,8 @@ export default function SupportPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to submit ticket');
       setTicketSuccess(data.message || 'Support ticket submitted successfully!');
       setTicketForm({ buyerName: '', buyerPhone: '', orderId: '', subject: 'Payment', message: '' });
-    } catch (err: any) {
-      setTicketError(err.message || 'Something went wrong');
+    } catch (err: unknown) {
+      setTicketError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setTicketLoading(false);
     }
@@ -84,8 +84,8 @@ export default function SupportPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to submit warranty claim');
       setWarrantySuccess(data.message || 'Claim submitted successfully!');
       setWarrantyForm({ buyerName: '', buyerPhone: '', orderId: '', claimType: 'Warranty', description: '' });
-    } catch (err: any) {
-      setWarrantyError(err.message || 'Something went wrong');
+    } catch (err: unknown) {
+      setWarrantyError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setWarrantyLoading(false);
     }

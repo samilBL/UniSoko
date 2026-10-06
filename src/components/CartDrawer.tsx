@@ -21,7 +21,6 @@ export default function CartDrawer() {
     cartTotalSavings,
     selectedCampus,
     cartCount,
-    storeSettings,
   } = useStore();
 
   const handleWhatsAppCheckout = () => {

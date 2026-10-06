@@ -22,7 +22,7 @@ import { createWhatsAppLink } from '@/lib/whatsapp';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function SellDevicePage() {
-  const { submitTradeInRequest, selectedCampus, storeSettings } = useStore();
+  const { submitTradeInRequest, selectedCampus } = useStore();
 
   const [studentName, setStudentName] = useState('');
   const [phone, setPhone] = useState('');
