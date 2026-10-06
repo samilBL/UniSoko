@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CheckCircle2, Store } from 'lucide-react';
 import Header from '@/components/Header';
+import PasswordInput from '@/components/PasswordInput';
 
 const fieldClass = 'mt-1.5 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white';
 
@@ -34,7 +35,7 @@ export default function SellerApplyPage() {
       <label className="text-xs font-bold">Shop name<input className={fieldClass} required minLength={2} maxLength={120} autoComplete="organization" value={form.displayName} onChange={(e) => setForm({...form, displayName:e.target.value})}/></label>
       <label className="text-xs font-bold">University<input className={fieldClass} required minLength={2} maxLength={160} value={form.university} onChange={(e) => setForm({...form, university:e.target.value})} placeholder="Your university"/></label>
       <label className="text-xs font-bold">Campus (optional)<input className={fieldClass} maxLength={160} value={form.campus} onChange={(e) => setForm({...form, campus:e.target.value})}/></label>
-      <label className="text-xs font-bold">Password<input className={fieldClass} type="password" required minLength={8} maxLength={128} autoComplete="new-password" value={form.password} onChange={(e) => setForm({...form, password:e.target.value})} placeholder="At least 8 characters"/></label>
+      <label className="text-xs font-bold">Password<PasswordInput className={fieldClass.replace('mt-1.5 ', '')} required minLength={8} maxLength={128} autoComplete="new-password" value={form.password} onChange={(e) => setForm({...form, password:e.target.value})} placeholder="At least 8 characters"/></label>
       <label className="text-xs font-bold sm:col-span-2">What will you sell? (optional)<textarea className={`${fieldClass} min-h-24 resize-y py-3`} maxLength={2000} value={form.description} onChange={(e) => setForm({...form, description:e.target.value})} placeholder="Tell students and reviewers about your shop."/></label>
       {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 sm:col-span-2">{error}</p>}
       <button disabled={busy} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:opacity-60 sm:col-span-2">{busy ? 'Creating account…' : 'Create account & submit shop application'}<ArrowRight className="h-4 w-4"/></button>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, CheckCircle2, GraduationCap, ShieldCheck } from 'lucide-react';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
+import PasswordInput from '@/components/PasswordInput';
 import { ALL_UNIVERSITIES, OTHER_TANZANIA_UNIVERSITY } from '@/lib/mockData';
 
 const fieldClass = 'mt-1.5 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white';
@@ -53,7 +54,7 @@ export default function WingaLandingPage() {
       <label className="text-xs font-bold">Phone number<input className={fieldClass} type="tel" required autoComplete="tel" value={form.phone} onChange={(e) => setForm({...form, phone:e.target.value})} placeholder="0712 345 678"/></label>
       <label className="text-xs font-bold sm:col-span-2"><span className="inline-flex items-center gap-1.5"><GraduationCap className="h-4 w-4"/>University or campus</span><select className={fieldClass} required value={form.university} onChange={(e) => setForm({...form, university:e.target.value})}>{ALL_UNIVERSITIES.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
       {form.university === OTHER_TANZANIA_UNIVERSITY.name && <label className="text-xs font-bold sm:col-span-2">University name<input className={fieldClass} required maxLength={160} value={form.otherUniversity} onChange={(e) => setForm({...form, otherUniversity:e.target.value})}/></label>}
-      <label className="text-xs font-bold sm:col-span-2">Password<input className={fieldClass} type="password" required minLength={8} maxLength={128} autoComplete="new-password" value={form.password} onChange={(e) => setForm({...form, password:e.target.value})} placeholder="At least 8 characters"/><span className="mt-1 block font-normal text-slate-500">Use this password with your email or phone when you sign in.</span></label>
+      <label className="text-xs font-bold sm:col-span-2">Password<PasswordInput className={fieldClass.replace('mt-1.5 ', '')} required minLength={8} maxLength={128} autoComplete="new-password" value={form.password} onChange={(e) => setForm({...form, password:e.target.value})} placeholder="At least 8 characters"/><span className="mt-1 block font-normal text-slate-500">Use this password with your email or phone when you sign in.</span></label>
       {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 sm:col-span-2">{error}</p>}
       <button disabled={busy} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-5 text-sm font-bold text-white transition hover:bg-indigo-800 disabled:opacity-60 sm:col-span-2">{busy ? 'Creating your account…' : 'Create account & submit application'}<ArrowRight className="h-4 w-4"/></button>
     </form><p className="mt-5 text-center text-sm text-slate-600 dark:text-slate-300">Already registered? <Link className="font-bold text-indigo-700 hover:underline dark:text-indigo-300" href="/winga/login">Sign in</Link></p></section>

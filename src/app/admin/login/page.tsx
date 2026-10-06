@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function AdminLoginPage() {
           </label>
           <label className="block text-sm font-semibold text-slate-800">
             Password
-            <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 w-full rounded-xl px-3.5 py-3 text-sm" />
+            <PasswordInput autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl px-3.5 py-3 text-sm" />
           </label>
           {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
           <button disabled={isSubmitting} className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60">
