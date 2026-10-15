@@ -1,7 +1,7 @@
 'use client';
 
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, ClipboardList, Package, Pencil, Save, ShieldCheck, Store } from 'lucide-react';
+import { Archive, Check, ClipboardList, Headphones, Home, Laptop, Layers, Package, Pencil, Save, ShieldCheck, Smartphone, Store, Zap } from 'lucide-react';
 import Link from 'next/link';
 import AccountSignOutButton from '@/components/AccountSignOutButton';
 import SellerMarketplaceInsights from '@/components/SellerMarketplaceInsights';
@@ -27,6 +27,54 @@ type Plan = { id: string; name: string; description: string; plan_type: string; 
 type PaymentMethod = { id: string; name: string; instructions: string; public_details: Record<string, unknown> };
 type Subscription = { id: string; status: string; plan_snapshot: Record<string, unknown>; expires_at: string | null };
 type Tab = 'overview' | 'products' | 'profile';
+
+const DEFAULT_FALLBACK_CATEGORIES: Category[] = [
+  { id: 'cat-laptops', name: 'Laptops & Computers' },
+  { id: 'cat-phones', name: 'Phones & Tablets' },
+  { id: 'cat-audio', name: 'Audio & Sound' },
+  { id: 'cat-power', name: 'Power & Cables' },
+  { id: 'cat-room', name: 'Room & Hostel Gear' },
+  { id: 'cat-campus', name: 'Campus Essentials' },
+];
+
+const DEFAULT_FALLBACK_SUBCATEGORIES: Subcategory[] = [
+  { id: 'sub-macbooks', category_id: 'cat-laptops', name: 'MacBooks & Laptops' },
+  { id: 'sub-desktops', category_id: 'cat-laptops', name: 'Desktops & Monitors' },
+  { id: 'sub-laptopacc', category_id: 'cat-laptops', name: 'Laptop Bags & Accessories' },
+  { id: 'sub-smartphones', category_id: 'cat-phones', name: 'Smartphones & iPhones' },
+  { id: 'sub-tablets', category_id: 'cat-phones', name: 'iPads & Tablets' },
+  { id: 'sub-cases', category_id: 'cat-phones', name: 'Phone Cases & Screen Protectors' },
+  { id: 'sub-earbuds', category_id: 'cat-audio', name: 'AirPods & Earbuds' },
+  { id: 'sub-headphones', category_id: 'cat-audio', name: 'Over-Ear Headphones' },
+  { id: 'sub-speakers', category_id: 'cat-audio', name: 'Bluetooth Speakers' },
+  { id: 'sub-powerbanks', category_id: 'cat-power', name: 'Power Banks' },
+  { id: 'sub-chargers', category_id: 'cat-power', name: 'Fast Chargers' },
+  { id: 'sub-cables', category_id: 'cat-power', name: 'Cables & Hub Adapters' },
+  { id: 'sub-desklamps', category_id: 'cat-room', name: 'Desk Lamps & Lights' },
+  { id: 'sub-extensions', category_id: 'cat-room', name: 'Extension Cables' },
+  { id: 'sub-kettles', category_id: 'cat-room', name: 'Kettles & Cookware' },
+  { id: 'sub-fans', category_id: 'cat-room', name: 'Mini Fans' },
+  { id: 'sub-backpacks', category_id: 'cat-campus', name: 'Backpacks & Bags' },
+  { id: 'sub-calculators', category_id: 'cat-campus', name: 'Calculators & Tech Tools' },
+  { id: 'sub-storage', category_id: 'cat-campus', name: 'Flash Drives & External SSDs' },
+  { id: 'sub-stationery', category_id: 'cat-campus', name: 'Stationery & Study Gear' },
+];
+
+const DEFAULT_FALLBACK_CONDITIONS: Condition[] = [
+  { id: 'cond-brand-new', name: 'Brand New', description: 'Factory sealed in original packaging with manufacturer warranty.' },
+  { id: 'cond-grade-a', name: 'Grade A Like-New', description: 'Flawless condition, fully tested and inspected with no visible wear.' },
+  { id: 'cond-refurbished', name: 'Refurbished', description: 'Professionally restored, cleaned, tested and fully functional.' },
+];
+
+function getCategoryIcon(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.includes('laptop') || lower.includes('computer')) return <Laptop className="h-4 w-4" />;
+  if (lower.includes('phone') || lower.includes('tablet')) return <Smartphone className="h-4 w-4" />;
+  if (lower.includes('audio') || lower.includes('sound') || lower.includes('ear') || lower.includes('head')) return <Headphones className="h-4 w-4" />;
+  if (lower.includes('power') || lower.includes('cable') || lower.includes('charge')) return <Zap className="h-4 w-4" />;
+  if (lower.includes('room') || lower.includes('hostel') || lower.includes('home')) return <Home className="h-4 w-4" />;
+  return <Package className="h-4 w-4" />;
+}
 
 const inputClass = 'mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white';
 const emptyProductDraft = { name: '', categoryId: '', subcategoryId: '', conditionId: '', price: '', description: '', specs: {} as Record<string, unknown>, images: [] as string[] };
@@ -57,6 +105,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
   const [draft, setDraft] = useState(emptyProductDraft);
   const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
   const [productStep, setProductStep] = useState(0);
+  const [maxStepReached, setMaxStepReached] = useState(0);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [profileForm, setProfileForm] = useState({ displayName: initialProfile.display_name, university: initialProfile.university, campus: initialProfile.campus || '', phone: typeof initialProfile.contact_options.phone === 'string' ? initialProfile.contact_options.phone : '', description: initialProfile.description });
 
@@ -216,8 +265,13 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     setDraft({ name: product.name, categoryId: product.category_id || '', subcategoryId: product.subcategory_id || '', conditionId: product.product_condition_id || '', price: String(product.price), description: product.description || '', specs: product.specs || {}, images });
     setImagePreviews(Object.fromEntries(images.map((path, index) => [path, product.imageUrls[index] || ''])));
     setProductStep(0);
+    setMaxStepReached(5);
     setTab('products');
   };
+
+  const effectiveCategories = categories.length > 0 ? categories : DEFAULT_FALLBACK_CATEGORIES;
+  const effectiveSubcategories = subcategories.length > 0 ? subcategories : DEFAULT_FALLBACK_SUBCATEGORIES;
+  const effectiveConditions = conditions.length > 0 ? conditions : DEFAULT_FALLBACK_CONDITIONS;
 
   const applicableAttributes = attributes.filter((attribute) =>
     (!attribute.category_id || attribute.category_id === draft.categoryId) &&
@@ -271,14 +325,505 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-extrabold">Product drafts</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Drafts are private and will not appear in marketplace search.</p></div><div className="flex flex-wrap gap-2">{['all', 'draft', 'pending_approval', 'approved', 'rejected', 'changes_requested', 'archived'].map((status) => <button type="button" key={status} onClick={() => setFilter(status)} className={`min-h-9 rounded-full px-3 text-[11px] font-bold capitalize ${filter === status ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'}`}>{status === 'all' ? `All (${products.length})` : `${status.replaceAll('_', ' ')} (${counts[status] || 0})`}</button>)}</div></div>
           {approved ? <form onSubmit={saveProduct} className="mt-5 space-y-5 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
             <div><h3 className="font-bold">{editingId ? 'Edit product draft' : 'Create a product draft'}</h3><p className="mt-1 text-xs text-slate-500">Your progress is saved in this browser while you work. Saving creates a private draft.</p></div>
-            <ol className="grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Product creation steps">{['Category', 'Condition', 'Specifications', 'Images', 'Description', 'Preview'].map((label, index) => <li key={label}><button type="button" onClick={() => { if (index <= productStep) setProductStep(index); }} className={`min-h-10 w-full rounded-lg px-2 text-[11px] font-bold ${productStep === index ? 'bg-indigo-600 text-white' : index < productStep ? 'bg-indigo-100 text-indigo-800' : 'bg-white text-slate-500 dark:bg-slate-900'}`}>{index + 1}. {label}</button></li>)}</ol>
-            {productStep === 0 && <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Category<select className={inputClass} required value={draft.categoryId} onChange={(event) => setDraft({ ...draft, categoryId: event.target.value, subcategoryId: '', specs: {} })}><option value="">Choose category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="text-xs font-bold">Subcategory <span className="font-normal text-slate-500">(optional)</span><select className={inputClass} value={draft.subcategoryId} disabled={!draft.categoryId} onChange={(event) => setDraft({ ...draft, subcategoryId: event.target.value, specs: {} })}><option value="">Choose subcategory</option>{subcategories.filter((item) => item.category_id === draft.categoryId).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{categories.length === 0 && <p className="text-xs text-amber-700 sm:col-span-2">No active categories are configured yet. Ask an administrator to add marketplace categories.</p>}</div>}
-            {productStep === 1 && <div className="grid gap-3 sm:grid-cols-2">{conditions.map((condition) => <label key={condition.id} className={`cursor-pointer rounded-xl border p-4 ${draft.conditionId === condition.id ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}><input className="mr-2" type="radio" name="productCondition" value={condition.id} checked={draft.conditionId === condition.id} onChange={() => setDraft({ ...draft, conditionId: condition.id, specs: {} })}/><b className="text-sm">{condition.name}</b><p className="mt-1 pl-6 text-xs text-slate-500">{condition.description}</p></label>)}</div>}
-            {productStep === 2 && <div className="grid gap-4 sm:grid-cols-2">{!draft.categoryId || !draft.conditionId ? <p className="text-sm text-amber-700 sm:col-span-2">Choose a category and condition first.</p> : applicableAttributes.length === 0 ? <p className="text-sm text-slate-600 sm:col-span-2">No extra specifications are configured for this category and condition.</p> : applicableAttributes.map((attribute) => <label key={attribute.id} className="text-xs font-bold">{attribute.name}{attribute.is_required && <span className="text-rose-600"> *</span>}{attribute.input_type === 'text' && <input className={inputClass} required={attribute.is_required} maxLength={Number(attribute.validation_rules.maxLength || 500)} value={String(draft.specs[attribute.attribute_key] ?? '')} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value } })}/>}{attribute.input_type === 'number' && <input className={inputClass} required={attribute.is_required} type="number" min={typeof attribute.validation_rules.min === 'number' ? attribute.validation_rules.min : undefined} max={typeof attribute.validation_rules.max === 'number' ? attribute.validation_rules.max : undefined} value={typeof draft.specs[attribute.attribute_key] === 'number' ? String(draft.specs[attribute.attribute_key]) : ''} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value === '' ? '' : Number(event.target.value) } })}/>}{attribute.input_type === 'boolean' && <select required={attribute.is_required} className={inputClass} value={draft.specs[attribute.attribute_key] === true ? 'true' : draft.specs[attribute.attribute_key] === false ? 'false' : ''} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value === '' ? '' : event.target.value === 'true' } })}><option value="">Choose</option><option value="true">Yes</option><option value="false">No</option></select>}{attribute.input_type === 'select' && <select required={attribute.is_required} className={inputClass} value={String(draft.specs[attribute.attribute_key] ?? '')} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value } })}><option value="">Choose option</option>{attribute.product_attribute_options.filter((option) => option.is_active !== false).map((option) => <option key={option.id} value={option.value}>{option.label}</option>)}</select>}{attribute.input_type === 'multiselect' && <select required={attribute.is_required} multiple className={`${inputClass} min-h-28`} value={Array.isArray(draft.specs[attribute.attribute_key]) ? draft.specs[attribute.attribute_key] as string[] : []} onChange={(event) => setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: Array.from(event.target.selectedOptions, (option) => option.value) } })}>{attribute.product_attribute_options.filter((option) => option.is_active !== false).map((option) => <option key={option.id} value={option.value}>{option.label}</option>)}</select>}</label>)}</div>}
-            {productStep === 3 && <div><label className="block text-xs font-bold">Product images <span className="font-normal text-slate-500">(1–8, JPG/PNG/WebP, up to 5 MB each)</span><input className={`${inputClass} py-2`} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={uploadingImages || draft.images.length >= 8} onChange={(event) => { void uploadImages(event.target.files); event.currentTarget.value = ''; }}/></label>{uploadingImages && <p className="mt-2 text-xs text-indigo-600">Uploading images…</p>}<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{draft.images.map((path) => <article key={path} className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"><img className="aspect-square w-full object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product upload preview"/><button type="button" onClick={() => void removeImage(path)} className="w-full p-2 text-xs font-bold text-rose-700">Remove image</button></article>)}</div></div>}
-            {productStep === 4 && <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Product name<input className={inputClass} required minLength={2} maxLength={300} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}/></label><label className="text-xs font-bold">Price (TZS)<input className={inputClass} required type="number" inputMode="decimal" min="1" step="1" value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })}/></label><label className="text-xs font-bold sm:col-span-2">Description <span className="font-normal text-slate-500">({draft.description.length}/4,000)</span><textarea className={`${inputClass} min-h-32 py-3`} required minLength={10} maxLength={4000} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })}/></label></div>}
-            {productStep === 5 && <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"><h4 className="text-lg font-black">{draft.name || 'Product preview'}</h4><p className="mt-1 text-sm text-slate-600">{categories.find((item) => item.id === draft.categoryId)?.name}{draft.subcategoryId ? ` · ${subcategories.find((item) => item.id === draft.subcategoryId)?.name || ''}` : ''} · {conditions.find((item) => item.id === draft.conditionId)?.name || 'Condition not selected'}</p><p className="mt-2 text-lg font-bold">TZS {Number(draft.price || 0).toLocaleString('en-TZ')}</p><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{draft.images.map((path) => <img key={path} className="aspect-square w-full rounded-lg object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product preview"/>)}</div><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{draft.description || 'Add a product description.'}</p>{Object.keys(draft.specs).length > 0 && <dl className="mt-4 grid gap-2 sm:grid-cols-2">{Object.entries(draft.specs).filter(([, value]) => value !== '' && value !== undefined).map(([key, value]) => <div key={key} className="rounded-lg bg-slate-50 p-2 text-xs dark:bg-slate-800"><dt className="font-bold">{applicableAttributes.find((attribute) => attribute.attribute_key === key)?.name || key}</dt><dd>{Array.isArray(value) ? value.join(', ') : String(value)}</dd></div>)}</dl>}<p className="mt-4 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">This preview will be saved as a private draft. Product submission for moderation is part of the next phase.</p></div>}
-            <div className="flex flex-wrap justify-between gap-2"><div className="flex gap-2">{productStep > 0 && <button type="button" onClick={() => { setProductStep((step) => Math.max(0, step - 1)); }} className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold">Back</button>}{productStep < 5 && <button type="button" onClick={() => { if (productStep === 0 && !draft.categoryId) { setError('Choose a category to continue.'); return; } if (productStep === 1 && !draft.conditionId) { setError('Choose a product condition to continue.'); return; } if (productStep === 2 && applicableAttributes.some((attribute) => attribute.is_required && (draft.specs[attribute.attribute_key] === undefined || draft.specs[attribute.attribute_key] === '' || (Array.isArray(draft.specs[attribute.attribute_key]) && !(draft.specs[attribute.attribute_key] as unknown[]).length)))) { setError('Complete each required specification to continue.'); return; } if (productStep === 3 && draft.images.length === 0) { setError('Add at least one product image to continue.'); return; } if (productStep === 4 && (!draft.name.trim() || Number(draft.price) <= 0 || draft.description.trim().length < 10)) { setError('Add the product name, a positive price, and a description of at least 10 characters.'); return; } setError(''); setProductStep((step) => step + 1); }} className="min-h-10 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white dark:bg-white dark:text-slate-900">Continue</button>}</div><div className="flex gap-2">{editingId && <button type="button" onClick={() => { setEditingId(null); setDraft(emptyProductDraft); setImagePreviews({}); setProductStep(0); }} className="min-h-10 rounded-xl border border-slate-300 px-4 text-xs font-bold">Cancel edit</button>}{productStep === 5 && <button type="submit" disabled={busy || uploadingImages || !draft.images.length} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white disabled:opacity-50"><Save className="h-4 w-4"/>{busy ? 'Saving…' : 'Save private draft'}</button>}</div></div>
+            <ol className="grid grid-cols-3 gap-2 sm:grid-cols-6" aria-label="Product creation steps">
+              {['Category', 'Condition', 'Specifications', 'Images', 'Description', 'Preview'].map((label, index) => {
+                const canVisit = index <= Math.max(productStep, maxStepReached) || Boolean(editingId);
+                return (
+                  <li key={label}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (canVisit) setProductStep(index);
+                      }}
+                      className={`min-h-10 w-full rounded-lg px-2 text-[11px] font-bold transition cursor-pointer ${
+                        productStep === index
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : canVisit
+                          ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300'
+                          : 'bg-white text-slate-400 dark:bg-slate-900 dark:text-slate-600 cursor-not-allowed opacity-75'
+                      }`}
+                    >
+                      {index + 1}. {label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {/* STEP 0: PRESSABLE CATEGORY & SUBCATEGORY SELECTION */}
+            {productStep === 0 && (
+              <div className="space-y-5">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Product Category <span className="text-rose-500">*</span>
+                    </label>
+                    {draft.categoryId && (
+                      <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                        Selected: {effectiveCategories.find((c) => c.id === draft.categoryId)?.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mb-3">
+                    Press a category card to assign the department for your item:
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {effectiveCategories.map((category) => {
+                      const isSelected = draft.categoryId === category.id;
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => {
+                            setDraft({ ...draft, categoryId: category.id, subcategoryId: '', specs: {} });
+                            setError('');
+                          }}
+                          className={`group relative flex flex-col items-start p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/90 dark:bg-indigo-950/60 text-indigo-950 dark:text-indigo-100 shadow-md ring-2 ring-indigo-500/20'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full mb-2">
+                            <span
+                              className={`p-2 rounded-lg transition-colors ${
+                                isSelected
+                                  ? 'bg-indigo-600 text-white shadow-sm'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-700 dark:group-hover:bg-indigo-900/50 dark:group-hover:text-indigo-300'
+                              }`}
+                            >
+                              {getCategoryIcon(category.name)}
+                            </span>
+                            {isSelected && (
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm">
+                                <Check className="h-3 w-3 stroke-[3]" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold leading-snug line-clamp-2">{category.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Subcategory Pills */}
+                {draft.categoryId && (
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700/80">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Subcategory <span className="font-normal text-slate-500">(Press to filter or specialize)</span>
+                      </label>
+                      {draft.subcategoryId && (
+                        <button
+                          type="button"
+                          onClick={() => setDraft({ ...draft, subcategoryId: '', specs: {} })}
+                          className="text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+                        >
+                          Reset to General
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDraft({ ...draft, subcategoryId: '', specs: {} })}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          !draft.subcategoryId
+                            ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm ring-1 ring-slate-900 dark:ring-white'
+                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        All / General {effectiveCategories.find((c) => c.id === draft.categoryId)?.name || ''}
+                      </button>
+
+                      {effectiveSubcategories
+                        .filter((item) => item.category_id === draft.categoryId)
+                        .map((item) => {
+                          const isSubSelected = draft.subcategoryId === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                setDraft({ ...draft, subcategoryId: item.id, specs: {} });
+                                setError('');
+                              }}
+                              className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                                isSubSelected
+                                  ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-500'
+                                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-600'
+                              }`}
+                            >
+                              {isSubSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                              <span>{item.name}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 1: PRESSABLE CONDITION SELECTION */}
+            {productStep === 1 && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold block text-slate-800 dark:text-slate-200 mb-1">
+                    Product Condition <span className="text-rose-500">*</span>
+                  </label>
+                  <p className="text-xs text-slate-500 mb-3">Press a condition card to describe the physical state of your gadget:</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {effectiveConditions.map((condition) => {
+                    const isCondSelected = draft.conditionId === condition.id;
+                    return (
+                      <button
+                        key={condition.id}
+                        type="button"
+                        onClick={() => {
+                          setDraft({ ...draft, conditionId: condition.id, specs: {} });
+                          setError('');
+                        }}
+                        className={`cursor-pointer rounded-xl border-2 p-4 text-left transition-all ${
+                          isCondSelected
+                            ? 'border-indigo-600 bg-indigo-50/90 dark:bg-indigo-950/50 shadow-sm ring-2 ring-indigo-500/20 text-indigo-950 dark:text-indigo-100'
+                            : 'border-slate-200 bg-white hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 text-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <b className="text-sm font-bold">{condition.name}</b>
+                          {isCondSelected && (
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm">
+                              <Check className="h-3 w-3 stroke-[3]" />
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{condition.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: DYNAMIC SPECIFICATIONS */}
+            {productStep === 2 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {!draft.categoryId || !draft.conditionId ? (
+                  <p className="text-sm text-amber-700 sm:col-span-2">Choose a category and condition first.</p>
+                ) : applicableAttributes.length === 0 ? (
+                  <div className="rounded-xl bg-slate-100 p-4 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300 sm:col-span-2">
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Standard Item Specs</p>
+                    <p>No extra specifications required for this category. Press <b>Continue</b> below to proceed to image uploads.</p>
+                  </div>
+                ) : (
+                  applicableAttributes.map((attribute) => (
+                    <label key={attribute.id} className="text-xs font-bold">
+                      {attribute.name}
+                      {attribute.is_required && <span className="text-rose-600"> *</span>}
+                      {attribute.input_type === 'text' && (
+                        <input
+                          className={inputClass}
+                          required={attribute.is_required}
+                          maxLength={Number(attribute.validation_rules.maxLength || 500)}
+                          value={String(draft.specs[attribute.attribute_key] ?? '')}
+                          onChange={(event) =>
+                            setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value } })
+                          }
+                        />
+                      )}
+                      {attribute.input_type === 'number' && (
+                        <input
+                          className={inputClass}
+                          required={attribute.is_required}
+                          type="number"
+                          min={typeof attribute.validation_rules.min === 'number' ? attribute.validation_rules.min : undefined}
+                          max={typeof attribute.validation_rules.max === 'number' ? attribute.validation_rules.max : undefined}
+                          value={typeof draft.specs[attribute.attribute_key] === 'number' ? String(draft.specs[attribute.attribute_key]) : ''}
+                          onChange={(event) =>
+                            setDraft({
+                              ...draft,
+                              specs: {
+                                ...draft.specs,
+                                [attribute.attribute_key]: event.target.value === '' ? '' : Number(event.target.value),
+                              },
+                            })
+                          }
+                        />
+                      )}
+                      {attribute.input_type === 'boolean' && (
+                        <select
+                          required={attribute.is_required}
+                          className={inputClass}
+                          value={draft.specs[attribute.attribute_key] === true ? 'true' : draft.specs[attribute.attribute_key] === false ? 'false' : ''}
+                          onChange={(event) =>
+                            setDraft({
+                              ...draft,
+                              specs: {
+                                ...draft.specs,
+                                [attribute.attribute_key]: event.target.value === '' ? '' : event.target.value === 'true',
+                              },
+                            })
+                          }
+                        >
+                          <option value="">Choose</option>
+                          <option value="true">Yes</option>
+                          <option value="false">No</option>
+                        </select>
+                      )}
+                      {attribute.input_type === 'select' && (
+                        <select
+                          required={attribute.is_required}
+                          className={inputClass}
+                          value={String(draft.specs[attribute.attribute_key] ?? '')}
+                          onChange={(event) =>
+                            setDraft({ ...draft, specs: { ...draft.specs, [attribute.attribute_key]: event.target.value } })
+                          }
+                        >
+                          <option value="">Choose option</option>
+                          {attribute.product_attribute_options.filter((option) => option.is_active !== false).map((option) => (
+                            <option key={option.id} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      )}
+                      {attribute.input_type === 'multiselect' && (
+                        <select
+                          required={attribute.is_required}
+                          multiple
+                          className={`${inputClass} min-h-28`}
+                          value={Array.isArray(draft.specs[attribute.attribute_key]) ? (draft.specs[attribute.attribute_key] as string[]) : []}
+                          onChange={(event) =>
+                            setDraft({
+                              ...draft,
+                              specs: {
+                                ...draft.specs,
+                                [attribute.attribute_key]: Array.from(event.target.selectedOptions, (option) => option.value),
+                              },
+                            })
+                          }
+                        >
+                          {attribute.product_attribute_options.filter((option) => option.is_active !== false).map((option) => (
+                            <option key={option.id} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      )}
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* STEP 3: IMAGES */}
+            {productStep === 3 && (
+              <div>
+                <label className="block text-xs font-bold">
+                  Product images <span className="font-normal text-slate-500">(1–8, JPG/PNG/WebP, up to 5 MB each)</span>
+                  <input
+                    className={`${inputClass} py-2`}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    disabled={uploadingImages || draft.images.length >= 8}
+                    onChange={(event) => {
+                      void uploadImages(event.target.files);
+                      event.currentTarget.value = '';
+                    }}
+                  />
+                </label>
+                {uploadingImages && <p className="mt-2 text-xs text-indigo-600">Uploading images…</p>}
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {draft.images.map((path) => (
+                    <article key={path} className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                      <img className="aspect-square w-full object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product upload preview" />
+                      <button type="button" onClick={() => void removeImage(path)} className="w-full p-2 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                        Remove image
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: DESCRIPTION & DETAILS */}
+            {productStep === 4 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="text-xs font-bold">
+                  Product name <span className="text-rose-500">*</span>
+                  <input
+                    className={inputClass}
+                    required
+                    minLength={2}
+                    maxLength={300}
+                    placeholder="e.g. MacBook Air M2 13-inch 8GB/256GB Midnight"
+                    value={draft.name}
+                    onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                  />
+                </label>
+                <label className="text-xs font-bold">
+                  Price (TZS) <span className="text-rose-500">*</span>
+                  <input
+                    className={inputClass}
+                    required
+                    type="number"
+                    inputMode="decimal"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 1850000"
+                    value={draft.price}
+                    onChange={(event) => setDraft({ ...draft, price: event.target.value })}
+                  />
+                </label>
+                <label className="text-xs font-bold sm:col-span-2">
+                  Description <span className="text-rose-500">*</span> <span className="font-normal text-slate-500">({draft.description.length}/4,000)</span>
+                  <textarea
+                    className={`${inputClass} min-h-32 py-3`}
+                    required
+                    minLength={10}
+                    maxLength={4000}
+                    placeholder="Describe condition, battery health, accessories included, and pickup points..."
+                    value={draft.description}
+                    onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* STEP 5: PREVIEW */}
+            {productStep === 5 && (
+              <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                <h4 className="text-lg font-black">{draft.name || 'Product preview'}</h4>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  {effectiveCategories.find((item) => item.id === draft.categoryId)?.name}
+                  {draft.subcategoryId ? ` · ${effectiveSubcategories.find((item) => item.id === draft.subcategoryId)?.name || ''}` : ''}
+                  {' · '}
+                  {effectiveConditions.find((item) => item.id === draft.conditionId)?.name || 'Condition not selected'}
+                </p>
+                <p className="mt-2 text-xl font-black text-indigo-600 dark:text-indigo-400">
+                  TZS {Number(draft.price || 0).toLocaleString('en-TZ')}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {draft.images.map((path) => (
+                    <img key={path} className="aspect-square w-full rounded-lg object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product preview" />
+                  ))}
+                </div>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">
+                  {draft.description || 'Add a product description.'}
+                </p>
+                {Object.keys(draft.specs).length > 0 && (
+                  <dl className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {Object.entries(draft.specs)
+                      .filter(([, value]) => value !== '' && value !== undefined)
+                      .map(([key, value]) => (
+                        <div key={key} className="rounded-lg bg-slate-50 p-2.5 text-xs dark:bg-slate-800">
+                          <dt className="font-bold text-slate-600 dark:text-slate-400">
+                            {applicableAttributes.find((attribute) => attribute.attribute_key === key)?.name || key}
+                          </dt>
+                          <dd className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                            {Array.isArray(value) ? value.join(', ') : String(value)}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+                )}
+                <p className="mt-4 rounded-lg bg-indigo-50 p-3 text-xs text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">
+                  This preview will be saved as a private draft. Once ready, you can submit it for listing approval.
+                </p>
+              </div>
+            )}
+
+            {/* FORM CONTROLS & CONTINUATION */}
+            <div className="flex flex-wrap justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex gap-2">
+                {productStep > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductStep((step) => Math.max(0, step - 1));
+                    }}
+                    className="min-h-11 rounded-xl border border-slate-300 px-5 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    Back
+                  </button>
+                )}
+                {productStep < 5 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (productStep === 0 && !draft.categoryId) {
+                        setError('Please press a category card to choose a product department.');
+                        return;
+                      }
+                      if (productStep === 1 && !draft.conditionId) {
+                        setError('Please press a condition card to describe product quality.');
+                        return;
+                      }
+                      if (
+                        productStep === 2 &&
+                        applicableAttributes.some(
+                          (attribute) =>
+                            attribute.is_required &&
+                            (draft.specs[attribute.attribute_key] === undefined ||
+                              draft.specs[attribute.attribute_key] === '' ||
+                              (Array.isArray(draft.specs[attribute.attribute_key]) &&
+                                !(draft.specs[attribute.attribute_key] as unknown[]).length))
+                        )
+                      ) {
+                        setError('Complete each required specification to continue.');
+                        return;
+                      }
+                      if (productStep === 3 && draft.images.length === 0) {
+                        setError('Add at least one product image to continue.');
+                        return;
+                      }
+                      if (
+                        productStep === 4 &&
+                        (!draft.name.trim() || Number(draft.price) <= 0 || draft.description.trim().length < 10)
+                      ) {
+                        setError('Add the product name, a positive price, and a description of at least 10 characters.');
+                        return;
+                      }
+                      setError('');
+                      setMaxStepReached((prev) => Math.max(prev, productStep + 1));
+                      setProductStep((step) => step + 1);
+                    }}
+                    className="min-h-11 rounded-xl bg-slate-900 px-5 text-xs font-bold text-white dark:bg-white dark:text-slate-900 hover:bg-slate-800 cursor-pointer transition shadow-sm"
+                  >
+                    Continue
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(null);
+                      setDraft(emptyProductDraft);
+                      setImagePreviews({});
+                      setProductStep(0);
+                    }}
+                    className="min-h-11 rounded-xl border border-slate-300 px-4 text-xs font-bold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    Cancel edit
+                  </button>
+                )}
+                {productStep === 5 && (
+                  <button
+                    type="submit"
+                    disabled={busy || uploadingImages || !draft.images.length}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white disabled:opacity-50 hover:bg-indigo-700 transition cursor-pointer shadow-md shadow-indigo-600/20"
+                  >
+                    <Save className="h-4 w-4" />
+                    {busy ? 'Saving…' : 'Save private draft'}
+                  </button>
+                )}
+              </div>
+            </div>
           </form> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">Your application must be approved before you can create product drafts.</p>}
         </section>
         <section className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900" aria-label="Seller products">

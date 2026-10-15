@@ -70,10 +70,81 @@ async function currentSeller() {
   return { actor, profile };
 }
 
+const DEFAULT_MARKETPLACE_SEEDS = [
+  {
+    name: 'Laptops & Computers',
+    slug: 'laptops-computers',
+    display_order: 1,
+    subcategories: [
+      { name: 'MacBooks & Laptops', slug: 'macbooks-laptops' },
+      { name: 'Desktops & Monitors', slug: 'desktops-monitors' },
+      { name: 'Laptop Bags & Accessories', slug: 'laptop-accessories' },
+    ],
+  },
+  {
+    name: 'Phones & Tablets',
+    slug: 'phones-tablets',
+    display_order: 2,
+    subcategories: [
+      { name: 'Smartphones & iPhones', slug: 'smartphones-iphones' },
+      { name: 'iPads & Tablets', slug: 'ipads-tablets' },
+      { name: 'Phone Cases & Screen Protectors', slug: 'phone-cases' },
+    ],
+  },
+  {
+    name: 'Audio & Sound',
+    slug: 'audio-sound',
+    display_order: 3,
+    subcategories: [
+      { name: 'AirPods & Earbuds', slug: 'airpods-earbuds' },
+      { name: 'Over-Ear Headphones', slug: 'headphones' },
+      { name: 'Bluetooth Speakers', slug: 'bluetooth-speakers' },
+    ],
+  },
+  {
+    name: 'Power & Cables',
+    slug: 'power-cables',
+    display_order: 4,
+    subcategories: [
+      { name: 'Power Banks', slug: 'power-banks' },
+      { name: 'Fast Chargers', slug: 'fast-chargers' },
+      { name: 'Cables & Hub Adapters', slug: 'cables-adapters' },
+    ],
+  },
+  {
+    name: 'Room & Hostel Gear',
+    slug: 'room-hostel-gear',
+    display_order: 5,
+    subcategories: [
+      { name: 'Desk Lamps & Lights', slug: 'desk-lamps' },
+      { name: 'Extension Cables', slug: 'extension-cables' },
+      { name: 'Kettles & Cookware', slug: 'kettles-cookware' },
+      { name: 'Mini Fans', slug: 'mini-fans' },
+    ],
+  },
+  {
+    name: 'Campus Essentials',
+    slug: 'campus-essentials',
+    display_order: 6,
+    subcategories: [
+      { name: 'Backpacks & Bags', slug: 'backpacks-bags' },
+      { name: 'Calculators & Tech Tools', slug: 'calculators-tech' },
+      { name: 'Flash Drives & External SSDs', slug: 'flash-drives-ssds' },
+      { name: 'Stationery & Study Gear', slug: 'stationery-gear' },
+    ],
+  },
+];
+
+const DEFAULT_CONDITIONS = [
+  { name: 'Brand New', slug: 'brand-new', description: 'Factory sealed in original packaging with manufacturer warranty.', display_order: 1 },
+  { name: 'Grade A Like-New', slug: 'grade-a-like-new', description: 'Flawless condition, fully tested and inspected with no visible wear.', display_order: 2 },
+  { name: 'Refurbished', slug: 'refurbished', description: 'Professionally restored, cleaned, tested and fully functional.', display_order: 3 },
+];
+
 export async function GET() {
   const seller = await currentSeller();
   if ('response' in seller) return seller.response;
-  const [{ data: products, error: productError }, { data: categories, error: categoryError }, { data: subcategories, error: subcategoryError }, { data: conditions, error: conditionError }, { data: attributes, error: attributeError }] = await Promise.all([
+  let [{ data: products, error: productError }, { data: categories, error: categoryError }, { data: subcategories, error: subcategoryError }, { data: conditions, error: conditionError }, { data: attributes, error: attributeError }] = await Promise.all([
     seller.actor.serviceClient.from('products').select(productFields)
       .eq('seller_profile_id', seller.profile.id)
       .order('created_at', { ascending: false }),
@@ -83,7 +154,48 @@ export async function GET() {
     seller.actor.serviceClient.from('product_conditions').select('id,name,description').eq('is_active', true).order('display_order'),
     seller.actor.serviceClient.from('product_attributes').select('id,category_id,subcategory_id,product_condition_id,name,attribute_key,input_type,is_required,display_order,validation_rules,product_attribute_options(id,value,label,is_active)').eq('is_active', true).order('display_order'),
   ]);
+
   if (productError || categoryError || subcategoryError || conditionError || attributeError) return NextResponse.json({ error: 'Seller marketplace data is not ready. Confirm that the marketplace migrations have been applied.' }, { status: 503 });
+
+  // Auto-seed default categories and conditions if database table has 0 rows
+  if (!categories || categories.length === 0) {
+    try {
+      for (const cat of DEFAULT_MARKETPLACE_SEEDS) {
+        const { data: insertedCat } = await seller.actor.serviceClient.from('marketplace_categories')
+          .insert({ name: cat.name, slug: cat.slug, display_order: cat.display_order, is_active: true })
+          .select('id, name')
+          .maybeSingle();
+        if (insertedCat) {
+          for (const sub of cat.subcategories) {
+            await seller.actor.serviceClient.from('marketplace_subcategories')
+              .insert({ category_id: insertedCat.id, name: sub.name, slug: sub.slug, is_active: true });
+          }
+        }
+      }
+      const [refreshedCats, refreshedSubs] = await Promise.all([
+        seller.actor.serviceClient.from('marketplace_categories').select('id, name').eq('is_active', true).order('display_order', { ascending: true }),
+        seller.actor.serviceClient.from('marketplace_subcategories').select('id,category_id,name').eq('is_active', true).order('display_order'),
+      ]);
+      if (refreshedCats.data) categories = refreshedCats.data;
+      if (refreshedSubs.data) subcategories = refreshedSubs.data;
+    } catch {
+      // Fallback silently if constraints prevent insert
+    }
+  }
+
+  if (!conditions || conditions.length === 0) {
+    try {
+      for (const cond of DEFAULT_CONDITIONS) {
+        await seller.actor.serviceClient.from('product_conditions')
+          .insert({ name: cond.name, slug: cond.slug, description: cond.description, display_order: cond.display_order, is_active: true });
+      }
+      const refreshedConds = await seller.actor.serviceClient.from('product_conditions').select('id,name,description').eq('is_active', true).order('display_order');
+      if (refreshedConds.data) conditions = refreshedConds.data;
+    } catch {
+      // Fallback silently if constraints prevent insert
+    }
+  }
+
   const { entitlement } = await getSellerEntitlement(seller.actor.serviceClient, seller.profile.id);
   return NextResponse.json({
     products: (products || []).map((product) => ({
