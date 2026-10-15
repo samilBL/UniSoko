@@ -38,6 +38,9 @@ import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 import TradeInModal from '@/components/TradeInModal';
 import { TRADE_IN_INSPECTION_DISCLAIMER } from '@/lib/tradeInValuation';
 import type { TradeInQuoteAttachment } from '@/lib/types';
+import { DEFAULT_LIPA_NETWORKS } from '@/lib/payments/gateway';
+import type { SupportedNetwork } from '@/lib/payments/types';
+import { Smartphone, Zap } from 'lucide-react';
 
 export default function CheckoutPage() {
   const {
@@ -84,6 +87,9 @@ export default function CheckoutPage() {
   const [copiedTill, setCopiedTill] = useState(false);
   const [lipaTxId, setLipaTxId] = useState('');
   const [txError, setTxError] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'lipa_namba' | 'clickpesa'>('lipa_namba');
+  const [activeNetwork, setActiveNetwork] = useState<SupportedNetwork>('M-Pesa');
+  const [copiedAmount, setCopiedAmount] = useState(false);
 
   // Completed Order State
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);

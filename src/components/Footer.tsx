@@ -16,6 +16,7 @@ import {
   Briefcase,
   Users,
   ExternalLink,
+  ArrowUp,
 } from 'lucide-react';
 
 export default function Footer() {
@@ -192,6 +193,22 @@ export default function Footer() {
               <Link href="/advertise" className="text-amber-400 hover:text-amber-300">
                 Advertise
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+                  } catch {
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors ml-auto sm:ml-2"
+                aria-label="Back to top of page"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+                <span>Back to top</span>
+              </button>
             </div>
           </div>
 
