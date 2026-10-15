@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Download, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createWhatsAppLink } from '@/lib/whatsapp';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
@@ -87,10 +88,59 @@ export default function CheckoutPage() {
   // Completed Order State
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [trackingToken, setTrackingToken] = useState<string | null>(null);
+  const [copiedOrderId, setCopiedOrderId] = useState(false);
+  const [copiedToken, setCopiedToken] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
     const [isTradeInModalOpen, setIsTradeInModalOpen] = useState(false);
   const paymentModalRef = useRef<HTMLDivElement>(null);
   const proceedButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleDownloadTokenVoucher = (order: Order, token: string) => {
+    const lines = [
+      '=================================================================',
+      '         UNISOKO TANZANIA — OFFICIAL ORDER CONFIRMATION          ',
+      '=================================================================',
+      `Order Reference ID: #${order.id}`,
+      `Security Tracking Token: ${token}`,
+      `Lipa Namba Reference: ${order.lipaNambaTxId}`,
+      `Date & Time: ${new Date().toLocaleString('en-TZ')}`,
+      '-----------------------------------------------------------------',
+      `Customer Name: ${order.buyerName}`,
+      `Customer Phone: ${order.buyerPhone}`,
+      `Destination Campus: ${order.university}`,
+      `Delivery Landmark / Room: ${order.deliveryDetails}`,
+      `Delivery Method: ${order.deliverySpotType || 'Campus Hand-off'}`,
+      '-----------------------------------------------------------------',
+      'ITEMS ORDERED:',
+      ...(order.items && order.items.length > 0
+        ? order.items.map(
+            (item, i) =>
+              `  ${i + 1}. ${item.productTitle} x${item.quantity} — TZS ${Number(item.lineTotal || 0).toLocaleString()}`
+          )
+        : [`  1. ${order.product?.title || order.productId} x${order.quantity} — TZS ${Number(order.totalAmount).toLocaleString()}`]),
+      '-----------------------------------------------------------------',
+      `Total Paid: TZS ${Number(order.totalAmount).toLocaleString()}`,
+      ...(order.wingaCodeUsed ? [`Winga Promo Applied: ${order.wingaCodeUsed}`] : []),
+      '-----------------------------------------------------------------',
+      'HOW TO TRACK & VERIFY:',
+      `Private Tracking URL: ${typeof window !== 'undefined' ? window.location.origin : 'https://unisoko.co.tz'}/track/${encodeURIComponent(order.id)}?token=${encodeURIComponent(token)}`,
+      `Digital Receipt: ${typeof window !== 'undefined' ? window.location.origin : 'https://unisoko.co.tz'}/order/${encodeURIComponent(order.id)}/receipt`,
+      'WhatsApp Support: +255 616 961 511',
+      '=================================================================',
+      'Keep this token safe. Show it to your UniSoko runner upon delivery.',
+      '=================================================================',
+    ];
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `UniSoko_Order_${order.id}_Token.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // University determination with defensive checks
   const isMbeyaUni = Boolean(safeCampus?.isMbeya);
@@ -395,6 +445,91 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {/* Security Confirmation Token & Reference Box */}
+            <div className="relative z-10 rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-4 text-left space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-indigo-400" />
+                  <span>Security &amp; Tracking Credentials</span>
+                </span>
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-400 border border-emerald-500/20">
+                  Save for Verification
+                </span>
+              </div>
+
+              {/* Order Number Row */}
+              <div className="flex items-center justify-between rounded-xl bg-slate-900/90 border border-slate-800 p-2.5">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-medium">Order Number</p>
+                  <p className="font-mono text-xs sm:text-sm font-bold text-white">#{completedOrder.id}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(completedOrder.id);
+                    setCopiedOrderId(true);
+                    setTimeout(() => setCopiedOrderId(false), 2500);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-all"
+                >
+                  {copiedOrderId ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Copy ID</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Confirmation Token Row */}
+              {trackingToken && (
+                <div className="flex items-center justify-between rounded-xl bg-slate-900/90 border border-slate-800 p-2.5">
+                  <div className="min-w-0 pr-2">
+                    <p className="text-[10px] text-slate-400 font-medium">Confirmation &amp; Hand-off Token</p>
+                    <p className="font-mono text-xs font-bold text-indigo-300 truncate max-w-xs">{trackingToken}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(trackingToken);
+                      setCopiedToken(true);
+                      setTimeout(() => setCopiedToken(false), 2500);
+                    }}
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-all"
+                  >
+                    {copiedToken ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 text-slate-400" />
+                        <span>Copy Token</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Download Voucher Button */}
+              {trackingToken && (
+                <button
+                  type="button"
+                  onClick={() => handleDownloadTokenVoucher(completedOrder, trackingToken)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-[0.99]"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Download Confirmation Voucher (.txt)</span>
+                </button>
+              )}
+            </div>
+
             {/* Action Buttons */}
             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               {trackingToken ? (
@@ -406,6 +541,13 @@ export default function CheckoutPage() {
                   <span>Track Order</span>
                 </Link>
               ) : null}
+              <Link
+                href={`/order/${encodeURIComponent(completedOrder.id)}/receipt`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-5 py-3 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-all"
+              >
+                <FileText className="h-4 w-4" />
+                <span>View Digital Receipt</span>
+              </Link>
               <a
                 href={createWhatsAppLink(UNISOKO_CONTACT.phoneDigits, `Habari UniSoko! Nimekamilisha malipo ya Order #${completedOrder.id} (Tx: ${completedOrder.lipaNambaTxId}) kwa ${completedOrder.university}. Tafadhali thibitisha delivery!`)}
                 target="_blank"

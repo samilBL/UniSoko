@@ -4,6 +4,8 @@ import { StoreProvider } from "@/context/StoreContext";
 import StudentOnboardingHost from "@/components/StudentOnboardingHost";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SplashScreen from "@/components/SplashScreen";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { SITE_URL } from '@/lib/seo';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
@@ -64,6 +66,8 @@ export default function RootLayout({
           {children}
           <StudentOnboardingHost />
           <PwaInstallPrompt />
+          <ScrollToTopButton />
+          <CookieConsentBanner />
         </StoreProvider>
       </body>
     </html>

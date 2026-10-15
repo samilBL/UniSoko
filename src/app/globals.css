@@ -146,6 +146,22 @@ h1, h2, h3, h4, h5, h6 {
   color: #FCD34D !important;
 }
 
+/* Indigo tint card surfaces & text readability overrides */
+.dark .bg-indigo-50,
+.dark [class*="bg-indigo-50"] {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+.dark .text-indigo-900,
+.dark .text-indigo-950 {
+  color: #E0E7FF !important;
+}
+.dark .text-indigo-800 {
+  color: #C7D2FE !important;
+}
+.dark .text-indigo-700 {
+  color: #A5B4FC !important;
+}
+
 /* ─── Form Controls ─────────────────────────────────────── */
 input:not([type="range"]):not([type="checkbox"]),
 select, textarea {

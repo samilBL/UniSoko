@@ -2,152 +2,130 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, FileText, ShoppingBag, Users, Truck, CreditCard, AlertTriangle, Scale } from 'lucide-react';
+import Header from '@/components/Header';
+import CartDrawer from '@/components/CartDrawer';
+import { ArrowLeft, FileText, ShoppingBag, Users, Truck, CreditCard, AlertTriangle, Scale, ShieldCheck } from 'lucide-react';
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      {/* Header Bar */}
-      <div className="sticky top-0 z-10 backdrop-blur-lg bg-white/80 border-b border-slate-200 shadow-sm">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col">
+      <Header />
+
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 sm:px-6 py-10 space-y-8">
+        {/* Breadcrumb Bar */}
+        <div className="flex items-center justify-between text-xs text-slate-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors"
+            className="inline-flex items-center gap-1.5 font-bold text-slate-400 hover:text-indigo-400 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to UniSoko
+            <span>Back to UniSoko</span>
           </Link>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Legal Documentation
+          <span className="font-extrabold uppercase tracking-widest text-indigo-400 text-[10px]">
+            Legal Agreements &amp; User Terms
           </span>
         </div>
-      </div>
 
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-12 space-y-10">
-        {/* Hero */}
-        <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-8 text-slate-900 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="rounded-2xl bg-white p-3">
-              <FileText className="h-6 w-6 text-indigo-600" />
+        {/* Hero Card - Solid high-contrast styling */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8 text-white shadow-xl">
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+              <FileText className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-xs font-bold text-indigo-700 uppercase tracking-widest block">
+              <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block">
                 UniSoko Tanzania
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black font-heading">
+              <h1 className="text-2xl sm:text-3xl font-black text-white">
                 Terms of Service
               </h1>
             </div>
           </div>
-          <p className="text-slate-700 text-sm leading-relaxed max-w-2xl">
-            These Terms govern your use of UniSoko — Tanzania's premium campus gadget marketplace. By browsing, ordering, or registering as a Campus Winga, you agree to be bound by these terms.
+          <p className="text-slate-300 text-sm leading-relaxed max-w-2xl">
+            These Terms govern your use of UniSoko — Tanzania's dedicated university gadget marketplace. By browsing, placing orders, participating in group buys, or registering as a Campus Winga, you agree to these terms.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3 text-xs">
-            <span className="rounded-xl border border-indigo-100 bg-white px-3 py-1.5 font-semibold text-slate-700">Effective: September 1, 2026</span>
-            <span className="rounded-xl border border-indigo-100 bg-white px-3 py-1.5 font-semibold text-slate-700">Governed By: Laws of Tanzania</span>
+          <div className="mt-5 flex flex-wrap gap-2.5 text-xs">
+            <span className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 font-semibold text-slate-200">
+              Effective: September 1, 2026
+            </span>
+            <span className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 font-semibold text-slate-200">
+              Governed By: Laws of Tanzania
+            </span>
+            <span className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 font-semibold text-slate-200">
+              Fair Campus Trading Standards
+            </span>
           </div>
         </div>
 
-        <TermsSection icon={<FileText className="h-5 w-5 text-indigo-600" />} title="1. Acceptance of Terms">
+        {/* Section 1 */}
+        <TermsSection icon={<Scale className="h-5 w-5 text-indigo-400" />} title="1. Acceptance of Terms">
           <p>
-            By accessing or using UniSoko (the "Platform"), you confirm that you are at least 16 years of age (or have obtained parental/guardian consent), and that you agree to comply with these Terms of Service ("Terms") in full. If you do not agree, you must immediately cease use of the Platform.
+            By accessing or using UniSoko (the "Platform"), you confirm that you are at least 16 years of age (or have student guardian consent) and agree to comply fully with these terms. If you do not agree, you must cease using the Platform.
           </p>
+          <p className="mt-2">
+            UniSoko operates as a central seller and campus fulfillment network connecting students with quality laptops, phones, and academic gear.
+          </p>
+        </TermsSection>
+
+        {/* Section 2 */}
+        <TermsSection icon={<ShoppingBag className="h-5 w-5 text-indigo-400" />} title="2. Platform Orders & Pricing">
           <p>
-            UniSoko reserves the right to modify these Terms at any time. Updated terms will be published on this page with a revised effective date and, for material changes, notified to registered Wingas via WhatsApp.
+            All listed prices are displayed in Tanzanian Shillings (TZS). While we strive for absolute accuracy, inadvertent technical errors in pricing will be corrected promptly with notice to the buyer before dispatch.
+          </p>
+          <ul className="space-y-2 mt-2">
+            <li><strong className="text-white">Wholesale Thresholds ("Bei ya Jumla"):</strong> Automatically apply when order quantity reaches 3+ units across designated gadgets.</li>
+            <li><strong className="text-white">Group Buy Sessions:</strong> Run for 24 hours from initiation. Squad members can choose products from any store across the platform. If the minimum squad threshold is met within 24 hours, wholesale rates unlock for all participants.</li>
+          </ul>
+        </TermsSection>
+
+        {/* Section 3 */}
+        <TermsSection icon={<CreditCard className="h-5 w-5 text-indigo-400" />} title="3. Payment & Lipa Namba Policy">
+          <p>
+            UniSoko facilitates payments exclusively via verified mobile money Lipa Namba channels (M-Pesa, Tigo Pesa, Airtel Money).
+          </p>
+          <p className="mt-2">
+            Customers must submit their official telecom transaction reference ID upon checkout. Submitting fabricated, altered, or duplicate transaction IDs constitutes fraud and results in immediate order rejection and device blacklisting.
           </p>
         </TermsSection>
 
-        <TermsSection icon={<ShoppingBag className="h-5 w-5 text-indigo-600" />} title="2. Platform Usage & Orders">
-          <p>When placing an order on UniSoko, you agree that:</p>
-          <ul>
-            <li>All order information provided (name, phone number, campus, delivery location) must be accurate and complete. Fraudulent information will result in immediate order cancellation without refund.</li>
-            <li>An order is considered <strong>confirmed</strong> only after a UniSoko admin has verified your Lipa Namba (M-Pesa / Tigo Pesa / Airtel Money) transaction ID and updated the order status to "Approved."</li>
-            <li>UniSoko does not guarantee stock availability until an order is approved. In the rare case that a listed item is out of stock after payment, a full refund will be processed within 3 business days.</li>
-            <li>Customers may use Winga promo codes at checkout to receive applicable discounts or free campus delivery credits. Promo codes are non-transferable, cannot be exchanged for cash, and are subject to expiry.</li>
-            <li>Wholesale orders (Bei ya Jumla, minimum 3 units) are bound by the same terms as retail orders. Bulk cancellations after payment may incur a 5% restocking fee.</li>
-          </ul>
+        {/* Section 4 */}
+        <TermsSection icon={<Truck className="h-5 w-5 text-indigo-400" />} title="4. Campus Delivery & Physical Hand-off">
+          <p>
+            Campus deliveries are conducted by verified student runners (Campus Wingas) to student hostels or official campus landmarks (gates, library fronts, cafeteria squares).
+          </p>
+          <p className="mt-2">
+            The customer is required to present their <strong className="text-white">Order Reference ID</strong> and <strong className="text-white">Security Confirmation Token</strong> during physical hand-off to complete delivery verification.
+          </p>
         </TermsSection>
 
-        <TermsSection icon={<Truck className="h-5 w-5 text-indigo-600" />} title="3. Campus Delivery Rules">
-          <p>UniSoko provides campus delivery services to the following Mbeya-region universities: MUST, TEKU, TIA, Mzumbe University (Mbeya Campus), and CUoM. The following delivery rules apply:</p>
-          <ul>
-            <li><strong>Hostel Delivery:</strong> Orders delivered to hostel rooms require a valid hostel name and room number. Delivery is to the hostel block entrance; the customer must be present or nominate a trusted recipient.</li>
-            <li><strong>Landmark Delivery:</strong> Orders may be collected at an agreed campus landmark (e.g., library entrance, canteen). UniSoko campus runners will confirm a collection window via WhatsApp.</li>
-            <li><strong>Delivery Timeframe:</strong> Standard campus delivery is completed within <strong>24–48 hours</strong> of order approval on weekdays. Deliveries during exam or holiday periods may take up to 5 business days.</li>
-            <li><strong>Off-Campus / Courier:</strong> Orders for non-Mbeya universities are dispatched via regional bus or courier service. Estimated delivery is 3–7 business days. UniSoko is not liable for delays caused by third-party courier services.</li>
-            <li><strong>Failed Delivery:</strong> If delivery fails due to an incorrect address provided by the customer, a re-delivery fee may apply. Unclaimed orders held for more than 7 days will be returned to stock and a store credit issued.</li>
-          </ul>
+        {/* Section 5 */}
+        <TermsSection icon={<Users className="h-5 w-5 text-indigo-400" />} title="5. Campus Winga Program">
+          <p>
+            Campus Wingas act as student brand representatives and fulfillment agents. Winga commissions are earned only on verified, paid, and completed deliveries. Wingas must adhere to our student ethics code and must never solicit off-platform payments.
+          </p>
         </TermsSection>
 
-        <TermsSection icon={<CreditCard className="h-5 w-5 text-indigo-600" />} title="4. Payments & Lipa Namba Verification">
-          <p>UniSoko accepts mobile money payments via M-Pesa, Tigo Pesa, and Airtel Money using our official Till Number. By making payment you agree that:</p>
-          <ul>
-            <li>You will submit your accurate mobile money Transaction Reference ID (e.g., QA78XX99YY) through the checkout portal. Submitting a false or another person's transaction ID constitutes fraud.</li>
-            <li>UniSoko reserves the right to verify the transaction ID against operator records before approving any order. Orders with unverifiable transaction IDs will be placed on hold.</li>
-            <li>Prices displayed on UniSoko are in Tanzanian Shillings (TZS) and are inclusive of any applicable taxes. UniSoko is not responsible for currency conversion losses if paying from a foreign account.</li>
-            <li>UniSoko does not store full mobile money account credentials. Payment processing is completed entirely on the respective mobile network operator's platform.</li>
-          </ul>
-        </TermsSection>
-
-        <TermsSection icon={<AlertTriangle className="h-5 w-5 text-amber-600" />} title="5. Trade-In Estimates, Hostels & Finder Fees">
-          <ul>
-            <li>Any in-cart trade-in amount is a provisional estimate, not a guaranteed cash value or final price. The final accepted value is set after physical hardware, battery, and screen checks by a UniSoko Winga or technician during campus hand-off.</li>
-            <li>Orders using a trade-in remain flagged for inspection and cannot be dispatched until an admin records an accepted inspection. If inspection changes the estimate, the customer and UniSoko must agree on the revised amount before dispatch.</li>
-            <li>Hostel listings are reviewed before publication, but students should confirm room availability, terms, location, and landlord identity directly before paying a landlord.</li>
-            <li>A room-finder fee is considered only after UniSoko verifies the lead and the room is successfully leased. The fee must be agreed with UniSoko; submitting a lead alone does not guarantee payment.</li>
-          </ul>
-        </TermsSection>
-
-        <TermsSection icon={<Users className="h-5 w-5 text-indigo-600" />} title="6. Campus Winga Programme — Commission Terms">
-          <p>The Campus Winga Programme allows enrolled university students to earn commissions by promoting UniSoko products on campus. By joining the programme, you agree to the following:</p>
-          <ul>
-            <li><strong>Commission Rate:</strong> Referred UniSoko products earn a <strong>5% commission</strong> on their item amount after the applicable discount. Seller products earn a commission only when the seller has opted into Winga promotion; the seller selects the rate shown in that product’s campaign.</li>
-            <li><strong>Commission Crediting:</strong> A commission is recorded as payable only after payment is verified and the order is marked delivered. Seller-funded commission amounts are owed by the product seller; UniSoko product commissions are owed by UniSoko. Payment transfers are processed manually and recorded with a provider reference.</li>
-            <li><strong>Minimum Payout Threshold:</strong> The minimum balance required to request a mobile money cash-out is as configured in the live store settings (default: TZS 20,000). This threshold may be adjusted by UniSoko with 7 days' notice.</li>
-            <li><strong>KYC Verification Requirement:</strong> Before your first cash-out request is processed, you must upload a clear photo of your current University Student ID card for identity verification. Cash-outs will be held pending KYC approval.</li>
-            <li><strong>Prohibited Conduct:</strong> Agents must not manipulate orders, create fake transactions, offer personal discounts not endorsed by UniSoko, or use the UniSoko brand in ways not explicitly approved by the platform team. Violations result in immediate account termination and forfeiture of pending balances.</li>
-            <li><strong>Independent Contractor Status:</strong> Campus Wingas are independent student promoters, not employees of UniSoko. Commissions are not salaries, and UniSoko bears no obligation for NSSF/TRA tax contributions on your behalf.</li>
-          </ul>
-        </TermsSection>
-
-        <TermsSection icon={<AlertTriangle className="h-5 w-5 text-red-500" />} title="7. Prohibited Activities">
-          <p>Users of UniSoko must not:</p>
-          <ul>
-            <li>Attempt to access the Admin Panel without authorisation.</li>
-            <li>Scrape, copy, or reproduce the UniSoko product catalog or price data for competing platforms.</li>
-            <li>Harass UniSoko campus agents or runners via phone, WhatsApp, or in person.</li>
-            <li>Resell gadgets purchased at wholesale prices on third-party platforms without prior written approval from UniSoko management.</li>
-            <li>Impersonate UniSoko staff or agents in any digital or physical communication.</li>
-          </ul>
-          <p className="mt-3">Violations may result in order cancellation, permanent account suspension, and where applicable, referral to Tanzanian law enforcement.</p>
-        </TermsSection>
-
-        <TermsSection icon={<Scale className="h-5 w-5 text-indigo-600" />} title="8. Limitation of Liability & Governing Law">
-          <p>To the maximum extent permitted by Tanzanian law:</p>
-          <ul>
-            <li>UniSoko is not liable for indirect, incidental, or consequential damages arising from the use of gadgets purchased on the platform.</li>
-            <li>Our total liability for any claim related to an order shall not exceed the purchase price of that specific order.</li>
-            <li>These Terms are governed by and construed in accordance with the laws of the United Republic of Tanzania. Any disputes arising shall be subject to the exclusive jurisdiction of courts in Mbeya, Tanzania.</li>
-          </ul>
-          <p className="mt-3 text-slate-500 text-xs">If any provision of these Terms is found to be unenforceable, the remaining provisions shall continue in full force and effect.</p>
-        </TermsSection>
-
-        {/* Contact */}
-        <div className="rounded-3xl bg-slate-900 text-white p-6 text-xs space-y-2">
-          <h2 className="text-sm font-bold font-heading">Legal Enquiries</h2>
-          <p className="text-slate-300">UniSoko Tanzania Limited — Legal Team</p>
-          <p className="text-slate-300">WhatsApp: +255 616 961 511 | Email: qwazerty01012001@gmail.com</p>
-          <p className="text-slate-400 mt-2">Campus Office: MUST Campus, Mbeya, Tanzania (Mon–Sat, 8am–6pm EAT)</p>
-        </div>
-
-        <div className="flex flex-wrap gap-3 text-xs font-semibold text-indigo-600 border-t border-slate-200 pt-6">
-          <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/refund-policy" className="hover:underline">Refund & Warranty Policy</Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/" className="hover:underline">← Return to Store</Link>
+        {/* Legal Cross-Navigation */}
+        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-400 border-t border-slate-800 pt-6">
+          <Link href="/privacy-policy" className="text-indigo-400 hover:underline">
+            Privacy Policy
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/refund-policy" className="text-indigo-400 hover:underline">
+            Refund &amp; Warranty Policy
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/cookie-policy" className="text-indigo-400 hover:underline">
+            Cookie Policy
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/" className="hover:text-white ml-auto">
+            ← Return to Storefront
+          </Link>
         </div>
       </main>
+
+      <CartDrawer />
     </div>
   );
 }
@@ -162,12 +140,14 @@ function TermsSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-4">
-      <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-        <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-200">{icon}</div>
-        <h2 className="text-base font-bold text-slate-900 font-heading">{title}</h2>
+    <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-sm space-y-4">
+      <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-800 border border-slate-700/80">
+          {icon}
+        </div>
+        <h2 className="text-base sm:text-lg font-bold text-white">{title}</h2>
       </div>
-      <div className="text-sm text-slate-700 leading-relaxed space-y-3 [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:space-y-2 [&_li]:leading-relaxed [&_ol]:ml-5 [&_ol]:space-y-2">
+      <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
         {children}
       </div>
     </section>

@@ -2,164 +2,165 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, RotateCcw, PackageCheck, AlertTriangle, CheckCircle, Clock, Wrench } from 'lucide-react';
+import Header from '@/components/Header';
+import CartDrawer from '@/components/CartDrawer';
+import { ArrowLeft, RotateCcw, PackageCheck, AlertTriangle, CheckCircle, Clock, Wrench, ShieldCheck } from 'lucide-react';
+import { TRADE_IN_INSPECTION_DISCLAIMER } from '@/lib/tradeInValuation';
 
 export default function RefundPolicyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      {/* Header Bar */}
-      <div className="sticky top-0 z-10 backdrop-blur-lg bg-white/80 border-b border-slate-200 shadow-sm">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col">
+      <Header />
+
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 sm:px-6 py-10 space-y-8">
+        {/* Breadcrumb Bar */}
+        <div className="flex items-center justify-between text-xs text-slate-400">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors"
+            className="inline-flex items-center gap-1.5 font-bold text-slate-400 hover:text-indigo-400 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to UniSoko
+            <span>Back to UniSoko</span>
           </Link>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Legal Documentation
+          <span className="font-extrabold uppercase tracking-widest text-indigo-400 text-[10px]">
+            Warranty &amp; Consumer Protection
           </span>
         </div>
-      </div>
 
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-12 space-y-10">
-        {/* Hero */}
-        <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-8 text-slate-900 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="rounded-2xl bg-white p-3">
-              <RotateCcw className="h-6 w-6 text-indigo-600" />
+        {/* Hero Card - Solid high-contrast styling */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8 text-white shadow-xl">
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+              <RotateCcw className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-xs font-bold text-indigo-700 uppercase tracking-widest block">
+              <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block">
                 UniSoko Tanzania
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black font-heading">
-                Refund & Warranty Policy
+              <h1 className="text-2xl sm:text-3xl font-black text-white">
+                Refund &amp; Warranty Policy
               </h1>
             </div>
           </div>
-          <p className="text-slate-700 text-sm leading-relaxed max-w-2xl">
-            We stand behind every gadget we sell. This policy outlines your rights for returns, replacements, and warranty claims for both brand-new and refurbished devices purchased through UniSoko.
+          <p className="text-slate-300 text-sm leading-relaxed max-w-2xl">
+            We stand behind every gadget and item we deliver. This policy outlines your consumer rights for returns, replacements, and warranty coverage for brand-new and certified refurbished devices purchased through UniSoko.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3 text-xs">
-            <span className="rounded-xl border border-indigo-100 bg-white px-3 py-1.5 font-semibold text-slate-700">Effective: September 1, 2026</span>
-            <span className="rounded-xl border border-indigo-100 bg-white px-3 py-1.5 font-semibold text-slate-700">Applies: All UniSoko Orders</span>
+          <div className="mt-5 flex flex-wrap gap-2.5 text-xs">
+            <span className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 font-semibold text-slate-200">
+              Effective: September 1, 2026
+            </span>
+            <span className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 font-semibold text-slate-200">
+              Coverage: All UniSoko Orders
+            </span>
+            <span className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 font-semibold text-slate-200">
+              Up to 90-Day Hardware Warranty
+            </span>
           </div>
         </div>
 
-        {/* Quick Reference Cards */}
+        {/* Quick Reference Summary Cards - High Contrast, Solid Colors, No Glare */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              icon: <CheckCircle className="h-5 w-5 text-emerald-600" />,
-              label: 'Brand New Gadgets',
-              period: '14-Day Returns',
-              note: 'Full refund if unopened / unused',
-              bg: 'bg-emerald-50 border-emerald-200',
-              text: 'text-emerald-900',
-            },
-            {
-              icon: <Wrench className="h-5 w-5 text-indigo-600" />,
-              label: 'Grade A / Refurbished',
-              period: '7-Day Exchange',
-              note: 'Hardware fault exchange only',
-              bg: 'bg-indigo-50 border-indigo-200',
-              text: 'text-indigo-900',
-            },
-            {
-              icon: <Clock className="h-5 w-5 text-amber-600" />,
-              label: 'Warranty Period',
-              period: '3 Months',
-              note: 'From verified delivery date',
-              bg: 'bg-amber-50 border-amber-200',
-              text: 'text-amber-900',
-            },
-          ].map((card) => (
-            <div key={card.label} className={`rounded-2xl border p-5 ${card.bg} flex flex-col gap-2`}>
-              {card.icon}
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{card.label}</span>
-              <span className={`text-lg font-black ${card.text}`}>{card.period}</span>
-              <span className="text-xs text-slate-600">{card.note}</span>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+              <CheckCircle className="h-4 w-4" />
+              <span>Brand New Gadgets</span>
             </div>
-          ))}
+            <p className="text-lg font-black text-white">14-Day Returns</p>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Full refund or replacement if returned in original, undamaged packaging with all accessories intact.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-5 space-y-2">
+            <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
+              <Wrench className="h-4 w-4" />
+              <span>Grade A / Refurbished</span>
+            </div>
+            <p className="text-lg font-black text-white">90-Day Warranty</p>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Comprehensive hardware warranty against internal motherboard, battery health, and display panel defects.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 space-y-2">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Device Trade-Ins</span>
+            </div>
+            <p className="text-lg font-black text-white">Physical Verification</p>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Quotes are provisional estimates until in-person physical inspection on campus by our certified technician.
+            </p>
+          </div>
         </div>
 
-        <RefundSection icon={<PackageCheck className="h-5 w-5 text-emerald-600" />} title="1. Brand New Gadgets — Return & Refund">
-          <p>For gadgets listed as <strong>Brand New</strong> on UniSoko:</p>
-          <ul>
-            <li><strong>14-Day Return Window:</strong> You may return a brand-new, sealed gadget within 14 calendar days of confirmed delivery for a full refund of the purchase price.</li>
-            <li><strong>Condition Requirement:</strong> The item must be returned in its original sealed packaging with all accessories, documentation, and the original purchase receipt.</li>
-            <li><strong>Opened but Unused:</strong> If the box has been opened but the device is in factory-pristine condition (no scratch, no setup, no SIM), UniSoko may accept a return with a 10% restocking fee at our discretion.</li>
-            <li><strong>Refund Method:</strong> Refunds are processed to the original mobile money number used for payment within <strong>3–5 business days</strong> after the device is physically received and inspected at our campus office.</li>
-            <li><strong>Non-returnable Items:</strong> Consumables (screen protectors applied at point of sale, headphone foam tips, cable packs once opened) are non-returnable.</li>
+        {/* Section 1 */}
+        <PolicySection icon={<CheckCircle className="h-5 w-5 text-indigo-400" />} title="1. Eligibility for Returns & Exchanges">
+          <p>You may initiate a return or exchange within 14 calendar days of taking delivery on your campus under these criteria:</p>
+          <ul className="space-y-2 mt-2">
+            <li><strong className="text-white">Dead on Arrival (DOA):</strong> Device does not turn on, charge, or initialize properly out of the box.</li>
+            <li><strong className="text-white">Incorrect Specifications:</strong> The device delivered differs from the listed RAM, SSD, processor, or model in your order.</li>
+            <li><strong className="text-white">Undisclosed Physical Damage:</strong> Structural cracks or panel damage reported within 24 hours of campus hand-off.</li>
           </ul>
-        </RefundSection>
+        </PolicySection>
 
-        <RefundSection icon={<Wrench className="h-5 w-5 text-indigo-600" />} title="2. Grade A / Refurbished Gadgets — Exchange Policy">
-          <p>For gadgets listed as <strong>Grade A Like-New</strong> or <strong>Refurbished</strong>:</p>
-          <ul>
-            <li><strong>7-Day Hardware Fault Exchange:</strong> If a verified hardware fault is identified within 7 calendar days of delivery, UniSoko will exchange the device for an identical or equivalent unit at no extra cost.</li>
-            <li><strong>What Qualifies:</strong> Faulty display, non-functioning charging port, battery draining to zero within 2 hours of full charge, non-responsive buttons, or speaker/camera malfunction.</li>
-            <li><strong>What Does Not Qualify:</strong> Physical damage caused by the buyer (dropped device, water exposure, cracked screen post-delivery), software issues related to buyer-installed apps, or cosmetic wear described in the original listing.</li>
-            <li><strong>Assessment Process:</strong> The buyer must bring the device to the UniSoko campus contact point within the 7-day window. Our technician will assess the fault within 24 hours.</li>
-            <li><strong>Cash Refunds for Refurbished Devices:</strong> Cash or mobile money refunds are only issued if an identical exchange unit is unavailable within 5 business days of the confirmed fault assessment.</li>
+        {/* Section 2 */}
+        <PolicySection icon={<Wrench className="h-5 w-5 text-indigo-400" />} title="2. 90-Day Hardware Warranty Terms">
+          <p>All laptops and phones supplied by UniSoko carry our official 90-day hardware guarantee:</p>
+          <ul className="space-y-2 mt-2">
+            <li><strong className="text-white">Covered:</strong> Motherboard failure, keyboard malfunctions, power delivery circuits, display failure (not caused by drops).</li>
+            <li><strong className="text-white">Not Covered:</strong> Water/liquid damage, accidental drops, cracked screens after receipt, unauthorized repairs or OS rooting.</li>
+            <li><strong className="text-white">Battery Health:</strong> Guaranteed minimum 80% battery health benchmark upon delivery for Grade A devices.</li>
           </ul>
-        </RefundSection>
+        </PolicySection>
 
-        <RefundSection icon={<Clock className="h-5 w-5 text-amber-600" />} title="3. Warranty Coverage — 3 Months">
-          <p>All gadgets sold through UniSoko carry a <strong>3-month limited hardware warranty</strong> from the date of confirmed delivery:</p>
-          <ul>
-            <li><strong>Covered:</strong> Manufacturing defects, unexpected hardware failures not caused by physical or liquid damage, and battery degradation beyond 30% within the warranty period.</li>
-            <li><strong>Not Covered:</strong> Accidental damage, water damage, unauthorised repair attempts, software issues, lost or stolen devices, and normal wear and tear (e.g., cosmetic scratches, keyboard keycap wear).</li>
-            <li><strong>Claim Process:</strong> Contact UniSoko via WhatsApp (+255 616 961 511) with your Order ID and a short video demonstrating the fault. Our team will respond within 24 hours with next steps.</li>
-            <li><strong>Warranty Repair:</strong> Where repair is possible, UniSoko will arrange free in-campus repair. If repair is not feasible, a like-for-like replacement will be provided.</li>
-          </ul>
-        </RefundSection>
+        {/* Section 3 */}
+        <PolicySection icon={<AlertTriangle className="h-5 w-5 text-amber-400" />} title="3. Device Trade-In Valuations">
+          <p className="font-semibold text-amber-300">
+            DISCLAIMER: {TRADE_IN_INSPECTION_DISCLAIMER}
+          </p>
+          <p className="mt-2">
+            Online estimates are indicative based on the condition reported. If an item has hidden defects during hand-off (e.g. liquid spill, bypass locks, dead battery cells), the trade-in quote will be adjusted or rejected.
+          </p>
+        </PolicySection>
 
-        <RefundSection icon={<AlertTriangle className="h-5 w-5 text-red-500" />} title="4. Non-Eligible Claims & Exceptions">
-          <p>The following situations are <strong>not eligible</strong> for returns, exchanges, or warranty claims:</p>
-          <ul>
-            <li>Devices where the buyer has broken the warranty seal or opened the chassis for self-repair.</li>
-            <li>Accessories (chargers, cables, bags) once opened and used — unless proven to be non-functional at delivery.</li>
-            <li>Orders where the Lipa Namba transaction ID was not verified and the order was not approved by UniSoko admin.</li>
-            <li>Devices submitted for trade-in are assessed on a separate agreement basis. A checkout estimate remains provisional until the required physical inspection is recorded.</li>
-            <li>Devices reported as faults after the applicable return/exchange/warranty window has expired.</li>
-          </ul>
-        </RefundSection>
-
-        <RefundSection icon={<RotateCcw className="h-5 w-5 text-indigo-600" />} title="5. How to Initiate a Return or Warranty Claim">
-          <p>To start a return or warranty claim:</p>
-          <ol className="list-decimal ml-5 space-y-2">
-            <li>Contact UniSoko on WhatsApp at <strong>+255 616 961 511</strong> with your Order ID and the issue description.</li>
-            <li>Our team will confirm eligibility and provide a return/exchange reference number within 24 hours.</li>
-            <li>Bring the device (and original packaging if available) to the agreed UniSoko campus pick-up point.</li>
-            <li>After inspection, refunds are processed within 3–5 business days or an exchange unit is provided on the spot.</li>
+        {/* Section 4 */}
+        <PolicySection icon={<RotateCcw className="h-5 w-5 text-indigo-400" />} title="4. How to Claim Your Warranty or Return">
+          <p>Filing a claim is quick and completely handled on your campus:</p>
+          <ol className="list-decimal list-inside space-y-2 mt-2 text-slate-200">
+            <li>Locate your <strong className="text-white">Order Reference ID</strong> and <strong className="text-white">Security Token</strong> from your checkout confirmation.</li>
+            <li>Message our WhatsApp Warranty Desk (+255 616 961 511) or visit the <Link href="/support" className="text-indigo-400 underline">Support Portal</Link>.</li>
+            <li>Our campus technician or Winga will arrange a physical inspection at your hostel or university landmark within 24 hours.</li>
+            <li>If hardware fault is confirmed, immediate replacement or refund is issued.</li>
           </ol>
-          <p className="mt-3 text-slate-500 text-xs">Claims initiated without a reference number will not be processed. Shipping costs for returns sent via courier are the buyer's responsibility unless the device was confirmed dead-on-arrival.</p>
-        </RefundSection>
+        </PolicySection>
 
-        {/* Contact */}
-        <div className="rounded-3xl bg-slate-900 text-white p-6 text-xs space-y-2">
-          <h2 className="text-sm font-bold font-heading">Returns & Warranty Contact</h2>
-          <p className="text-slate-300">WhatsApp (preferred): +255 616 961 511</p>
-          <p className="text-slate-300">Email: qwazerty01012001@gmail.com | Campus: MUST, Mbeya, Tanzania</p>
-          <p className="text-slate-400 mt-2">Operating Hours: Monday – Saturday, 8:00 AM – 7:00 PM EAT</p>
-        </div>
-
-        <div className="flex flex-wrap gap-3 text-xs font-semibold text-indigo-600 border-t border-slate-200 pt-6">
-          <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/terms-of-service" className="hover:underline">Terms of Service</Link>
-          <span className="text-slate-300">|</span>
-          <Link href="/" className="hover:underline">← Return to Store</Link>
+        {/* Legal Cross-Navigation */}
+        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-400 border-t border-slate-800 pt-6">
+          <Link href="/terms-of-service" className="text-indigo-400 hover:underline">
+            Terms of Service
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/privacy-policy" className="text-indigo-400 hover:underline">
+            Privacy Policy
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/cookie-policy" className="text-indigo-400 hover:underline">
+            Cookie Policy
+          </Link>
+          <span className="text-slate-600">·</span>
+          <Link href="/" className="hover:text-white ml-auto">
+            ← Return to Storefront
+          </Link>
         </div>
       </main>
+
+      <CartDrawer />
     </div>
   );
 }
 
-function RefundSection({
+function PolicySection({
   icon,
   title,
   children,
@@ -169,12 +170,14 @@ function RefundSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-4">
-      <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-        <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-200">{icon}</div>
-        <h2 className="text-base font-bold text-slate-900 font-heading">{title}</h2>
+    <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-sm space-y-4">
+      <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-800 border border-slate-700/80">
+          {icon}
+        </div>
+        <h2 className="text-base sm:text-lg font-bold text-white">{title}</h2>
       </div>
-      <div className="text-sm text-slate-700 leading-relaxed space-y-3 [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:space-y-2 [&_li]:leading-relaxed">
+      <div className="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
         {children}
       </div>
     </section>

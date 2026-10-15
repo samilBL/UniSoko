@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { 
   Headphones, 
   ShieldCheck, 
@@ -92,7 +94,8 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-indigo-500 selection:text-white pb-24">
+    <div className="min-h-screen bg-slate-950 text-white selection:bg-indigo-500 selection:text-white flex flex-col">
+      <Header />
       {/* Hero Header */}
       <section className="relative overflow-hidden border-b border-slate-800 bg-gradient-to-b from-indigo-950/40 via-slate-950 to-slate-950 py-16 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto text-center space-y-4">
@@ -100,7 +103,7 @@ export default function SupportPage() {
             <Sparkles className="w-3.5 h-3.5" />
             Student Protection & Care Hub
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
             UniSoko Customer Support & Guarantee
           </h1>
           <p className="max-w-2xl mx-auto text-slate-400 text-sm sm:text-base">
@@ -298,7 +301,7 @@ export default function SupportPage() {
                 </ul>
               </div>
 
-              <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-500/20 rounded-3xl p-6 space-y-3">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">
                 <h3 className="font-bold text-white text-base">Track Existing Order?</h3>
                 <p className="text-xs text-slate-400">
                   You can check real-time status, Lipa Namba verification, and winga dispatch directly on the tracking portal.
@@ -494,6 +497,7 @@ export default function SupportPage() {
           </div>
         )}
       </section>
+      <Footer />
     </div>
   );
 }
