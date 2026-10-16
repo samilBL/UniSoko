@@ -60,7 +60,7 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased dark"
     >
-      <body className="min-h-full flex flex-col bg-black text-white font-sans">
+      <body className="min-h-dvh flex flex-col bg-black text-white font-sans">
         <StoreProvider>
           <SplashScreen />
           {children}

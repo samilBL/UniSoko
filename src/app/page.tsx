@@ -14,25 +14,17 @@ import { openStudentGuide } from '@/lib/studentGuide';
 import CartDrawer from '@/components/CartDrawer';
 import { useStore } from '@/context/StoreContext';
 import {
-  ShieldCheck,
-  MapPin,
-  Layers,
   ArrowRight,
   PlayCircle,
   DollarSign,
 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { createWhatsAppLink } from '@/lib/whatsapp';
 import { matchesProductSearch } from '@/lib/productSpecs';
-import { DEVELOPER_PROFILE_DEFAULTS, UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function StorefrontHomePage() {
   const { selectedCampus, products, storeSettings, searchQuery, setSearchQuery } = useStore();
-  const developerProfile = { ...DEVELOPER_PROFILE_DEFAULTS, ...storeSettings.developerProfile };
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
   const [appliedFilter, setAppliedFilter] = useState<FilterCategory>('All');
-  const [showDev, setShowDev] = useState(false);
   const [maxPrice, setMaxPrice] = useState('');
   const [sellerFilter, setSellerFilter] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
@@ -166,52 +158,6 @@ export default function StorefrontHomePage() {
           </Link>
         </section>
 
-        {/* Value Props Strip */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
-              <MapPin className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Made for students across Tanzania
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Discover campus-ready offers wherever you study
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-              <Layers className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Bei ya Jumla (Wholesale)
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Pool 3+ units for direct supplier discount
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Grade-A Quality Inspected
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Battery health & ports fully certified
-              </p>
-            </div>
-          </div>
-
-        </section>
-
         <HomepageBanners />
 
         {/* Product Catalog Section */}
@@ -232,7 +178,7 @@ export default function StorefrontHomePage() {
               </p>
             </div>
 
-            <div className="mt-4"><p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">Browse categories</p><FilterChips
+            <div className="mt-4 space-y-2"><label className="block max-w-sm text-[11px] font-bold uppercase tracking-wider text-slate-500">Choose a department or category<select aria-label="Choose a department or category" value={selectedFilter} onChange={(event) => { const value = event.target.value as FilterCategory; setSelectedFilter(value); setAppliedFilter(value); }} className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold normal-case text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="All">Home · All products</option><option value="Campus Essentials">Books &amp; Academic</option><option value="Laptops">PC / Tech · Laptops</option><option value="Phones">PC / Tech · Phones</option><option value="Accessories">Accessories</option><option value="Room Gear">Home &amp; Hostel</option><option value="Student Lifestyle Gear">Student Lifestyle</option><option value="Trending">Trending</option><option value="Bei ya Jumla">Bei ya Jumla</option></select></label><p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">Browse all filters</p><FilterChips
               selectedFilter={selectedFilter}
               onSelectFilter={setSelectedFilter}
               counts={filterCounts}
@@ -244,30 +190,6 @@ export default function StorefrontHomePage() {
             <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Seller<select value={sellerFilter} onChange={(event) => setSellerFilter(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="all">All sellers</option><option value="official">Official UniSoko</option><option value="verified">Verified sellers</option></select></label>
             <label className="text-xs font-bold text-slate-700 dark:text-slate-200">Sort by<select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="mt-1.5 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="featured">Featured first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
             <div className="flex gap-2"><button type="button" onClick={applyFilters} className="min-h-11 flex-1 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-700">Apply filters</button><button type="button" onClick={resetFilters} className="min-h-11 rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Reset</button></div>
-          </div>
-
-          {/* Wholesale Info Callout */}
-          <div
-            id="wholesale-info"
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-3xl border border-emerald-800 bg-emerald-950 p-5 text-white shadow-lg shadow-emerald-950/10 sm:p-6"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100">
-                <Layers className="h-6 w-6 text-emerald-700" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">
-                Group-buy savings for every campus
-                </p>
-                <p className="mt-1 text-sm font-medium leading-6 text-white">
-                  Pool your order with roommates or buy 3+ units to unlock{' '}
-                  <span className="font-extrabold text-emerald-200 underline decoration-emerald-300 decoration-2 underline-offset-2">Bei ya Jumla</span> pricing.
-                </p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-xl border border-emerald-300/30 bg-emerald-800 px-4 py-2 text-xs font-extrabold text-white shadow-sm">
-              Save together · 3+ units
-            </span>
           </div>
 
           {/* Product Grid */}

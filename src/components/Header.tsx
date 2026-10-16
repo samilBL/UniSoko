@@ -168,9 +168,10 @@ export default function Header() {
   // Synchronize app tabs across navigation via sessionStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const raw = sessionStorage.getItem('unisoko_app_tabs');
-      let loadedTabs: NavTab[] = raw ? JSON.parse(raw) : [{ path: '/', title: 'Store Home', icon: 'home' }];
+    const timer = window.setTimeout(() => {
+      try {
+        const raw = sessionStorage.getItem('unisoko_app_tabs');
+        let loadedTabs: NavTab[] = raw ? JSON.parse(raw) : [{ path: '/', title: 'Store Home', icon: 'home' }];
 
       // Ensure root home is present
       if (!loadedTabs.some((t) => t.path === '/')) {
@@ -194,11 +195,13 @@ export default function Header() {
         }
       }
 
-      setNavTabs(loadedTabs);
-      sessionStorage.setItem('unisoko_app_tabs', JSON.stringify(loadedTabs));
-    } catch {
-      // Fallback silently if storage unavailable
-    }
+        setNavTabs(loadedTabs);
+        sessionStorage.setItem('unisoko_app_tabs', JSON.stringify(loadedTabs));
+      } catch {
+        // Fallback silently if storage unavailable
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   const handleBack = () => {
@@ -326,7 +329,7 @@ export default function Header() {
         {isHomePage ? (
           <>
             {/* Top Wholesale Info Strip */}
-            <div className="bg-indigo-600 px-4 py-1 text-xs text-white">
+            <div className="hidden bg-indigo-600 px-4 py-1 text-xs text-white sm:block">
               <div className="mx-auto flex max-w-7xl items-center justify-between">
                 <div className="flex items-center gap-2 overflow-hidden text-[11px] sm:text-xs">
                   <span className="flex items-center gap-1 font-semibold">

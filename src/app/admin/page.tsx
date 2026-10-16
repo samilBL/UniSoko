@@ -45,10 +45,10 @@ import {
   BarChart3,
   Wrench,
   School,
-  UserCheck,
   Store,
 } from 'lucide-react';
 import AdminSellerApplications from '@/components/AdminSellerApplications';
+import AdminAdvertisingApplications from '@/components/AdminAdvertisingApplications';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -85,7 +85,7 @@ export default function AdminPanelPage() {
     allUniversities,
   } = useStore();
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'seller-applications' | 'inventory' | 'trade-ins' | 'payouts' | 'winga-applications' | 'hostels' | 'room-bounties' | 'banners' | 'cancellations' | 'support' | 'warranty' | 'issues' | 'universities' | 'health' | 'audit-logs' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'seller-applications' | 'advertising' | 'inventory' | 'trade-ins' | 'payouts' | 'winga-applications' | 'hostels' | 'room-bounties' | 'banners' | 'cancellations' | 'support' | 'warranty' | 'issues' | 'universities' | 'health' | 'audit-logs' | 'settings'>('orders');
 
   // Support, Warranty, Issues, and Universities states
   const [supportTickets, setSupportTickets] = useState<AdminSupportTicket[]>([]);
@@ -797,6 +797,7 @@ export default function AdminPanelPage() {
 
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+          <button onClick={() => setActiveTab('advertising')} className={`rounded-xl px-4 py-2.5 text-xs font-bold whitespace-nowrap ${activeTab === 'advertising' ? 'bg-amber-500 text-slate-950' : 'text-slate-600 hover:bg-slate-100'}`}>Ad applications</button>
           <button
             onClick={() => setActiveTab('seller-applications')}
             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-all ${
@@ -898,6 +899,7 @@ export default function AdminPanelPage() {
             <AdminSellerApplications />
           </div>
         )}
+        {activeTab === 'advertising' && <AdminAdvertisingApplications />}
 
         {activeTab === 'health' && (
           <div className="space-y-6">

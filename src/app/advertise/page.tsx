@@ -1,22 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { createWhatsAppLink } from '@/lib/whatsapp';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
+import { AD_TARGET_CAMPUSES, getAdvertisingFee, type SelfServeAdPackage } from '@/lib/advertising';
 import {
   Megaphone,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
-  TrendingUp,
-  Users,
-  Target,
   Send,
   MessageCircle,
-  HelpCircle,
   ArrowLeft,
   Building,
 } from 'lucide-react';
@@ -61,30 +57,9 @@ const AD_PACKAGES = [
       'Ideal for events, semester launches, or student discounts',
     ],
   },
-  {
-    id: 'semester-rush',
-    name: 'Semester Rush Partner',
-    tag: 'Comprehensive Bundle',
-    description: 'Full-spectrum advertising campaign including homepage, category pin, and campus community blasts.',
-    priceNote: 'Custom / Monthly partnership',
-    features: [
-      'Homepage banner + Category sponsor combo',
-      'Dedicated Campus Winga promotion pushes',
-      'Featured logo on UniSoko Trusted By section',
-      'Priority account management & creative assistance',
-    ],
-  },
 ];
 
-const CAMPUSES = [
-  'MUST (Mbeya)',
-  'TEKU (Mbeya)',
-  'UDSM (Dar es Salaam)',
-  'CBE (Dar / Dodoma)',
-  'DIT (Dar es Salaam)',
-  'IFM (Dar es Salaam)',
-  'All Tanzania Campuses',
-];
+type PublicPaymentMethod = { id: string; name: string; instructions: string; details: Record<string, unknown> };
 
 export default function AdvertisePage() {
   const [businessName, setBusinessName] = useState('');
@@ -93,12 +68,35 @@ export default function AdvertisePage() {
   const [email, setEmail] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(AD_PACKAGES[0].name);
   const [selectedCampuses, setSelectedCampuses] = useState<string[]>(['MUST (Mbeya)']);
-  const [budget, setBudget] = useState('');
   const [details, setDetails] = useState('');
+  const [campaignTitle, setCampaignTitle] = useState('');
+  const [creativeUrl, setCreativeUrl] = useState('');
+  const [destinationUrl, setDestinationUrl] = useState('');
+  const [durationWeeks, setDurationWeeks] = useState(1);
+  const [paymentMethods, setPaymentMethods] = useState<PublicPaymentMethod[]>([]);
+  const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
+  const [paymentMethodId, setPaymentMethodId] = useState('');
+  const [transactionReference, setTransactionReference] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const choosePackage = (name: string) => {
+    setSelectedPackage(name);
+    if (name === 'Campus Community Blast') setDurationWeeks(1);
+  };
+
+  useEffect(() => {
+    void fetch('/api/advertise', { cache: 'no-store' }).then(async (response) => {
+      const result = await response.json() as { paymentMethods?: PublicPaymentMethod[]; error?: string };
+      if (!response.ok) throw new Error(result.error || 'Could not load payment instructions.');
+      setPaymentMethods(result.paymentMethods || []);
+      setPaymentMethodId(result.paymentMethods?.[0]?.id || '');
+      setPaymentMethodsLoaded(true);
+    }).catch((error: unknown) => setLoadError(error instanceof Error ? error.message : 'Could not load payment instructions.'));
+  }, []);
 
   const toggleCampus = (campus: string) => {
     setSelectedCampuses((prev) =>
@@ -127,12 +125,18 @@ export default function AdvertisePage() {
           email,
           packageType: selectedPackage,
           targetCampuses: selectedCampuses,
-          budget,
+          durationWeeks,
+          campaignTitle,
+          creativeUrl,
+          destinationUrl,
+          paymentMethodId,
+          transactionReference,
           campaignDetails: details,
         }),
       });
 
-      if (!res.ok) throw new Error('Could not submit inquiry. Please try again.');
+      const result = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(result.error || 'Could not submit the campaign. Please try again.');
       setSubmitted(true);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.');
@@ -226,13 +230,13 @@ export default function AdvertisePage() {
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {AD_PACKAGES.map((pkg) => {
               const isSelected = selectedPackage === pkg.name;
               return (
                 <div
                   key={pkg.id}
-                  onClick={() => setSelectedPackage(pkg.name)}
+                  onClick={() => choosePackage(pkg.name)}
                   className={`cursor-pointer rounded-3xl border p-6 flex flex-col justify-between transition-all ${
                     isSelected
                       ? 'border-indigo-500 bg-indigo-950/30 ring-2 ring-indigo-500/20'
@@ -270,6 +274,7 @@ export default function AdvertisePage() {
               );
             })}
           </div>
+          <p className="text-center text-xs text-slate-400">Need a multi-placement partnership? <a className="font-bold text-indigo-300 underline" href={createWhatsAppLink(UNISOKO_CONTACT.phoneDigits, 'Habari UniSoko, I would like to discuss a custom Semester Rush advertising partnership.')}>Contact ad partnerships for a custom quote.</a></p>
         </section>
 
         {/* Self-Serve Inquiry Form */}
@@ -284,7 +289,7 @@ export default function AdvertisePage() {
                 <span>Self-Serve Advertising Booking Form</span>
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Fill in your details below. Our advertising team will reach out via WhatsApp to finalize your creative assets and launch your campaign.
+                Choose a package, pay its fee using a listed method, then submit your campaign for payment and creative review.
               </p>
             </div>
           </div>
@@ -294,10 +299,10 @@ export default function AdvertisePage() {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                 <CheckCircle2 className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-black text-white">Campaign Inquiry Received!</h3>
+              <h3 className="text-xl font-black text-white">Campaign Submitted for Verification</h3>
               <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
-                Thank you for choosing UniSoko. Our advertising partnerships desk will message your WhatsApp at{' '}
-                <strong className="text-white">{phone}</strong> within 24 hours to review your creatives and schedule publication.
+                Your campaign and payment reference were received. Payment is not confirmed yet. Our team will verify the transfer and review your creative before scheduling the campaign. We will contact{' '}
+                <strong className="text-white">{phone}</strong> if anything needs attention.
               </p>
               <div className="pt-2">
                 <a
@@ -307,7 +312,7 @@ export default function AdvertisePage() {
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-xs font-bold text-white shadow hover:bg-emerald-500"
                 >
                   <MessageCircle className="h-4 w-4" />
-                  <span>Speed up activation on WhatsApp</span>
+                  <span>Contact advertising support</span>
                 </a>
               </div>
             </div>
@@ -385,7 +390,7 @@ export default function AdvertisePage() {
                     <button
                       key={pkg.id}
                       type="button"
-                      onClick={() => setSelectedPackage(pkg.name)}
+                      onClick={() => choosePackage(pkg.name)}
                       className={`p-3 rounded-xl border text-xs font-semibold text-left transition-all ${
                         selectedPackage === pkg.name
                           ? 'border-indigo-500 bg-indigo-950/40 text-white'
@@ -405,12 +410,13 @@ export default function AdvertisePage() {
                   Target Campuses (Select all that apply)
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {CAMPUSES.map((campus) => {
+                  {AD_TARGET_CAMPUSES.map((campus) => {
                     const isChecked = selectedCampuses.includes(campus);
                     return (
                       <button
                         key={campus}
                         type="button"
+                        aria-pressed={isChecked}
                         onClick={() => toggleCampus(campus)}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                           isChecked
@@ -425,16 +431,30 @@ export default function AdvertisePage() {
                 </div>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-xs font-bold text-slate-200">Campaign title *<input required minLength={3} maxLength={160} value={campaignTitle} onChange={(event) => setCampaignTitle(event.target.value)} placeholder="e.g. Back to campus laptop repairs" className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white" /></label>
+                <label className="block text-xs font-bold text-slate-200">Campaign duration *<select value={durationWeeks} onChange={(event) => setDurationWeeks(Number(event.target.value))} disabled={selectedPackage === 'Campus Community Blast'} className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white">{(selectedPackage === 'Campus Community Blast' ? [1] : [1, 2, 3, 4]).map((weeks) => <option key={weeks} value={weeks}>{selectedPackage === 'Campus Community Blast' ? 'One campaign' : `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`}</option>)}</select></label>
+                <label className="block text-xs font-bold text-slate-200">Creative image URL *<input type="url" required value={creativeUrl} onChange={(event) => setCreativeUrl(event.target.value)} placeholder="https://…" className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white" /></label>
+                <label className="block text-xs font-bold text-slate-200">Destination URL (optional)<input type="url" value={destinationUrl} onChange={(event) => setDestinationUrl(event.target.value)} placeholder="https://your-site.example" className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white" /></label>
+              </div>
+
+              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/30 p-4 text-sm">
+                <h3 className="font-bold text-white">Pay the campaign fee</h3>
+                <p className="mt-1 text-slate-300">Fee: <strong className="text-emerald-300">TZS {getAdvertisingFee(selectedPackage as SelfServeAdPackage, durationWeeks).toLocaleString('en-TZ')}</strong>. Pay with the method below, then submit the transaction reference. An admin verifies payment before the campaign can be scheduled.</p>
+                {loadError && <p role="alert" className="mt-2 text-amber-300">{loadError}</p>}
+                {paymentMethods.length > 0 ? <><label className="mt-3 block text-xs font-bold text-slate-200">Payment method<select required value={paymentMethodId} onChange={(event) => setPaymentMethodId(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white">{paymentMethods.map((method) => <option key={method.id} value={method.id}>{method.name}</option>)}</select></label>{paymentMethods.find((method) => method.id === paymentMethodId) && <div className="mt-3 rounded-xl bg-slate-900 p-3 text-xs leading-5 text-slate-200"><p className="whitespace-pre-wrap">{paymentMethods.find((method) => method.id === paymentMethodId)?.instructions}</p>{Object.entries(paymentMethods.find((method) => method.id === paymentMethodId)?.details || {}).map(([key, value]) => <p key={key}><strong>{key.replaceAll('_', ' ')}:</strong> {String(value)}</p>)}</div>}<label className="mt-3 block text-xs font-bold text-slate-200">Payment transaction reference *<input required minLength={5} maxLength={40} value={transactionReference} onChange={(event) => setTransactionReference(event.target.value)} placeholder="Reference from the payment SMS" className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white" /></label></> : <p className="mt-2 text-xs text-amber-200">{loadError || (paymentMethodsLoaded ? 'No active payment method is configured. Contact UniSoko support before paying.' : 'Loading payment methods…')}</p>}
+              </div>
+
               {/* Campaign Notes */}
               <div>
                 <label className="block text-xs font-bold text-slate-200">
-                  Campaign Description, Target URL, or Creative Link
+                  Campaign description / message
                 </label>
                 <textarea
                   rows={3}
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
-                  placeholder="Share details about what you want to promote, preferred start date, or link to Google Drive/Canva design..."
+                  placeholder="Describe the offer and audience. Add any preferred timing or campaign context."
                   className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
                 />
               </div>
@@ -445,7 +465,7 @@ export default function AdvertisePage() {
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 disabled:opacity-50 transition-all active:scale-[0.99]"
               >
                 <Send className="h-4 w-4" />
-                <span>{isSubmitting ? 'Submitting Inquiry…' : 'Submit Advertising Request'}</span>
+                <span>{isSubmitting ? 'Submitting Campaign…' : 'Submit Campaign for Verification'}</span>
               </button>
             </form>
           )}

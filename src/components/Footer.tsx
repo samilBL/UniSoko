@@ -8,14 +8,9 @@ import { DEVELOPER_PROFILE_DEFAULTS, UNISOKO_CONTACT } from '@/lib/siteConfig';
 import { createWhatsAppLink } from '@/lib/whatsapp';
 import {
   Sparkles,
-  Phone,
-  Mail,
   ChevronDown,
-  ShieldCheck,
   Megaphone,
   Briefcase,
-  Users,
-  ExternalLink,
   ArrowUp,
 } from 'lucide-react';
 
@@ -40,7 +35,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-              Tanzania's dedicated university student marketplace connecting university communities across MUST, UDSM, CBE, DIT, and IFM with inspected laptops, phones, group-buy bulk pricing, and reliable hostel hand-off delivery.
+              Tanzania&apos;s dedicated university student marketplace connecting university communities across MUST, UDSM, CBE, DIT, and IFM with inspected laptops, phones, group-buy bulk pricing, and reliable hostel hand-off delivery.
             </p>
             <div className="pt-2 text-xs text-slate-300 space-y-1">
               <p>📍 Campus Hub: MUST Campus (Iyunga), Mbeya, Tanzania</p>
@@ -141,6 +136,7 @@ export default function Footer() {
                   Who We Are &amp; Developer
                 </Link>
               </li>
+              <li><Link href="/everything-we-do" className="hover:text-white transition-colors">Everything We Do</Link></li>
               <li>
                 <Link href="/terms-of-service" className="hover:text-white transition-colors">
                   Terms of Service

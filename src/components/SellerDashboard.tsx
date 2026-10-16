@@ -3,6 +3,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, Check, ClipboardList, Headphones, Home, Laptop, Package, Pencil, Save, ShieldCheck, Smartphone, Store, Zap } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import AccountSignOutButton from '@/components/AccountSignOutButton';
 import SellerMarketplaceInsights from '@/components/SellerMarketplaceInsights';
 import type { Order } from '@/lib/types';
@@ -396,7 +397,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                     </label>
                     {draft.categoryId && (
                       <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <Check className="h-3 w-3 stroke-[3]" />
+                        <Check className="h-3 w-3 stroke-3" />
                         Selected: {effectiveCategories.find((c) => c.id === draft.categoryId)?.name}
                       </span>
                     )}
@@ -434,7 +435,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                             </span>
                             {isSelected && (
                               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm">
-                                <Check className="h-3 w-3 stroke-[3]" />
+                                <Check className="h-3 w-3 stroke-3" />
                               </span>
                             )}
                           </div>
@@ -494,7 +495,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                                   : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-600'
                               }`}
                             >
-                              {isSubSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                              {isSubSelected && <Check className="h-3 w-3 stroke-3" />}
                               <span>{item.name}</span>
                             </button>
                           );
@@ -535,7 +536,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                           <b className="text-sm font-bold">{condition.name}</b>
                           {isCondSelected && (
                             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm">
-                              <Check className="h-3 w-3 stroke-[3]" />
+                              <Check className="h-3 w-3 stroke-3" />
                             </span>
                           )}
                         </div>
@@ -694,7 +695,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {draft.images.map((path) => (
                     <article key={path} className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-                      <img className="aspect-square w-full object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product upload preview" />
+                      <div className="relative aspect-square"><Image fill unoptimized sizes="(max-width: 640px) 50vw, 25vw" className="object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product upload preview" /></div>
                       <button type="button" onClick={() => void removeImage(path)} className="w-full p-2 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40">
                         Remove image
                       </button>
@@ -767,7 +768,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {draft.images.map((path) => (
-                    <img key={path} className="aspect-square w-full rounded-lg object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product preview" />
+                    <div key={path} className="relative aspect-square overflow-hidden rounded-lg"><Image fill unoptimized sizes="(max-width: 640px) 50vw, 25vw" className="object-cover" src={imagePreviews[path] || '/favicon.svg'} alt="Product preview" /></div>
                   ))}
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">
