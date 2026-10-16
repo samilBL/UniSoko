@@ -112,7 +112,13 @@ export async function PATCH(request: NextRequest) {
   const campus = body.campus === '' || body.campus === undefined ? null : readText(body.campus, 2, 160);
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
-  if (!displayName || !university || (campus !== null && !campus) || description.length > 2000 || phone.length > 32 || (phone && !/^\+?[0-9 ()-]{7,32}$/.test(phone))) {
+  const tillNetwork = body.tillNetwork;
+  const tillNumber = typeof body.tillNumber === 'string' ? body.tillNumber.trim() : '';
+  const tillAccountName = typeof body.tillAccountName === 'string' ? body.tillAccountName.trim() : '';
+  const allowedNetworks = ['M-Pesa', 'Tigo Pesa', 'Airtel Money'];
+  if (!displayName || !university || (campus !== null && !campus) || description.length > 2000 || phone.length > 32 || (phone && !/^\+?[0-9 ()-]{7,32}$/.test(phone)) ||
+      !allowedNetworks.includes(String(tillNetwork)) || tillNumber.length > 20 || tillAccountName.length > 120 ||
+      (tillNumber && (!/^\d{5,20}$/.test(tillNumber) || tillAccountName.length < 2))) {
     return NextResponse.json({ error: 'Check the profile fields and try again.' }, { status: 400 });
   }
 
@@ -121,9 +127,14 @@ export async function PATCH(request: NextRequest) {
   if (!profile) return NextResponse.json({ error: 'Submit a seller application before editing a profile.' }, { status: 404 });
   if (profile.status !== 'approved') return NextResponse.json({ error: 'Only approved sellers can edit their public profile.' }, { status: 403 });
 
+  const existingContactOptions = profile.contact_options && typeof profile.contact_options === 'object' ? profile.contact_options : {};
   const contactOptions = {
+    ...existingContactOptions,
     ...(actor.user.email ? { email: actor.user.email.toLowerCase() } : {}),
-    ...(phone ? { phone } : {}),
+    phone,
+    tillNetwork: tillNumber ? tillNetwork : null,
+    tillNumber,
+    tillAccountName: tillNumber ? tillAccountName : '',
   };
   const { data, error } = await actor.serviceClient.from('seller_profiles')
     .update({ display_name: displayName, university, campus, description, contact_options: contactOptions, updated_at: new Date().toISOString() })

@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BadgeCheck, MapPin, Store } from 'lucide-react';
+import { BadgeCheck, MapPin, MessageCircle, Store } from 'lucide-react';
 import Header from '@/components/Header';
 import ProductCard from '@/components/ProductCard';
 import MarketplaceReportButton from '@/components/MarketplaceReportButton';
 import { useStore } from '@/context/StoreContext';
 import type { Product } from '@/lib/types';
+import { createWhatsAppLink } from '@/lib/whatsapp';
 
-type Seller = { id: string; display_name: string; university: string; campus: string | null; description: string; verified: boolean; verificationLabel: string | null; productCount: number };
+type Seller = { id: string; display_name: string; university: string; campus: string | null; description: string; verified: boolean; verificationLabel: string | null; whatsappPhone: string | null; tillNetwork: string | null; tillNumber: string | null; tillAccountName: string | null; productCount: number };
 export default function PublicSellerPage({ params }: { params: Promise<{ id: string }> }) {
   const { products } = useStore();
   const [id, setId] = useState('');
@@ -25,6 +26,21 @@ export default function PublicSellerPage({ params }: { params: Promise<{ id: str
     <Link href="/" className="text-sm font-semibold text-indigo-600">← Marketplace</Link>
     {error ? <p role="alert" className="rounded-xl bg-white p-6 text-rose-700">{error}</p> : !seller ? <p className="rounded-xl bg-white p-6">Loading seller profile…</p> : <>
       <section className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"><div className="flex flex-wrap items-start justify-between gap-5"><div className="flex gap-4"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"><Store/></span><div><div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-black">{seller.display_name}</h1>{seller.verified && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><BadgeCheck className="h-4 w-4"/>{seller.verificationLabel || 'Verified seller'}</span>}</div><p className="mt-1 flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-4 w-4"/>{seller.university}{seller.campus ? ` · ${seller.campus}` : ''}</p></div></div><MarketplaceReportButton sellerProfileId={seller.id} label="Report seller"/></div>{seller.description && <p className="mt-5 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{seller.description}</p>}<p className="mt-4 text-xs font-semibold text-slate-500">{seller.productCount} approved listings</p></section>
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex flex-wrap items-start justify-between gap-5">
+                <div className="flex gap-4"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"><Store/></span><div>
+                  <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-black">{seller.display_name}</h1>{seller.verified && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${seller.verificationLabel === 'Gold Tick' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100'}`}><BadgeCheck className="h-4 w-4"/>{seller.verificationLabel || 'White Tick'}</span>}</div>
+                  <p className="mt-1 flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-4 w-4"/>{seller.university}{seller.campus ? ` · ${seller.campus}` : ''}</p>
+                </div></div>
+                <MarketplaceReportButton sellerProfileId={seller.id} label="Report seller"/>
+              </div>
+              {seller.description && <p className="mt-5 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{seller.description}</p>}
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                {seller.whatsappPhone && <a href={createWhatsAppLink(seller.whatsappPhone, `Habari ${seller.display_name}, nina swali kuhusu bidhaa zako za UniSoko.`)} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700"><MessageCircle className="h-4 w-4"/>WhatsApp {seller.whatsappPhone}</a>}
+                {seller.tillNumber && <p className="text-xs text-slate-600 dark:text-slate-300">Payment till: <strong>{seller.tillNetwork} · {seller.tillNumber}</strong>{seller.tillAccountName ? ` · ${seller.tillAccountName}` : ''}</p>}
+              </div>
+              <p className="mt-4 text-xs font-semibold text-slate-500">{seller.productCount} approved listings</p>
+            </section>
       <section><h2 className="mb-4 text-xl font-black">Seller listings</h2>{sellerProducts.length ? <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">{sellerProducts.map((product) => <div key={product.id} className="space-y-2"><ProductCard product={product}/><div className="px-1"><MarketplaceReportButton productId={product.id} sellerProfileId={seller.id}/></div></div>)}</div> : <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-slate-500">No approved listings are currently available.</p>}</section>
     </>}
   </main></div>;

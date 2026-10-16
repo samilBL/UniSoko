@@ -6,8 +6,10 @@ import AccountSignOutButton from '@/components/AccountSignOutButton';
 import WingaPasswordManager from '@/components/WingaPasswordManager';
 import WingaMarketplaceEarnings from '@/components/WingaMarketplaceEarnings';
 import WingaEarningsEstimator from '@/components/WingaEarningsEstimator';
+import WingaDispatchQueue from '@/components/WingaDispatchQueue';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getSupabaseServer } from '@/lib/supabaseServer';
+import { SITE_URL } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,7 +71,7 @@ export default async function WingaAgentDashboardPage() {
             <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-200"><CheckCircle2 className="h-4 w-4" />UniSoko promo code</p>
               <p className="mt-2 font-mono text-2xl font-extrabold text-slate-900 dark:text-white">{application.promo_code}</p>
-              <a className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700" href={`https://wa.me/?text=${encodeURIComponent(`Shop official UniSoko student deals. Use my Winga code ${application.promo_code}: https://unisoko.tz/?ref=${application.promo_code}`)}`} target="_blank" rel="noreferrer">Share UniSoko offer</a>
+              <a className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700" href={`https://wa.me/?text=${encodeURIComponent(`Shop official UniSoko student deals. Use my Winga code ${application.promo_code}: ${new URL(`/?ref=${application.promo_code}`, SITE_URL).toString()}`)}`} target="_blank" rel="noreferrer">Share UniSoko offer</a>
             </div>
           ) : isRejected ? (
             <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
@@ -85,6 +87,7 @@ export default async function WingaAgentDashboardPage() {
         </section>
 
         {isApproved && <WingaMarketplaceEarnings />}
+          {isApproved && <WingaDispatchQueue />}
         {isApproved && <WingaEarningsEstimator />}
 
         <p className="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Your Winga portal is separate from seller accounts. Commission balances reflect orders marked payment verified and delivered; money transfers are still processed by UniSoko outside this portal.</p>

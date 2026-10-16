@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
+import { getGroupBuyUnitPrice } from '@/lib/pricing';
 
 interface GroupBuyRow {
   id: string;
@@ -32,7 +33,7 @@ function mapGroup(group: GroupBuyRow, participants: ParticipantRow[] = []) {
     productId: group.product_id,
     productTitle: group.product_title,
     retailPrice: Number(group.retail_price),
-    wholesalePrice: Number(group.wholesale_price),
+    groupBuyPrice: getGroupBuyUnitPrice(Number(group.retail_price)),
     minimumQuantity: Number(group.minimum_quantity),
     participantCount: Math.max(Number(group.participant_count || 1), participants.length),
     createdAt: group.created_at,
@@ -44,7 +45,7 @@ function mapGroup(group: GroupBuyRow, participants: ParticipantRow[] = []) {
       productId: p.product_id || group.product_id,
       productTitle: p.product_title || group.product_title,
       retailPrice: Number(p.retail_price ?? group.retail_price),
-      wholesalePrice: Number(p.wholesale_price ?? group.wholesale_price),
+      groupBuyPrice: getGroupBuyUnitPrice(Number(p.retail_price ?? group.retail_price)),
       createdAt: p.created_at,
     })),
   };
@@ -62,7 +63,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
       product_id: defaultProduct.id,
       product_title: defaultProduct.title,
       retail_price: defaultProduct.priceRetail,
-      wholesale_price: defaultProduct.priceWholesale,
+      wholesale_price: getGroupBuyUnitPrice(defaultProduct.priceRetail),
       minimum_quantity: 3,
       participant_count: 1,
       created_at: new Date(Date.now() - 3600000).toISOString(),
@@ -77,7 +78,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
           product_id: defaultProduct.id,
           product_title: defaultProduct.title,
           retail_price: defaultProduct.priceRetail,
-          wholesale_price: defaultProduct.priceWholesale,
+          wholesale_price: getGroupBuyUnitPrice(defaultProduct.priceRetail),
           created_at: mockGroup.created_at,
         },
       ]),
@@ -116,9 +117,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   let body: {
     participantToken?: string;
     productId?: string;
-    productTitle?: string;
-    retailPrice?: number;
-    wholesalePrice?: number;
   };
   try {
     body = await request.json();
@@ -132,14 +130,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
   if (!supabase) {
     // Mock response when DB is not connected
-    const product =
-      MOCK_PRODUCTS.find((p) => p.id === body.productId) || MOCK_PRODUCTS[0];
+    const product = MOCK_PRODUCTS.find((p) => p.id === body.productId) || (!body.productId ? MOCK_PRODUCTS[0] : null);
+    if (!product || product.stockStatus === 'Coming Soon') {
+      return NextResponse.json({ error: 'Choose an available product from the UniSoko catalog.' }, { status: 400 });
+    }
     const mockGroup: GroupBuyRow = {
       id,
       product_id: product.id,
       product_title: product.title,
       retail_price: product.priceRetail,
-      wholesale_price: product.priceWholesale,
+      wholesale_price: getGroupBuyUnitPrice(product.priceRetail),
       minimum_quantity: 3,
       participant_count: 2,
       created_at: new Date(Date.now() - 3600000).toISOString(),
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
           product_id: MOCK_PRODUCTS[0].id,
           product_title: MOCK_PRODUCTS[0].title,
           retail_price: MOCK_PRODUCTS[0].priceRetail,
-          wholesale_price: MOCK_PRODUCTS[0].priceWholesale,
+          wholesale_price: getGroupBuyUnitPrice(MOCK_PRODUCTS[0].priceRetail),
           created_at: mockGroup.created_at,
         },
         {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
           product_id: product.id,
           product_title: product.title,
           retail_price: product.priceRetail,
-          wholesale_price: product.priceWholesale,
+          wholesale_price: getGroupBuyUnitPrice(product.priceRetail),
           created_at: new Date().toISOString(),
         },
       ]),
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   let chosenProductId = currentGroup.product_id;
   let chosenTitle = currentGroup.product_title;
   let chosenRetail = Number(currentGroup.retail_price);
-  let chosenWholesale = Number(currentGroup.wholesale_price);
+  let chosenGroupBuyPrice = getGroupBuyUnitPrice(chosenRetail);
 
   if (body.productId && body.productId !== currentGroup.product_id) {
     const catalogProduct = MOCK_PRODUCTS.find((p) => p.id === body.productId);
@@ -195,19 +195,30 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       chosenProductId = catalogProduct.id;
       chosenTitle = catalogProduct.title;
       chosenRetail = catalogProduct.priceRetail;
-      chosenWholesale = catalogProduct.priceWholesale;
+      chosenGroupBuyPrice = getGroupBuyUnitPrice(chosenRetail);
     } else {
       // Check database products
       const { data: dbProduct } = await supabase
         .from('products')
-        .select('id, name, price, seller_wholesale_price')
+        .select('id, name, price, seller_profile_id, in_stock, listing_status, is_active')
         .eq('id', body.productId)
+        .eq('listing_status', 'approved')
+        .eq('is_active', true)
+        .eq('in_stock', true)
         .maybeSingle();
       if (dbProduct) {
+        let productSellerApproved = true;
+        if (dbProduct.seller_profile_id) {
+          const { data: seller } = await supabase.from('seller_profiles').select('status').eq('id', dbProduct.seller_profile_id).maybeSingle();
+          productSellerApproved = seller?.status === 'approved';
+        }
+        if (!productSellerApproved) return NextResponse.json({ error: 'This store product is not currently available.' }, { status: 409 });
         chosenProductId = dbProduct.id;
         chosenTitle = dbProduct.name;
         chosenRetail = Number(dbProduct.price);
-        chosenWholesale = Number(dbProduct.seller_wholesale_price || dbProduct.price);
+        chosenGroupBuyPrice = getGroupBuyUnitPrice(chosenRetail);
+      } else {
+        return NextResponse.json({ error: 'Choose an available product from the UniSoko catalog.' }, { status: 400 });
       }
     }
   }
@@ -220,7 +231,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     joining_product_id: chosenProductId,
     joining_product_title: chosenTitle,
     joining_retail_price: chosenRetail,
-    joining_wholesale_price: chosenWholesale,
+    joining_wholesale_price: chosenGroupBuyPrice,
   });
 
   if (!rpcError && rpcData) {
@@ -242,7 +253,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
           product_id: chosenProductId,
           product_title: chosenTitle,
           retail_price: chosenRetail,
-          wholesale_price: chosenWholesale,
+          wholesale_price: chosenGroupBuyPrice,
         });
 
         const { data: incGroup } = await supabase

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getSupabaseServer } from '@/lib/supabaseServer';
+import { SITE_URL } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ export async function GET() {
     return seller?.status === 'approved';
   }).map((product) => {
     const seller = Array.isArray(product.seller_profiles) ? product.seller_profiles[0] : product.seller_profiles;
-    return { id: product.id, name: product.name, price: Number(product.price), sellerName: seller?.display_name || 'Marketplace seller', commissionRate: Number(product.seller_winga_commission_rate), shareUrl: `/product/${encodeURIComponent(product.id)}?ref=${encodeURIComponent(profile.promo_code!)}` };
+    return { id: product.id, name: product.name, price: Number(product.price), sellerName: seller?.display_name || 'Marketplace seller', commissionRate: Number(product.seller_winga_commission_rate), shareUrl: new URL(`/product/${encodeURIComponent(product.id)}?ref=${encodeURIComponent(profile.promo_code!)}`, SITE_URL).toString() };
   });
   const earnings = (commissions || []).reduce((summary, row) => {
     const amount = Number(row.amount);

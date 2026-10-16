@@ -9,6 +9,7 @@ import {
   StoreSettings,
 } from './types';
 import { DEVELOPER_PROFILE_DEFAULTS, UNISOKO_CONTACT } from './siteConfig';
+import { getWholesaleUnitPrice } from './pricing';
 
 export const BRAND_ASSETS: BrandAsset[] = [
   {
@@ -766,10 +767,11 @@ export function formatTZS(amount: number): string {
 export function calculateWholesaleSavings(
   retailPrice: number,
   wholesalePrice: number,
-  quantity: number = 3
+  quantity: number = 3,
+  minimumQuantity = 3
 ): { totalSavings: number; percentSaved: number } {
   const retailTotal = retailPrice * quantity;
-  const wholesaleTotal = wholesalePrice * quantity;
+  const wholesaleTotal = getWholesaleUnitPrice(retailPrice, wholesalePrice, quantity, minimumQuantity) * quantity;
   const totalSavings = Math.max(0, retailTotal - wholesaleTotal);
   const percentSaved = retailTotal > 0 ? Math.round((totalSavings / retailTotal) * 100) : 0;
 

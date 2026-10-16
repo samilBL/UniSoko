@@ -30,24 +30,29 @@ export async function POST(request: NextRequest) {
   const id = typeof body.id === 'string' ? body.id.trim() : '';
   const wingaEnabled = body.wingaEnabled === true;
   const ratePercent = Number(body.wingaRatePercent);
+  const wholesaleEnabled = body.wholesaleEnabled === true;
+  const wholesaleDiscountPercent = Number(body.wholesaleDiscountPercent);
+  const wholesaleMinimum = Number(body.wholesaleMinimum);
   const groupBuyEnabled = body.groupBuyEnabled === true;
-  const wholesalePrice = Number(body.wholesalePrice);
   const minimum = Number(body.groupBuyMinimum);
-  if (!id || typeof body.wingaEnabled !== 'boolean' || typeof body.groupBuyEnabled !== 'boolean' ||
+  if (!id || typeof body.wingaEnabled !== 'boolean' || typeof body.wholesaleEnabled !== 'boolean' || typeof body.groupBuyEnabled !== 'boolean' ||
       (wingaEnabled && (!Number.isFinite(ratePercent) || ratePercent < 1 || ratePercent > 30)) ||
-      (groupBuyEnabled && (!Number.isFinite(wholesalePrice) || wholesalePrice <= 0 || !Number.isInteger(minimum) || minimum < 2 || minimum > 100))) {
-    return NextResponse.json({ error: 'Winga commission must be 1–30%. Group buying needs a positive wholesale price and 2–100 students.' }, { status: 400 });
+      !Number.isFinite(wholesaleDiscountPercent) || wholesaleDiscountPercent < 0 || wholesaleDiscountPercent > 5 ||
+      !Number.isInteger(wholesaleMinimum) || wholesaleMinimum < 2 || wholesaleMinimum > 12 ||
+      (groupBuyEnabled && (!Number.isInteger(minimum) || minimum < 2 || minimum > 100))) {
+    return NextResponse.json({ error: 'Wholesale must stay within 0–5% and 2–12 units. Group buying needs 2–100 students, and Winga commission must be 1–30%.' }, { status: 400 });
   }
   const { data: current, error: lookupError } = await actor.serviceClient.from('products').select('id,price')
     .eq('id', id).eq('seller_profile_id', seller.id).eq('listing_status', 'approved').eq('is_active', true).maybeSingle();
   if (lookupError) return NextResponse.json({ error: 'Marketplace settings unavailable. Apply the latest UniSoko migration.' }, { status: 503 });
   if (!current) return NextResponse.json({ error: 'Only approved, active products can join these programs.' }, { status: 409 });
-  if (groupBuyEnabled && wholesalePrice >= Number(current.price)) return NextResponse.json({ error: 'The group-buy price must be lower than the retail price.' }, { status: 400 });
   const { data, error } = await actor.serviceClient.from('products').update({
     seller_winga_campaign_enabled: wingaEnabled,
     seller_winga_commission_rate: wingaEnabled ? ratePercent / 100 : 0.05,
+    seller_wholesale_enabled: wholesaleEnabled,
+    seller_wholesale_discount_percent: wholesaleDiscountPercent,
+    seller_wholesale_minimum: wholesaleMinimum,
     seller_group_buy_enabled: groupBuyEnabled,
-    seller_wholesale_price: groupBuyEnabled ? wholesalePrice : null,
     seller_group_buy_minimum: groupBuyEnabled ? minimum : 3,
     updated_at: new Date().toISOString(),
   }).eq('id', id).eq('seller_profile_id', seller.id).eq('listing_status', 'approved').select('id').maybeSingle();

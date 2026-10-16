@@ -37,6 +37,10 @@ function mapOrder(row: Record<string, unknown>, events: OrderStatusEvent[] = [],
     paymentStatus: row.payment_status as Order['paymentStatus'],
     fulfillmentStatus: row.fulfillment_status as Order['fulfillmentStatus'],
     deliveryStatus: row.delivery_status as Order['deliveryStatus'],
+    dispatchAssigneeType: row.dispatch_assignee_type as Order['dispatchAssigneeType'],
+    dispatchAssigneeId: typeof row.dispatch_assignee_id === 'string' ? row.dispatch_assignee_id : undefined,
+    dispatchAssigneeName: typeof row.dispatch_assignee_name === 'string' ? row.dispatch_assignee_name : undefined,
+    dispatchAssignedAt: typeof row.dispatch_assigned_at === 'string' ? row.dispatch_assigned_at : undefined,
     statusHistory: events,
     createdAt: String(row.created_at),
   };
@@ -89,8 +93,62 @@ export async function PATCH(request: NextRequest) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ error: 'Order tracking is not configured yet.' }, { status: 503 });
 
-  let body: { id?: string; statusType?: string; status?: string };
+  let body: { id?: string; statusType?: string; status?: string; action?: string; assigneeType?: string; assigneeId?: string };
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid order update.' }, { status: 400 }); }
+  if (body.action === 'assign_dispatch') {
+    if (!body.id || !['winga', 'dispatch_team', 'courier'].includes(String(body.assigneeType))) return NextResponse.json({ error: 'Choose an order and a dispatch assignee.' }, { status: 400 });
+    const { data: current, error: lookupError } = await supabase.from('orders')
+      .select('id,payment_status,fulfillment_status,delivery_status')
+      .eq('id', body.id)
+      .maybeSingle();
+    if (lookupError) return NextResponse.json({ error: 'Could not load this order for dispatch.' }, { status: 500 });
+    if (!current) return NextResponse.json({ error: 'Order not found.' }, { status: 404 });
+    if (current.payment_status !== 'Verified' || current.fulfillment_status !== 'Ready for Dispatch' || current.delivery_status === 'Delivered') {
+      return NextResponse.json({ error: 'Verify payment and mark the order ready before assigning dispatch.' }, { status: 409 });
+    }
+
+    let assigneeId = '';
+    let assigneeName = '';
+    const assigneeType = body.assigneeType as 'winga' | 'dispatch_team' | 'courier';
+    if (assigneeType === 'winga') {
+      if (!body.assigneeId) return NextResponse.json({ error: 'Choose an approved Winga.' }, { status: 400 });
+      const { data: winga, error: wingaError } = await supabase.from('winga_applications')
+        .select('id,full_name').eq('id', body.assigneeId).eq('status', 'Approved').maybeSingle();
+      if (wingaError) return NextResponse.json({ error: 'Could not verify this Winga.' }, { status: 503 });
+      if (!winga) return NextResponse.json({ error: 'Only approved Wingas can be assigned.' }, { status: 400 });
+      assigneeId = winga.id;
+      assigneeName = winga.full_name;
+    } else {
+      const teams: Record<string, string> = {
+        campus_dispatch: 'UniSoko Campus Dispatch',
+        regional_courier: 'Regional Courier Team',
+      };
+      const teamId = body.assigneeId || '';
+      if (!teams[teamId]) return NextResponse.json({ error: 'Choose an available dispatch team.' }, { status: 400 });
+      assigneeId = teamId;
+      assigneeName = teams[teamId];
+    }
+
+    const now = new Date().toISOString();
+    const auditReady = await writeAdminAuditEvent(request, {
+      action: 'order.dispatch.assigned',
+      resourceType: 'order',
+      resourceId: body.id,
+      metadata: { assigneeType, assigneeId, assigneeName },
+    });
+    if (!auditReady) return NextResponse.json({ error: 'Audit logging is unavailable; no dispatch assignment was saved.' }, { status: 503 });
+    const { data: assigned, error: assignmentError } = await supabase.from('orders').update({
+      dispatch_assignee_type: assigneeType,
+      dispatch_assignee_id: assigneeId,
+      dispatch_assignee_name: assigneeName,
+      dispatch_assigned_at: now,
+      updated_at: now,
+    }).eq('id', body.id).eq('payment_status', 'Verified').eq('fulfillment_status', 'Ready for Dispatch')
+      .select('dispatch_assignee_type,dispatch_assignee_id,dispatch_assignee_name,dispatch_assigned_at').maybeSingle();
+    if (assignmentError) return NextResponse.json({ error: 'Could not save the dispatch assignment. Apply the Phase 2 seller portal migration.' }, { status: 503 });
+    if (!assigned) return NextResponse.json({ error: 'Order status changed. Refresh and retry dispatch assignment.' }, { status: 409 });
+    return NextResponse.json({ assignment: assigned }, { headers: { 'Cache-Control': 'no-store' } });
+  }
   const allowed = body.statusType && Object.hasOwn(ORDER_STATUS_LABELS, body.statusType)
     ? ORDER_STATUS_LABELS[body.statusType as keyof typeof ORDER_STATUS_LABELS]
     : [];

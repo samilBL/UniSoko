@@ -65,12 +65,19 @@ export default function StorefrontHomePage() {
     window.addEventListener('unisoko-select-category', handleCategoryEvent);
 
     const queryFilter = new URLSearchParams(window.location.search).get('filter') as FilterCategory | null;
-    if (queryFilter) {
-      setSelectedFilter(queryFilter);
-      setAppliedFilter(queryFilter);
-    }
+    const referral = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase();
+    if (referral && /^WINGA-[A-F0-9]{6}$/.test(referral)) localStorage.setItem('unisoko_winga_referral', referral);
+    const filterTimer = window.setTimeout(() => {
+      if (queryFilter) {
+        setSelectedFilter(queryFilter);
+        setAppliedFilter(queryFilter);
+      }
+    }, 0);
 
-    return () => window.removeEventListener('unisoko-select-category', handleCategoryEvent);
+    return () => {
+      window.clearTimeout(filterTimer);
+      window.removeEventListener('unisoko-select-category', handleCategoryEvent);
+    };
   }, []);
 
   // Calculate counts for chips

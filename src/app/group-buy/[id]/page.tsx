@@ -23,13 +23,14 @@ import {
   Tag,
 } from 'lucide-react';
 import type { Product } from '@/lib/types';
+import { getGroupBuyUnitPrice } from '@/lib/pricing';
 
 interface GroupBuyParticipant {
   id: string;
   productId: string;
   productTitle: string;
   retailPrice: number;
-  wholesalePrice: number;
+  groupBuyPrice: number;
   createdAt: string;
 }
 
@@ -38,7 +39,7 @@ interface GroupBuy {
   productId: string;
   productTitle: string;
   retailPrice: number;
-  wholesalePrice: number;
+  groupBuyPrice: number;
   minimumQuantity: number;
   participantCount: number;
   createdAt: string;
@@ -123,13 +124,22 @@ export default function GroupBuyPage() {
   }, [loadGroup]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const expirationTimer = group
+      ? window.setTimeout(
+          () => setRemainingMs(0),
+          Math.max(0, new Date(group.expiresAt).getTime() - Date.now())
+        )
+      : undefined;
+    const countdownTimer = window.setInterval(() => {
       if (group) {
         const diff = Math.max(0, new Date(group.expiresAt).getTime() - Date.now());
         setRemainingMs(diff);
       }
     }, 1000);
-    return () => window.clearInterval(timer);
+    return () => {
+      if (expirationTimer !== undefined) window.clearTimeout(expirationTimer);
+      window.clearInterval(countdownTimer);
+    };
   }, [group]);
 
   const isExpired = remainingMs <= 0 || group?.status === 'closed' || Boolean(group?.isExpired);
@@ -154,9 +164,6 @@ export default function GroupBuyPage() {
         body: JSON.stringify({
           participantToken: getParticipantToken(),
           productId: chosenProduct ? chosenProduct.id : undefined,
-          productTitle: chosenProduct ? chosenProduct.title : undefined,
-          retailPrice: chosenProduct ? chosenProduct.priceRetail : undefined,
-          wholesalePrice: chosenProduct ? chosenProduct.priceWholesale : undefined,
         }),
       });
       const body = (await response.json()) as { group?: GroupBuy; error?: string };
@@ -183,7 +190,7 @@ export default function GroupBuyPage() {
     setTimeout(() => setCopied(false), 3000);
   };
 
-  const wholesaleUnlocked = Boolean(group && group.participantCount >= group.minimumQuantity);
+  const groupBuyUnlocked = Boolean(group && group.participantCount >= group.minimumQuantity);
   const participantsRemaining = group ? Math.max(0, group.minimumQuantity - group.participantCount) : 0;
 
   // Active product to display (either user-selected or group default)
@@ -191,8 +198,8 @@ export default function GroupBuyPage() {
     id: group?.productId || '',
     title: group?.productTitle || '',
     priceRetail: group?.retailPrice || 0,
-    priceWholesale: group?.wholesalePrice || 0,
   };
+  const displayGroupBuyPrice = getGroupBuyUnitPrice(displayProduct.priceRetail);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
@@ -259,16 +266,16 @@ export default function GroupBuyPage() {
                   </div>
                   <div
                     className={`rounded-xl p-3.5 border ${
-                      wholesaleUnlocked
+                      groupBuyUnlocked
                         ? 'bg-emerald-950/40 border-emerald-500/40'
                         : 'bg-indigo-950/30 border-indigo-500/30'
                     }`}
                   >
                     <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-400">
-                      Bei ya Jumla per unit
+                      Group Buy price per unit
                     </p>
                     <p className="mt-1 text-base sm:text-lg font-black text-emerald-300">
-                      {formatTZS(displayProduct.priceWholesale)}
+                      {formatTZS(displayGroupBuyPrice)}
                     </p>
                   </div>
                 </div>
@@ -286,7 +293,7 @@ export default function GroupBuyPage() {
                     </p>
                     <p className="text-xs text-slate-400">
                       {participantsRemaining === 0
-                        ? '🎉 Wholesale threshold unlocked!'
+                        ? '🎉 Group Buy discount unlocked!'
                         : `${participantsRemaining} more student${participantsRemaining === 1 ? '' : 's'} needed for discount`}
                     </p>
                   </div>
@@ -310,15 +317,15 @@ export default function GroupBuyPage() {
                 className={`mt-4 rounded-2xl p-4 text-xs sm:text-sm font-semibold border ${
                   isExpired
                     ? 'bg-red-950/30 border-red-900/50 text-red-300'
-                    : wholesaleUnlocked
+                    : groupBuyUnlocked
                     ? 'bg-emerald-950/40 border-emerald-900/60 text-emerald-300'
                     : 'bg-indigo-950/30 border-indigo-900/50 text-indigo-200'
                 }`}
               >
                 {isExpired
                   ? '⚠️ This 24-hour group buy session has expired. Invite links are now closed.'
-                  : wholesaleUnlocked
-                  ? '✨ Wholesale unlocked! You and your classmates save on every item. UniSoko operations will coordinate your shared campus delivery.'
+                  : groupBuyUnlocked
+                  ? '✨ Group Buy discount unlocked! You and your classmates save on your selected products. UniSoko operations will coordinate your shared campus delivery.'
                   : `Invite ${participantsRemaining} more student${
                       participantsRemaining === 1 ? '' : 's'
                     }. The group rate unlocks at ${group.minimumQuantity} participants.`}
@@ -352,7 +359,7 @@ export default function GroupBuyPage() {
                         </div>
                         <div className="text-right shrink-0">
                           <p className="font-bold text-emerald-400">
-                            {formatTZS(participant.wholesalePrice)}
+                            {formatTZS(participant.groupBuyPrice)}
                           </p>
                           <p className="text-[10px] text-slate-500 line-through">
                             {formatTZS(participant.retailPrice)}
@@ -393,7 +400,7 @@ export default function GroupBuyPage() {
                       <span>Create New Group Buy</span>
                     </Link>
                     <p className="text-center text-xs text-slate-400">
-                      Start a new 24-hour pool on any device or product to unlock wholesale rates with your friends.
+                      Start a new 24-hour pool on any device or product to unlock the group-buy rate with your friends.
                     </p>
                   </div>
                 ) : (
@@ -448,7 +455,7 @@ export default function GroupBuyPage() {
             <p className="font-semibold text-slate-300">How Multi-Store Group Buys Work:</p>
             <p>1. The link expires 24 hours from creation.</p>
             <p>2. Each joining classmate can pick any approved product across the platform.</p>
-            <p>3. Once the minimum threshold is met, wholesale rates unlock for all participants on campus.</p>
+            <p>3. Once the minimum threshold is met, group-buy rates unlock for all participants.</p>
           </div>
         </section>
 
@@ -531,7 +538,7 @@ export default function GroupBuyPage() {
                         </h4>
                         <div className="mt-1 flex items-center gap-2 text-xs">
                           <span className="font-extrabold text-emerald-400">
-                            Jumla: {formatTZS(product.priceWholesale)}
+                            Group Buy: {formatTZS(getGroupBuyUnitPrice(product.priceRetail))}
                           </span>
                           <span className="text-[11px] text-slate-500 line-through">
                             {formatTZS(product.priceRetail)}

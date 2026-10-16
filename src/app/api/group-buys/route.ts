@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { DEFAULT_GROUP_BUY_MINIMUM, getGroupBuyUnitPrice } from '@/lib/pricing';
 
 function validToken(token: unknown): token is string {
   return typeof token === 'string' && /^[0-9a-f-]{36}$/i.test(token);
@@ -15,19 +16,19 @@ export async function POST(request: NextRequest) {
   let productId = product?.id || '';
   let productTitle = product?.title || '';
   let retailPrice = product?.priceRetail || 0;
-  let wholesalePrice = product?.priceWholesale || 0;
-  let minimumQuantity = product?.minWholesaleQty || 3;
+  let groupBuyPrice = getGroupBuyUnitPrice(retailPrice);
+  let minimumQuantity = DEFAULT_GROUP_BUY_MINIMUM;
   let sellerProfileId: string | null = null;
   if (!product && typeof body.productId === 'string') {
     const { data: sellerProduct, error: sellerProductError } = await supabase.from('products')
-      .select('id,name,price,seller_wholesale_price,seller_group_buy_minimum,seller_profile_id')
-      .eq('id', body.productId).eq('seller_group_buy_enabled', true).eq('listing_status', 'approved').eq('is_active', true).maybeSingle();
+      .select('id,name,price,seller_group_buy_minimum,seller_profile_id')
+      .eq('id', body.productId).eq('seller_group_buy_enabled', true).eq('listing_status', 'approved').eq('is_active', true).eq('in_stock', true).maybeSingle();
     if (sellerProductError) return NextResponse.json({ error: 'Seller group-buy products are unavailable. Apply the latest marketplace migration.' }, { status: 503 });
     if (sellerProduct?.seller_profile_id) {
       const { data: seller } = await supabase.from('seller_profiles').select('status').eq('id', sellerProduct.seller_profile_id).maybeSingle();
-      if (seller?.status === 'approved' && sellerProduct.seller_wholesale_price !== null) {
+      if (seller?.status === 'approved') {
         productId = sellerProduct.id; productTitle = sellerProduct.name; retailPrice = Number(sellerProduct.price);
-        wholesalePrice = Number(sellerProduct.seller_wholesale_price); minimumQuantity = Number(sellerProduct.seller_group_buy_minimum || 3);
+        groupBuyPrice = getGroupBuyUnitPrice(retailPrice); minimumQuantity = Number(sellerProduct.seller_group_buy_minimum || DEFAULT_GROUP_BUY_MINIMUM);
         sellerProfileId = sellerProduct.seller_profile_id;
       }
     }
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     product_id: productId,
     product_title: productTitle,
     retail_price: retailPrice,
-    wholesale_price: wholesalePrice,
+    wholesale_price: groupBuyPrice,
     minimum_quantity: minimumQuantity,
     seller_profile_id: sellerProfileId,
     participant_count: 1,
@@ -52,5 +53,5 @@ export async function POST(request: NextRequest) {
   const { error: participantError } = await supabase.from('group_buy_participants').insert({ group_id: id, participant_token: body.participantToken });
   if (participantError) return NextResponse.json({ error: 'Could not start the group buy.' }, { status: 500 });
 
-  return NextResponse.json({ id, productId, productTitle, retailPrice, wholesalePrice, minimumQuantity, participantCount: 1, expiresAt }, { status: 201 });
+  return NextResponse.json({ id, productId, productTitle, retailPrice, groupBuyPrice, minimumQuantity, participantCount: 1, expiresAt }, { status: 201 });
 }

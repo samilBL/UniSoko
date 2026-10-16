@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { createWhatsAppLink } from '@/lib/whatsapp';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
+import { getProductUnitPrice, MAX_PRODUCT_QUANTITY } from '@/lib/pricing';
 
 export default function CartDrawer() {
   const {
@@ -27,8 +28,8 @@ export default function CartDrawer() {
     if (cart.length === 0) return;
     const itemsText = cart
       .map((item) => {
-        const isWholesale = item.quantity >= (item.product.minWholesaleQty || 3);
-        const price = isWholesale ? item.product.priceWholesale : item.product.priceRetail;
+        const isWholesale = getProductUnitPrice(item.product, item.quantity) < item.product.priceRetail;
+        const price = getProductUnitPrice(item.product, item.quantity);
         return `• ${item.quantity}x ${item.product.title} (${isWholesale ? 'Wholesale' : 'Retail'}) @ ${formatTZS(price)}`;
       })
       .join('\n');
@@ -106,8 +107,8 @@ export default function CartDrawer() {
                   </div>
                 ) : (
                   cart.map(({ product, quantity }) => {
-                    const isWholesale = quantity >= (product.minWholesaleQty || 3);
-                    const unitPrice = isWholesale ? product.priceWholesale : product.priceRetail;
+                    const unitPrice = getProductUnitPrice(product, quantity);
+                    const isWholesale = unitPrice < product.priceRetail;
                     const itemTotal = unitPrice * quantity;
 
                     return (
@@ -168,6 +169,9 @@ export default function CartDrawer() {
                                 </span>
                                 <button
                                   onClick={() => updateQuantity(product.id, quantity + 1)}
+                                                                    disabled={quantity >= MAX_PRODUCT_QUANTITY}
+                                                                    aria-label="Increase quantity"
+                                                                    title={`Maximum ${MAX_PRODUCT_QUANTITY} units per product`}
                                   className="flex h-11 w-11 items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-r-lg transition-colors"
                                 >
                                   <Plus className="h-3 w-3" />

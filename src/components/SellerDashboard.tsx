@@ -1,10 +1,12 @@
 'use client';
 
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, Check, ClipboardList, Headphones, Home, Laptop, Layers, Package, Pencil, Save, ShieldCheck, Smartphone, Store, Zap } from 'lucide-react';
+import { Archive, Check, ClipboardList, Headphones, Home, Laptop, Package, Pencil, Save, ShieldCheck, Smartphone, Store, Zap } from 'lucide-react';
 import Link from 'next/link';
 import AccountSignOutButton from '@/components/AccountSignOutButton';
 import SellerMarketplaceInsights from '@/components/SellerMarketplaceInsights';
+import type { Order } from '@/lib/types';
+type Tab = 'overview' | 'orders' | 'products' | 'profile';
 
 type Profile = {
   id: string;
@@ -18,7 +20,7 @@ type Profile = {
   created_at: string;
   updated_at: string;
 };
-type SellerProduct = { id: string; name: string; category: string; category_id: string | null; subcategory_id: string | null; product_condition_id: string | null; price: number | string; description: string; specs: Record<string, unknown>; images: string[]; imageUrls: string[]; listing_status: string; submitted_at: string | null; moderation_notes: string; created_at: string; updated_at: string; seller_winga_campaign_enabled?: boolean; seller_winga_commission_rate?: number | string; seller_group_buy_enabled?: boolean; seller_wholesale_price?: number | string | null; seller_group_buy_minimum?: number };
+type SellerProduct = { id: string; name: string; category: string; category_id: string | null; subcategory_id: string | null; product_condition_id: string | null; price: number | string; description: string; specs: Record<string, unknown>; images: string[]; imageUrls: string[]; listing_status: string; submitted_at: string | null; moderation_notes: string; created_at: string; updated_at: string; seller_winga_campaign_enabled?: boolean; seller_winga_commission_rate?: number | string; seller_group_buy_enabled?: boolean; seller_group_buy_minimum?: number; seller_wholesale_enabled?: boolean; seller_wholesale_discount_percent?: number | string; seller_wholesale_minimum?: number };
 type Category = { id: string; name: string };
 type Subcategory = { id: string; category_id: string; name: string };
 type Condition = { id: string; name: string; description: string };
@@ -26,7 +28,6 @@ type DynamicAttribute = { id: string; category_id: string | null; subcategory_id
 type Plan = { id: string; name: string; description: string; plan_type: string; price: number; currency: string; duration_days: number; product_limit: number | null; is_popular: boolean; slug: string; subscription_plan_features?: { feature_key: string; label: string; description: string; is_enabled: boolean }[] };
 type PaymentMethod = { id: string; name: string; instructions: string; public_details: Record<string, unknown> };
 type Subscription = { id: string; status: string; plan_snapshot: Record<string, unknown>; expires_at: string | null };
-type Tab = 'overview' | 'products' | 'profile';
 
 const DEFAULT_FALLBACK_CATEGORIES: Category[] = [
   { id: 'cat-laptops', name: 'Laptops & Computers' },
@@ -77,11 +78,13 @@ function getCategoryIcon(name: string) {
 }
 
 const inputClass = 'mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white';
-const emptyProductDraft = { name: '', categoryId: '', subcategoryId: '', conditionId: '', price: '', description: '', specs: {} as Record<string, unknown>, images: [] as string[] };
+const emptyProductDraft = { name: '', categoryId: '', subcategoryId: '', conditionId: '', price: '', description: '', specs: {} as Record<string, unknown>, images: [] as string[], wholesaleEnabled: false, wholesaleDiscountPercent: '5', wholesaleMinimum: '3' };
 
 export default function SellerDashboard({ email, initialProfile }: { email: string; initialProfile: Profile }) {
   const [profile, setProfile] = useState(initialProfile);
   const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [sellerOrders, setSellerOrders] = useState<Order[]>([]);
+  const [sellerOrdersError, setSellerOrdersError] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [conditions, setConditions] = useState<Condition[]>([]);
@@ -107,7 +110,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
   const [productStep, setProductStep] = useState(0);
   const [maxStepReached, setMaxStepReached] = useState(0);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [profileForm, setProfileForm] = useState({ displayName: initialProfile.display_name, university: initialProfile.university, campus: initialProfile.campus || '', phone: typeof initialProfile.contact_options.phone === 'string' ? initialProfile.contact_options.phone : '', description: initialProfile.description });
+  const [profileForm, setProfileForm] = useState({ displayName: initialProfile.display_name, university: initialProfile.university, campus: initialProfile.campus || '', phone: typeof initialProfile.contact_options.phone === 'string' ? initialProfile.contact_options.phone : '', tillNetwork: typeof initialProfile.contact_options.tillNetwork === 'string' ? initialProfile.contact_options.tillNetwork : 'M-Pesa', tillNumber: typeof initialProfile.contact_options.tillNumber === 'string' ? initialProfile.contact_options.tillNumber : '', tillAccountName: typeof initialProfile.contact_options.tillAccountName === 'string' ? initialProfile.contact_options.tillAccountName : '', description: initialProfile.description });
 
   const load = useCallback(async () => {
     const [profileResponse, productsResponse, subscriptionResponse] = await Promise.all([
@@ -123,7 +126,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     if (!subscriptionResponse.ok) throw new Error(subscriptionResult.error || 'Could not load subscription plans.');
     if (profileResult.profile) {
       setProfile(profileResult.profile);
-      setProfileForm({ displayName: profileResult.profile.display_name, university: profileResult.profile.university, campus: profileResult.profile.campus || '', phone: typeof profileResult.profile.contact_options.phone === 'string' ? profileResult.profile.contact_options.phone : '', description: profileResult.profile.description || '' });
+      setProfileForm({ displayName: profileResult.profile.display_name, university: profileResult.profile.university, campus: profileResult.profile.campus || '', phone: typeof profileResult.profile.contact_options.phone === 'string' ? profileResult.profile.contact_options.phone : '', tillNetwork: typeof profileResult.profile.contact_options.tillNetwork === 'string' ? profileResult.profile.contact_options.tillNetwork : 'M-Pesa', tillNumber: typeof profileResult.profile.contact_options.tillNumber === 'string' ? profileResult.profile.contact_options.tillNumber : '', tillAccountName: typeof profileResult.profile.contact_options.tillAccountName === 'string' ? profileResult.profile.contact_options.tillAccountName : '', description: profileResult.profile.description || '' });
     }
     setVerification(profileResult.verification?.status || 'unverified');
     setProducts(productsResult.products || []);
@@ -138,6 +141,14 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     if (subscriptionResult.plans?.length) setSelectedPlan((current) => current || subscriptionResult.plans?.find((plan) => plan.is_popular)?.id || subscriptionResult.plans?.find((plan) => plan.plan_type === 'paid')?.id || '');
     if (subscriptionResult.paymentMethods?.length) setSelectedMethod((current) => current || subscriptionResult.paymentMethods?.[0].id || '');
     setCurrentTime(Date.now());
+  }, []);
+
+  const refreshSellerOrders = useCallback(async () => {
+    const response = await fetch('/api/seller/orders', { cache: 'no-store' });
+    const result = await response.json() as { orders?: Order[]; error?: string };
+    if (!response.ok) throw new Error(result.error || 'Could not load seller orders.');
+    setSellerOrders(result.orders || []);
+    setSellerOrdersError('');
   }, []);
 
   useEffect(() => {
@@ -157,6 +168,17 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     void Promise.resolve().then(load).catch((err: unknown) => { if (active) setError(err instanceof Error ? err.message : 'Could not load your dashboard.'); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [load]);
+
+  useEffect(() => {
+    if (profile.status !== 'approved') return;
+    const initialTimer = window.setTimeout(() => {
+      void refreshSellerOrders().catch((reason: unknown) => setSellerOrdersError(reason instanceof Error ? reason.message : 'Could not load seller orders.'));
+    }, 0);
+    const timer = window.setInterval(() => {
+      void refreshSellerOrders().catch((reason: unknown) => setSellerOrdersError(reason instanceof Error ? reason.message : 'Could not refresh seller orders.'));
+    }, 15000);
+    return () => { window.clearTimeout(initialTimer); window.clearInterval(timer); };
+  }, [profile.status, refreshSellerOrders]);
 
   const counts = useMemo(() => products.reduce<Record<string, number>>((result, product) => {
     result[product.listing_status] = (result[product.listing_status] || 0) + 1;
@@ -262,7 +284,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
   const startEdit = (product: SellerProduct) => {
     setEditingId(product.id);
     const images = (product.images || []).filter((path) => path.startsWith(`${profile.id}/`));
-    setDraft({ name: product.name, categoryId: product.category_id || '', subcategoryId: product.subcategory_id || '', conditionId: product.product_condition_id || '', price: String(product.price), description: product.description || '', specs: product.specs || {}, images });
+    setDraft({ name: product.name, categoryId: product.category_id || '', subcategoryId: product.subcategory_id || '', conditionId: product.product_condition_id || '', price: String(product.price), description: product.description || '', specs: product.specs || {}, images, wholesaleEnabled: Boolean(product.seller_wholesale_enabled), wholesaleDiscountPercent: String(product.seller_wholesale_discount_percent ?? 5), wholesaleMinimum: String(product.seller_wholesale_minimum || 3) });
     setImagePreviews(Object.fromEntries(images.map((path, index) => [path, product.imageUrls[index] || ''])));
     setProductStep(0);
     setMaxStepReached(5);
@@ -278,6 +300,14 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
     (!attribute.subcategory_id || attribute.subcategory_id === draft.subcategoryId) &&
     (!attribute.product_condition_id || attribute.product_condition_id === draft.conditionId));
 
+  const addSpecification = () => {
+    setDraft((current) => {
+      let number = Object.keys(current.specs).length + 1;
+      while (`Specification ${number}` in current.specs) number += 1;
+      return { ...current, specs: { ...current.specs, [`Specification ${number}`]: '' } };
+    });
+  };
+
   const approved = profile.status === 'approved';
   const statusClass = profile.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : profile.status === 'rejected' ? 'bg-rose-100 text-rose-800' : profile.status === 'suspended' ? 'bg-slate-200 text-slate-800' : 'bg-amber-100 text-amber-900';
 
@@ -288,8 +318,14 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
         <AccountSignOutButton returnTo="/seller/login" />
       </div>
       <nav aria-label="Seller dashboard sections" className="mt-5 flex gap-2 overflow-x-auto border-b border-slate-200 pb-2 dark:border-slate-800">
-        {([['overview', 'Overview'], ['products', 'Products'], ['profile', 'Seller profile']] as const).map(([key, label]) => <button key={key} type="button" onClick={() => setTab(key)} className={`min-h-10 shrink-0 rounded-xl px-4 text-xs font-bold ${tab === key ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}>{label}</button>)}
+        {([['overview', 'Overview'], ['orders', 'Orders'], ['products', 'Products'], ['profile', 'Seller profile']] as const).map(([key, label]) => <button key={key} type="button" disabled={key === 'orders' && !approved} onClick={() => setTab(key)} className={`min-h-10 shrink-0 rounded-xl px-4 text-xs font-bold ${tab === key ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'} disabled:cursor-not-allowed disabled:opacity-40`}>{label}</button>)}
       </nav>
+
+      {!loading && tab === 'orders' && approved && <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-lg font-extrabold">Orders and dispatch</h2><p className="mt-1 text-xs text-slate-500">Order status refreshes automatically every 15 seconds.</p></div><span className="text-xs font-semibold text-slate-500">{sellerOrders.length} orders</span></div>
+        {sellerOrdersError && <p role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-xs text-rose-800">{sellerOrdersError}</p>}
+        {sellerOrders.length ? <div className="mt-4 divide-y divide-slate-200 dark:divide-slate-800">{sellerOrders.map((order) => <article key={order.id} className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center"><div><p className="font-mono text-xs font-bold">{order.id}</p><p className="mt-1 text-sm font-semibold">{order.items?.map((item) => `${item.quantity}x ${item.productTitle}`).join(', ')}</p><p className="mt-1 text-xs text-slate-500">{order.university} · {order.deliverySpotType} · {order.deliveryDetails}</p><p className="mt-1 text-xs text-slate-500">Buyer: {order.buyerName} · {order.buyerPhone}</p></div><div className="text-xs sm:text-right"><p><strong>Payment:</strong> {order.paymentStatus || order.status}</p><p className="mt-1"><strong>Fulfillment:</strong> {order.fulfillmentStatus || 'Unconfirmed'}</p><p className="mt-1"><strong>Delivery:</strong> {order.deliveryStatus || 'Not Dispatched'}</p><p className="mt-1"><strong>Assigned:</strong> {order.dispatchAssigneeName || 'Not assigned'}</p><p className="mt-1 text-slate-500">{new Date(order.createdAt).toLocaleString()}</p></div></article>)}</div> : !sellerOrdersError && <p className="mt-5 rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">No orders have been placed for your products yet.</p>}
+      </section>}
 
       {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</p>}
       {message && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{message}</p>}
@@ -519,7 +555,26 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                 ) : applicableAttributes.length === 0 ? (
                   <div className="rounded-xl bg-slate-100 p-4 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300 sm:col-span-2">
                     <p className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Standard Item Specs</p>
-                    <p>No extra specifications required for this category. Press <b>Continue</b> below to proceed to image uploads.</p>
+                    <p>Add useful details such as processor, memory, storage, or included accessories.</p>
+                    <div className="mt-3 space-y-2">
+                      {Object.entries(draft.specs).map(([name, value]) => (
+                        <div key={name} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto]">
+                          <input aria-label="Specification name" maxLength={80} value={name} onChange={(event) => {
+                            const nextName = event.target.value;
+                            setDraft((current) => {
+                              const specs = { ...current.specs };
+                              const currentValue = specs[name];
+                              delete specs[name];
+                              specs[nextName] = currentValue;
+                              return { ...current, specs };
+                            });
+                          }} className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs dark:border-slate-700 dark:bg-slate-950" />
+                          <input aria-label={`${name} value`} maxLength={300} value={String(value ?? '')} onChange={(event) => setDraft((current) => ({ ...current, specs: { ...current.specs, [name]: event.target.value } }))} className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs dark:border-slate-700 dark:bg-slate-950" />
+                          <button type="button" onClick={() => setDraft((current) => { const specs = { ...current.specs }; delete specs[name]; return { ...current, specs }; })} className="min-h-10 rounded-lg border border-slate-300 px-3 text-xs font-semibold hover:bg-white dark:border-slate-700 dark:hover:bg-slate-900">Remove</button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={addSpecification} className="min-h-10 rounded-lg border border-slate-300 px-3 text-xs font-bold hover:bg-white dark:border-slate-700 dark:hover:bg-slate-900">Add specification</button>
+                    </div>
                   </div>
                 ) : (
                   applicableAttributes.map((attribute) => (
@@ -678,6 +733,10 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
                     onChange={(event) => setDraft({ ...draft, price: event.target.value })}
                   />
                 </label>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/20 sm:col-span-2">
+                  <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={draft.wholesaleEnabled} onChange={(event) => setDraft({ ...draft, wholesaleEnabled: event.target.checked })} />Enable Bei ya Jumla for this product</label>
+                  {draft.wholesaleEnabled && <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold">Wholesale discount (%)<input className={inputClass} type="number" min="0" max="5" step="0.5" value={draft.wholesaleDiscountPercent} onChange={(event) => setDraft({ ...draft, wholesaleDiscountPercent: event.target.value })} /></label><label className="text-xs font-semibold">Minimum units<input className={inputClass} type="number" min="2" max="12" step="1" value={draft.wholesaleMinimum} onChange={(event) => setDraft({ ...draft, wholesaleMinimum: event.target.value })} /></label><p className="text-[11px] text-slate-600 dark:text-slate-300 sm:col-span-2">Final reductions remain capped at 5% and TZS 10,000 per unit.</p></div>}
+                </div>
                 <label className="text-xs font-bold sm:col-span-2">
                   Description <span className="text-rose-500">*</span> <span className="font-normal text-slate-500">({draft.description.length}/4,000)</span>
                   <textarea
@@ -833,7 +892,12 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
 
       {!loading && tab === 'profile' && <form onSubmit={saveProfile} className="mt-5 max-w-3xl space-y-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <div><h2 className="text-lg font-extrabold">Seller profile</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">These fields can be updated by the approved seller account owner.</p></div>
-        <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs font-bold">Seller or shop name<input className={inputClass} required minLength={2} maxLength={120} value={profileForm.displayName} onChange={(event) => setProfileForm({ ...profileForm, displayName: event.target.value })} /></label><label className="text-xs font-bold">University<input className={inputClass} required minLength={2} maxLength={160} value={profileForm.university} onChange={(event) => setProfileForm({ ...profileForm, university: event.target.value })} /></label><label className="text-xs font-bold">Campus<input className={inputClass} maxLength={160} value={profileForm.campus} onChange={(event) => setProfileForm({ ...profileForm, campus: event.target.value })} /></label><label className="text-xs font-bold">Buyer contact phone<input className={inputClass} maxLength={32} value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} /></label></div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="text-xs font-bold">Shop WhatsApp number<input className={inputClass} maxLength={32} placeholder="+255..." value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} /></label>
+          <label className="text-xs font-bold">Till network<select className={inputClass} value={profileForm.tillNetwork} onChange={(event) => setProfileForm({ ...profileForm, tillNetwork: event.target.value })}><option>M-Pesa</option><option>Tigo Pesa</option><option>Airtel Money</option></select></label>
+          <label className="text-xs font-bold">Till number<input className={inputClass} inputMode="numeric" maxLength={20} placeholder="Mobile-money till" value={profileForm.tillNumber} onChange={(event) => setProfileForm({ ...profileForm, tillNumber: event.target.value })} /></label>
+          <label className="text-xs font-bold">Till account name<input className={inputClass} maxLength={120} value={profileForm.tillAccountName} onChange={(event) => setProfileForm({ ...profileForm, tillAccountName: event.target.value })} /></label>
+        </div>
         <label className="block text-xs font-bold">About your shop<textarea className={`${inputClass} min-h-28 py-3`} maxLength={2000} value={profileForm.description} onChange={(event) => setProfileForm({ ...profileForm, description: event.target.value })} /></label>
         <p className="text-xs text-slate-500">Verified email: {email}</p>
         <button type="submit" disabled={busy || !approved} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"><Save className="h-4 w-4" />Save profile</button>
@@ -845,23 +909,44 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
 function SellerPromotionSettings({ product, onSaved }: { product: SellerProduct; onSaved: () => void }) {
   const [wingaEnabled, setWingaEnabled] = useState(Boolean(product.seller_winga_campaign_enabled));
   const [rate, setRate] = useState(Number(product.seller_winga_commission_rate || 0.05) * 100);
+  const [wholesaleEnabled, setWholesaleEnabled] = useState(Boolean(product.seller_wholesale_enabled));
+  const [wholesaleDiscountPercent, setWholesaleDiscountPercent] = useState(Number(product.seller_wholesale_discount_percent ?? 5));
+  const [wholesaleMinimum, setWholesaleMinimum] = useState(Number(product.seller_wholesale_minimum || 3));
   const [groupBuyEnabled, setGroupBuyEnabled] = useState(Boolean(product.seller_group_buy_enabled));
-  const [wholesalePrice, setWholesalePrice] = useState(Number(product.seller_wholesale_price || 0));
-  const [minimum, setMinimum] = useState(Number(product.seller_group_buy_minimum || 3));
+  const [groupBuyMinimum, setGroupBuyMinimum] = useState(Number(product.seller_group_buy_minimum || 3));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const save = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
     try {
-      const response = await fetch('/api/seller/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: product.id, wingaEnabled, wingaRatePercent: rate, groupBuyEnabled, wholesalePrice, groupBuyMinimum: minimum }) });
+      const response = await fetch('/api/seller/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: product.id, wingaEnabled, wingaRatePercent: rate, wholesaleEnabled, wholesaleDiscountPercent, wholesaleMinimum, groupBuyEnabled, groupBuyMinimum }) });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error || 'Could not save promotion settings.');
-      setMessage('Promotion settings saved.'); onSaved();
+      setMessage('Product pricing and campaign settings saved.'); onSaved();
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not save promotion settings.'); }
     finally { setBusy(false); }
   };
-  return <form onSubmit={save} className="mt-3 max-w-2xl rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/20"><p className="text-xs font-bold">Promote this product</p><div className="mt-2 grid gap-3 sm:grid-cols-2"><label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={wingaEnabled} onChange={(e) => setWingaEnabled(e.target.checked)}/><span>Allow Campus Wingas to promote this product and earn a seller-funded commission.</span></label>{wingaEnabled && <label className="text-xs font-semibold">Winga commission rate (%)<input type="number" min="1" max="30" step="0.5" required value={rate} onChange={(e) => setRate(Number(e.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950"/></label>}<label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={groupBuyEnabled} onChange={(e) => setGroupBuyEnabled(e.target.checked)}/><span>Offer this product through group buying.</span></label>{groupBuyEnabled && <><label className="text-xs font-semibold">Group price per unit (TZS)<input type="number" min="1" max={Number(product.price) - 1} required value={wholesalePrice || ''} onChange={(e) => setWholesalePrice(Number(e.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950"/></label><label className="text-xs font-semibold">Students needed<input type="number" min="2" max="100" required value={minimum} onChange={(e) => setMinimum(Number(e.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950"/></label></>}</div><p className="mt-2 text-[11px] text-slate-500">Commission is calculated on the referred item amount after discount and becomes payable after payment verification and delivery. UniSoko records settlement for manual payment.</p>{error && <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p>}{message && <p role="status" className="mt-2 text-xs text-emerald-700">{message}</p>}<button disabled={busy} className="mt-3 min-h-9 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save promotion settings'}</button></form>;
+  return (
+    <form onSubmit={save} className="mt-3 max-w-2xl rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/20">
+      <p className="text-xs font-bold">Product pricing and promotions</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={wholesaleEnabled} onChange={(event) => setWholesaleEnabled(event.target.checked)} /><span>Enable Bei ya Jumla for this product.</span></label>
+        {wholesaleEnabled && <>
+          <label className="text-xs font-semibold">Wholesale discount (%)<input type="number" min="0" max="5" step="0.5" value={wholesaleDiscountPercent} onChange={(event) => setWholesaleDiscountPercent(Number(event.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950" /></label>
+          <label className="text-xs font-semibold">Minimum units<input type="number" min="2" max="12" step="1" value={wholesaleMinimum} onChange={(event) => setWholesaleMinimum(Number(event.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950" /></label>
+        </>}
+        <label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={groupBuyEnabled} onChange={(event) => setGroupBuyEnabled(event.target.checked)} /><span>Offer this product through Group Buy.</span></label>
+        {groupBuyEnabled && <label className="text-xs font-semibold">Students needed<input type="number" min="2" max="100" required value={groupBuyMinimum} onChange={(event) => setGroupBuyMinimum(Number(event.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950" /></label>}
+        <label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={wingaEnabled} onChange={(event) => setWingaEnabled(event.target.checked)} /><span>Allow Campus Wingas to promote this product and earn a seller-funded commission.</span></label>
+        {wingaEnabled && <label className="text-xs font-semibold">Winga commission rate (%)<input type="number" min="1" max="30" step="0.5" required value={rate} onChange={(event) => setRate(Number(event.target.value))} className="mt-1 block min-h-9 w-full rounded-lg border px-2 dark:bg-slate-950" /></label>}
+      </div>
+      <p className="mt-2 text-[11px] text-slate-500">Wholesale reductions are capped at 5% and TZS 10,000 per unit. Group Buy uses a separate platform rate. Winga commission is payable after payment verification and delivery.</p>
+      {error && <p role="alert" className="mt-2 text-xs text-rose-700">{error}</p>}
+      {message && <p role="status" className="mt-2 text-xs text-emerald-700">{message}</p>}
+      <button disabled={busy} className="mt-3 min-h-9 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">{busy ? 'Saving...' : 'Save settings'}</button>
+    </form>
+  );
 }
 
 function SellerCommissionSummary() {

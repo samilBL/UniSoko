@@ -5,11 +5,12 @@ import { ALL_UNIVERSITIES, MOCK_PRODUCTS } from '@/lib/mockData';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import type { DeliverySpotType, OrderItem, Product } from '@/lib/types';
 import { STUDENT_BUNDLES } from '@/lib/studentBundles';
+import { DEFAULT_WHOLESALE_MINIMUM, getWholesaleUnitPrice, MAX_PRODUCT_QUANTITY } from '@/lib/pricing';
 
 const DELIVERY_SPOTS = new Set<DeliverySpotType>(['Hostel', 'Landmark', 'Off-Campus', 'Courier']);
 const MAX_TEXT_LENGTH = 500;
 const WINGA_DISCOUNT = 5000;
-type SellerOrderSettings = { seller_profile_id: string; seller_wholesale_price: number | string | null; seller_group_buy_minimum: number | null; seller_winga_campaign_enabled: boolean; seller_winga_commission_rate: number | string };
+type SellerOrderSettings = { seller_profile_id: string; seller_wholesale_enabled: boolean; seller_wholesale_discount_percent: number | string; seller_wholesale_minimum: number; seller_winga_campaign_enabled: boolean; seller_winga_commission_rate: number | string };
 
 function readText(value: unknown, maxLength = MAX_TEXT_LENGTH) {
   return typeof value === 'string' && value.trim() && value.length <= maxLength ? value.trim() : null;
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     const item = rawItem as { productId?: unknown; quantity?: unknown };
     const productId = readText(item.productId, 120);
     const quantity = Number(item.quantity);
-    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_PRODUCT_QUANTITY) {
       return NextResponse.json({ error: 'Each item needs a valid product and quantity.' }, { status: 400 });
     }
     quantities.set(productId, (quantities.get(productId) || 0) + quantity);
@@ -66,27 +67,32 @@ export async function POST(request: NextRequest) {
 
   const items: OrderItem[] = [];
   for (const [productId, quantity] of quantities) {
-    if (quantity > 100) return NextResponse.json({ error: 'Item quantity exceeds the checkout limit.' }, { status: 400 });
+    if (quantity > MAX_PRODUCT_QUANTITY) return NextResponse.json({ error: `Each product is limited to ${MAX_PRODUCT_QUANTITY} units per order.` }, { status: 400 });
     let product = MOCK_PRODUCTS.find((candidate) => candidate.id === productId)
       || STUDENT_BUNDLES.find((candidate) => candidate.id === productId);
     let sellerSettings: SellerOrderSettings | null = null;
     if (!product) {
       const { data: sellerRow, error: sellerProductError } = await supabase.from('products')
-        .select('id,name,description,category,price,seller_profile_id,seller_wholesale_price,seller_group_buy_minimum,seller_winga_campaign_enabled,seller_winga_commission_rate,in_stock,listing_status,is_active')
+        .select('id,name,description,category,price,seller_profile_id,seller_wholesale_enabled,seller_wholesale_discount_percent,seller_wholesale_minimum,seller_winga_campaign_enabled,seller_winga_commission_rate,in_stock,listing_status,is_active')
         .eq('id', productId).not('seller_profile_id', 'is', null).eq('listing_status', 'approved').eq('is_active', true).eq('in_stock', true).maybeSingle();
       if (sellerProductError) return NextResponse.json({ error: 'Seller product checkout is unavailable. Apply the latest marketplace migration.' }, { status: 503 });
       if (sellerRow?.seller_profile_id) {
         const { data: seller } = await supabase.from('seller_profiles').select('status').eq('id', sellerRow.seller_profile_id).maybeSingle();
         if (seller?.status === 'approved') {
           sellerSettings = sellerRow as SellerOrderSettings;
-          product = { id: sellerRow.id, title: sellerRow.name, description: sellerRow.description || '', category: sellerRow.category as Product['category'], priceRetail: Number(sellerRow.price), priceWholesale: Number(sellerRow.seller_wholesale_price || sellerRow.price), condition: 'Brand New', stockStatus: 'In Stock', images: [], minWholesaleQty: Number(sellerRow.seller_group_buy_minimum || 3) };
+          const priceRetail = Number(sellerRow.price);
+          product = { id: sellerRow.id, title: sellerRow.name, description: sellerRow.description || '', category: sellerRow.category as Product['category'], priceRetail, priceWholesale: sellerRow.seller_wholesale_enabled ? priceRetail * (1 - Number(sellerRow.seller_wholesale_discount_percent || 0) / 100) : priceRetail, condition: 'Brand New', stockStatus: 'In Stock', images: [], minWholesaleQty: sellerRow.seller_wholesale_minimum || DEFAULT_WHOLESALE_MINIMUM };
         }
       }
     }
     if (!product) return NextResponse.json({ error: 'A product in your cart is no longer available.' }, { status: 409 });
     if (product.stockStatus === 'Coming Soon') return NextResponse.json({ error: `${product.title} is not currently available.` }, { status: 409 });
-    const minimumWholesaleQuantity = product.minWholesaleQty || 3;
-    const unitPrice = quantity >= minimumWholesaleQuantity ? product.priceWholesale : product.priceRetail;
+    const unitPrice = getWholesaleUnitPrice(
+      product.priceRetail,
+      product.priceWholesale,
+      quantity,
+      product.minWholesaleQty
+    );
     items.push({
       productId: product.id,
       productTitle: product.title,

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import CartDrawer from '@/components/CartDrawer';
 import { MOCK_PRODUCTS, formatTZS, calculateWholesaleSavings } from '@/lib/mockData';
+import { getProductUnitPrice, MAX_PRODUCT_QUANTITY } from '@/lib/pricing';
 import { useStore } from '@/context/StoreContext';
 import {
   ShieldCheck,
@@ -30,6 +31,8 @@ import { getProductSpecEntries } from '@/lib/productSpecs';
 import TradeInModal from '@/components/TradeInModal';
 import type { TradeInQuoteAttachment } from '@/lib/types';
 import type { Product } from '@/lib/types';
+import { createWhatsAppLink } from '@/lib/whatsapp';
+import { UNISOKO_CONTACT } from '@/lib/siteConfig';
 
 export default function ProductDetailsPage() {
   const params = useParams();
@@ -75,17 +78,19 @@ export default function ProductDetailsPage() {
   const productSpecEntries = getProductSpecEntries(product);
 
   const minWholesale = product.minWholesaleQty || 3;
-  const isWholesaleUnlocked = quantity >= minWholesale;
-  const activeUnitPrice = isWholesaleUnlocked ? product.priceWholesale : product.priceRetail;
+  const wholesaleAvailable = !product.sellerProfileId || product.sellerWholesaleEnabled === true;
+  const isWholesaleUnlocked = wholesaleAvailable && quantity >= minWholesale;
+  const activeUnitPrice = getProductUnitPrice(product, quantity);
   const totalPrice = activeUnitPrice * quantity;
 
   const { totalSavings, percentSaved } = calculateWholesaleSavings(
     product.priceRetail,
-    product.priceWholesale,
-    quantity
+    wholesaleAvailable ? product.priceWholesale : product.priceRetail,
+    quantity,
+    minWholesale
   );
 
-  const handleIncrement = () => setQuantity((q) => q + 1);
+  const handleIncrement = () => setQuantity((q) => Math.min(MAX_PRODUCT_QUANTITY, q + 1));
   const handleDecrement = () => setQuantity((q) => Math.max(1, q - 1));
 
   const isAvailable = product.stockStatus !== 'Coming Soon';
@@ -102,13 +107,13 @@ export default function ProductDetailsPage() {
 
   const handleWhatsAppOrder = () => {
     const wholesaleNote = isWholesaleUnlocked
-      ? `\n🎉 *BEI YA JUMLA UNLOCKED* (${quantity} units @ ${formatTZS(product.priceWholesale)} each)`
+      ? `\n🎉 *BEI YA JUMLA UNLOCKED* (${quantity} units @ ${formatTZS(activeUnitPrice)} each)`
       : `\n• Bei ya Rejareja: ${formatTZS(product.priceRetail)} each`;
 
-    const msg = encodeURIComponent(
+    const msg =
       `Habari UniSoko! Nataka kuagiza gadget hii:\n\n• Bidhaa: ${product.title}\n• Condition: ${product.condition}\n• Idadi: ${quantity} units${wholesaleNote}\n• Jumla Kuu: ${formatTZS(totalPrice)}\n\n📍 Chuo: ${selectedCampus.name} (${selectedCampus.shortCode})\n\nTafadhali thibitisha upatikanaji wa hostel delivery!`
-    );
-    window.open(`https://wa.me/255754892110?text=${msg}`, '_blank');
+    ;
+    window.open(createWhatsAppLink(product.sellerWhatsappPhone || UNISOKO_CONTACT.phoneDigits, msg), '_blank', 'noopener,noreferrer');
   };
 
   const handleStartGroupBuy = async () => {
@@ -242,11 +247,12 @@ export default function ProductDetailsPage() {
               <p className="mt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                 {product.description}
               </p>
+              {product.sellerProfileId && product.sellerWhatsappPhone && <div className="mt-3 flex flex-wrap items-center gap-3 text-xs"><a href={createWhatsAppLink(product.sellerWhatsappPhone, `Habari ${product.sellerDisplayName || 'seller'}, naomba maelezo kuhusu ${product.title}.`)} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-600 px-3 font-bold text-white hover:bg-emerald-700"><MessageCircle className="h-4 w-4"/>WhatsApp seller</a><span className="text-slate-500">{product.sellerWhatsappPhone}</span></div>}
             </div>
 
             {/* Pricing Tier Card */}
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
-              <div className="grid grid-cols-2 gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div className={`grid ${wholesaleAvailable ? 'grid-cols-2' : 'grid-cols-1'} gap-3 border-b border-slate-100 pb-4 dark:border-slate-800`}>
                 {/* Retail Tier */}
                 <div className={`p-3 rounded-xl border transition-all ${
                   !isWholesaleUnlocked
@@ -263,7 +269,7 @@ export default function ProductDetailsPage() {
                 </div>
 
                 {/* Wholesale Tier */}
-                <div className={`p-3 rounded-xl border transition-all relative overflow-hidden ${
+                {wholesaleAvailable && <div className={`p-3 rounded-xl border transition-all relative overflow-hidden ${
                   isWholesaleUnlocked
                     ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 shadow-sm'
                     : 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20'
@@ -271,16 +277,15 @@ export default function ProductDetailsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1">
                       <Sparkles className="h-3 w-3 text-emerald-600" />
-                      Jumla (3+ Units)
+                      Jumla ({minWholesale}+ Units)
                     </span>
                   </div>
                   <span className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-1 block">
-                    {formatTZS(product.priceWholesale)}
                   </span>
                   <span className="text-[10px] text-emerald-600/80 dark:text-emerald-300 font-semibold">
-                    Save {formatTZS(product.priceRetail - product.priceWholesale)} /pc
+                    Save {formatTZS(product.priceRetail - getProductUnitPrice(product, minWholesale))} /pc
                   </span>
-                </div>
+                </div>}
               </div>
 
               {/* Dynamic Quantity Selector */}
@@ -290,7 +295,7 @@ export default function ProductDetailsPage() {
                     Select Quantity:
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    Hostel squad bulk buying supported
+                    Up to {MAX_PRODUCT_QUANTITY} units per product
                   </span>
                 </div>
 
@@ -308,6 +313,7 @@ export default function ProductDetailsPage() {
                     </span>
                     <button
                       onClick={handleIncrement}
+                                            disabled={quantity >= MAX_PRODUCT_QUANTITY}
                       className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-700 shadow-xs hover:bg-slate-100 dark:bg-slate-700 dark:text-white transition-colors"
                       aria-label="Increase quantity"
                     >

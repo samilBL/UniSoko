@@ -11,6 +11,7 @@ import {
   formatTZS,
 } from '@/lib/mockData';
 import { Order, DeliverySpotType } from '@/lib/types';
+import { getProductUnitPrice } from '@/lib/pricing';
 import {
   MapPin,
   School,
@@ -151,15 +152,22 @@ export default function CheckoutPage() {
   // University determination with defensive checks
   const isMbeyaUni = Boolean(safeCampus?.isMbeya);
   const configuredPaymentMethods = storeSettings?.paymentMethods?.filter((method) => method.enabled && method.tillNumber.trim()) || [];
-  const paymentMethods = configuredPaymentMethods.length > 0
+  const firstSellerProduct = checkoutItems[0]?.product;
+  const singleSellerCheckout = Boolean(firstSellerProduct?.sellerProfileId) && checkoutItems.every(({ product }) => product.sellerProfileId === firstSellerProduct?.sellerProfileId);
+  const sellerPaymentMethod = singleSellerCheckout && firstSellerProduct?.sellerTillNumber
+    ? { id: 'seller-till', network: firstSellerProduct.sellerTillNetwork || 'M-Pesa' as const, tillNumber: firstSellerProduct.sellerTillNumber, accountName: firstSellerProduct.sellerTillAccountName || 'Seller', enabled: true }
+    : null;
+  const paymentMethods = sellerPaymentMethod
+    ? [sellerPaymentMethod]
+    : configuredPaymentMethods.length > 0
     ? configuredPaymentMethods
     : [{ network: 'M-Pesa' as const, tillNumber: storeSettings?.tillNumber || '5849201', accountName: storeSettings?.accountName || 'UNISOKO TECH CAMPUS HUB', enabled: true }];
 
   // Pricing Calculation
   const rawSubtotal = checkoutItems.reduce((sum, item) => {
-    const minQty = item.product?.minWholesaleQty || 3;
-    const isWholesale = item.quantity >= minQty;
-    const unitPrice = isWholesale ? (item.product?.priceWholesale || item.product?.priceRetail || 0) : (item.product?.priceRetail || 0);
+    const unitPrice = item.product
+      ? getProductUnitPrice(item.product, item.quantity)
+      : 0;
     return sum + unitPrice * item.quantity;
   }, 0);
 
@@ -273,8 +281,8 @@ export default function CheckoutPage() {
         productTitle: product.title,
         condition: product.condition,
         quantity,
-        unitPrice: quantity >= (product.minWholesaleQty || 3) ? product.priceWholesale : product.priceRetail,
-        lineTotal: (quantity >= (product.minWholesaleQty || 3) ? product.priceWholesale : product.priceRetail) * quantity,
+        unitPrice: getProductUnitPrice(product, quantity),
+        lineTotal: getProductUnitPrice(product, quantity) * quantity,
       })),
       subtotalAmount: rawSubtotal,
       shippingFee,
@@ -899,9 +907,10 @@ export default function CheckoutPage() {
                 {/* Items preview list */}
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                   {checkoutItems.map(({ product, quantity }, itemIndex) => {
-                    const minQty = product?.minWholesaleQty || 3;
-                    const isWholesale = quantity >= minQty;
-                    const unitPrice = isWholesale ? (product?.priceWholesale || product?.priceRetail || 0) : (product?.priceRetail || 0);
+                    const isWholesale = Boolean(product && getProductUnitPrice(product, quantity) < product.priceRetail);
+                    const unitPrice = product
+                      ? getProductUnitPrice(product, quantity)
+                      : 0;
                     return (
                       <div
                         key={product?.id || `checkout-item-${itemIndex}`}
@@ -1026,6 +1035,8 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mt-4 space-y-3">
+                {sellerPaymentMethod && <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">This order is from one seller. Pay using the seller’s registered till below.</p>}
+                {!sellerPaymentMethod && checkoutItems.some(({ product }) => Boolean(product.sellerProfileId)) && <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200">Mixed-store carts use UniSoko’s checkout till. Seller tills are shown for single-seller orders.</p>}
                 {paymentMethods.map((method, index) => (
                   <div key={method.id || `${method.network}-${method.tillNumber}-${index}`} className="rounded-2xl bg-slate-900 p-4 text-white shadow-md">
                     <div className="flex items-center justify-between gap-3 text-xs text-indigo-200"><span>{method.network}</span><span className="text-right">Merchant: {method.accountName || storeSettings?.merchantName || 'UniSoko'}</span></div>

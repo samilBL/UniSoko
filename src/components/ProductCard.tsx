@@ -10,6 +10,8 @@ import { ShoppingBag, MessageCircle, Check, Sparkles, ArrowUpRight, ShieldCheck,
 import { motion } from 'framer-motion';
 import { getProductSpecEntries } from '@/lib/productSpecs';
 import { UNISOKO_CONTACT } from '@/lib/siteConfig';
+import { createWhatsAppLink } from '@/lib/whatsapp';
+import { DEFAULT_WHOLESALE_MINIMUM, getProductUnitPrice } from '@/lib/pricing';
 
 interface ProductCardProps {
   product: Product;
@@ -20,6 +22,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isAdded, setIsAdded] = useState(false);
   const isAvailable = product.stockStatus !== 'Coming Soon';
   const productSpecEntries = getProductSpecEntries(product);
+  const wholesaleMinimum = product.minWholesaleQty || DEFAULT_WHOLESALE_MINIMUM;
+  const wholesaleAvailable = !product.sellerProfileId || product.sellerWholesaleEnabled === true;
+  const wholesaleUnitPrice = getProductUnitPrice(product, wholesaleMinimum);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,10 +40,10 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation();
     const campusName = selectedCampus?.name || 'MUST Campus';
     const campusCode = selectedCampus?.shortCode || 'MUST';
-    const msg = encodeURIComponent(
-      `Habari UniSoko! Nipo ${campusName} (${campusCode}). Nataka kuagiza gadget hii:\n\n• ${product.title}\n• Condition: ${product.condition}\n• Bei ya Rejareja: ${formatTZS(product.priceRetail)}\n• Bei ya Jumla (3+): ${formatTZS(product.priceWholesale)}\n\nTafadhali nambie upatikanaji wa hostel delivery!`
-    );
-    window.open(`${UNISOKO_CONTACT.whatsappUrl}?text=${msg}`, '_blank', 'noopener,noreferrer');
+    const wholesaleMessage = wholesaleAvailable ? `\n• Bei ya Jumla (${wholesaleMinimum}+): ${formatTZS(wholesaleUnitPrice)}` : '';
+    const msg =
+      `Habari UniSoko! Nipo ${campusName} (${campusCode}). Nataka kuagiza gadget hii:\n\n• ${product.title}\n• Condition: ${product.condition}\n• Bei ya Rejareja: ${formatTZS(product.priceRetail)}${wholesaleMessage}\n\nTafadhali nambie upatikanaji wa hostel delivery!`;
+    window.open(createWhatsAppLink(product.sellerWhatsappPhone || UNISOKO_CONTACT.phoneDigits, msg), '_blank', 'noopener,noreferrer');
   };
 
   // Badge color mapping for conditions
@@ -84,8 +89,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {product.officialUniSoko && <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"><BadgeCheck className="h-3 w-3"/>Official UniSoko</span>}
-          {product.sellerVerified && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><BadgeCheck className="h-3 w-3"/>{product.sellerVerificationLabel || 'Verified seller'}</span>}
+          {product.officialUniSoko && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-900 dark:bg-amber-950 dark:text-amber-200"><BadgeCheck className="h-3 w-3"/>Gold Tick · UniSoko Official</span>}
+          {product.sellerVerified && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${product.sellerVerificationLabel === 'Gold Tick' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100'}`}><BadgeCheck className="h-3 w-3"/>{product.sellerVerificationLabel || 'White Tick · Verified seller'}</span>}
         </div>
 
         {/* Product Image */}
@@ -139,15 +144,15 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Wholesale Pill */}
-          <div className="flex items-center justify-between rounded-xl bg-emerald-50/90 px-2.5 py-1.5 text-xs text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80">
+                      {product.sellerWholesaleEnabled !== false && <div className="flex items-center justify-between rounded-xl bg-emerald-50/90 px-2.5 py-1.5 text-xs text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80">
             <span className="flex items-center gap-1 font-bold text-[11px]">
               <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-              Jumla (3+):
+              Jumla ({wholesaleMinimum}+):
             </span>
             <span className="font-extrabold text-emerald-800 dark:text-emerald-300 text-[11px]">
-              {formatTZS(product.priceWholesale)} /pc
+              {formatTZS(wholesaleUnitPrice)} /pc
             </span>
-          </div>
+          </div>}
         </div>
 
         {/* Action Buttons */}

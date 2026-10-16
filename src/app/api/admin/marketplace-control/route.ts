@@ -78,9 +78,13 @@ export async function POST(request: NextRequest) {
     resourceType = spec.table; resourceId = result.data.id;
   } else if (action === 'review_verification') {
     const status = body.status;
+    const level = body.level;
     const notes = typeof body.notes === 'string' ? body.notes.trim() : '';
-    if (!id || !['verified', 'rejected', 'suspended', 'unverified'].includes(String(status)) || notes.length > 2000) return NextResponse.json({ error: 'Choose a valid verification status and note.' }, { status: 400 });
-    const { data, error } = await db.from('seller_verifications').update({ status, verification_level: typeof body.level === 'string' ? body.level.trim().slice(0, 80) || 'none' : 'none', public_label: typeof body.label === 'string' ? body.label.trim().slice(0, 80) || null : null, notes, reviewed_at: now, reviewed_by: process.env.ADMIN_USERNAME || 'admin', verified_at: status === 'verified' ? now : null, updated_at: now }).eq('id', id).select('id').maybeSingle();
+    if (!id || !['verified', 'rejected', 'suspended', 'unverified'].includes(String(status)) || status === 'verified' && !['gold_tick', 'white_tick'].includes(String(level)) || notes.length > 2000) return NextResponse.json({ error: 'Choose a valid verification status, badge, and note.' }, { status: 400 });
+    const verified = status === 'verified';
+    const verificationLevel = verified ? String(level) : 'none';
+    const publicLabel = verified ? verificationLevel === 'gold_tick' ? 'Gold Tick' : 'White Tick' : null;
+    const { data, error } = await db.from('seller_verifications').update({ status, verification_level: verificationLevel, public_label: publicLabel, notes, reviewed_at: now, reviewed_by: process.env.ADMIN_USERNAME || 'admin', verified_at: verified ? now : null, updated_at: now }).eq('id', id).select('id').maybeSingle();
     if (error || !data) return NextResponse.json({ error: 'Could not update seller verification.' }, { status: 409 });
     resourceType = 'seller_verification';
   } else if (action === 'review_report') {

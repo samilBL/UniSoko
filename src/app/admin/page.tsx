@@ -141,6 +141,8 @@ export default function AdminPanelPage() {
   const [isReviewingWingaId, setIsReviewingWingaId] = useState<string | null>(null);
   const [wingaApplicationError, setWingaApplicationError] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+    const [dispatchSelections, setDispatchSelections] = useState<Record<string, string>>({});
+    const [assigningDispatchId, setAssigningDispatchId] = useState<string | null>(null);
   const [orderUpdateError, setOrderUpdateError] = useState('');
   const [hostelListings, setHostelListings] = useState<AdminHostelListing[]>([]);
   const [roomBountySubmissions, setRoomBountySubmissions] = useState<AdminRoomBounty[]>([]);
@@ -192,10 +194,16 @@ export default function AdminPanelPage() {
   }, []);
 
   React.useEffect(() => {
-    fetch('/api/admin/orders', { cache: 'no-store' })
-      .then(async (response) => response.ok ? response.json() as Promise<{ orders?: Order[]; configured?: boolean }> : null)
-      .then((result) => { if (result?.configured && result.orders) setRemoteOrders(result.orders); })
-      .catch(() => undefined);
+    let active = true;
+    const refreshOrders = () => {
+      fetch('/api/admin/orders', { cache: 'no-store' })
+        .then(async (response) => response.ok ? response.json() as Promise<{ orders?: Order[]; configured?: boolean }> : null)
+        .then((result) => { if (active && result?.configured && result.orders) setRemoteOrders(result.orders); })
+        .catch(() => undefined);
+    };
+    refreshOrders();
+    const timer = window.setInterval(refreshOrders, 15000);
+    return () => { active = false; window.clearInterval(timer); };
   }, []);
 
   React.useEffect(() => {
@@ -425,6 +433,34 @@ export default function AdminPanelPage() {
       setOrderUpdateError(error instanceof Error ? error.message : 'Could not update this order.');
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const handleAssignDispatch = async (order: Order) => {
+    const selection = dispatchSelections[order.id] || (order.dispatchAssigneeType ? `${order.dispatchAssigneeType}:${order.dispatchAssigneeId}` : '');
+    const [assigneeType, assigneeId] = selection.split(':');
+    if (!assigneeType || !assigneeId) return;
+    setAssigningDispatchId(order.id);
+    setOrderUpdateError('');
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_dispatch', id: order.id, assigneeType, assigneeId }),
+      });
+      const result = await response.json() as { assignment?: { dispatch_assignee_type: Order['dispatchAssigneeType']; dispatch_assignee_id: string; dispatch_assignee_name: string; dispatch_assigned_at: string }; error?: string };
+      if (!response.ok || !result.assignment) throw new Error(result.error || 'Could not assign this dispatch.');
+      setRemoteOrders((previous) => previous.map((existing) => existing.id === order.id ? {
+        ...existing,
+        dispatchAssigneeType: result.assignment?.dispatch_assignee_type,
+        dispatchAssigneeId: result.assignment?.dispatch_assignee_id,
+        dispatchAssigneeName: result.assignment?.dispatch_assignee_name,
+        dispatchAssignedAt: result.assignment?.dispatch_assigned_at,
+      } : existing));
+    } catch (error) {
+      setOrderUpdateError(error instanceof Error ? error.message : 'Could not assign this dispatch.');
+    } finally {
+      setAssigningDispatchId(null);
     }
   };
 
@@ -1572,10 +1608,12 @@ export default function AdminPanelPage() {
                                 {ord.paymentStatus ? `${ord.paymentStatus} · ${ord.fulfillmentStatus} · ${ord.deliveryStatus}` : ord.status}
                               </span>
                               {ord.tradeInRequestId && <span className={`mt-1 block text-[10px] font-bold ${ord.tradeInInspectionStatus === 'Inspected' ? 'text-emerald-700' : ord.tradeInInspectionStatus === 'Rejected' ? 'text-red-700' : 'text-amber-800'}`}>{ord.tradeInInspectionStatus || 'Trade-In Pending Inspection'}</span>}
+                                                          {ord.dispatchAssigneeName && <span className="mt-1 block text-[10px] font-semibold text-indigo-700">Assigned: {ord.dispatchAssigneeName}</span>}
                             </td>
 
                             {/* Actions */}
                             <td className="p-4 text-right space-x-1.5">
+                                                            {isPersistedOrder && ord.paymentStatus === 'Verified' && ord.fulfillmentStatus === 'Ready for Dispatch' && ord.deliveryStatus !== 'Delivered' && <div className="mb-2 flex flex-wrap justify-end gap-1.5"><select aria-label={`Dispatch assignee for ${ord.id}`} value={dispatchSelections[ord.id] ?? (ord.dispatchAssigneeType ? `${ord.dispatchAssigneeType}:${ord.dispatchAssigneeId}` : '')} onChange={(event) => setDispatchSelections((previous) => ({ ...previous, [ord.id]: event.target.value }))} className="max-w-48 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[10px]"><option value="">Assign Winga or team</option><optgroup label="Approved Wingas">{wingaApplications.filter((application) => application.status === 'Approved').map((application) => <option key={application.id} value={`winga:${application.id}`}>{application.fullName}</option>)}</optgroup><option value="dispatch_team:campus_dispatch">UniSoko Campus Dispatch</option><option value="courier:regional_courier">Regional Courier Team</option></select><button type="button" disabled={assigningDispatchId === ord.id || !dispatchSelections[ord.id] && !ord.dispatchAssigneeType} onClick={() => void handleAssignDispatch(ord)} className="rounded-lg border border-indigo-300 px-2 py-1.5 text-[10px] font-bold text-indigo-700 disabled:opacity-50">{assigningDispatchId === ord.id ? 'Saving...' : 'Assign'}</button></div>}
                               {isPersistedOrder ? nextOrderAction ? (
                                 <button
                                   onClick={() => void handlePersistedOrderTransition(ord)}

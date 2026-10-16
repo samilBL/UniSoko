@@ -23,6 +23,7 @@ import {
   MOCK_TRADE_IN_REQUESTS,
   DEFAULT_STORE_SETTINGS,
 } from '@/lib/mockData';
+import { getProductUnitPrice, MAX_PRODUCT_QUANTITY } from '@/lib/pricing';
 
 export interface CartItem {
   product: Product;
@@ -243,16 +244,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [hasHydrated, storeSettings]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    const addedQuantity = Math.max(1, Math.min(MAX_PRODUCT_QUANTITY, Math.floor(quantity)));
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: Math.min(MAX_PRODUCT_QUANTITY, item.quantity + addedQuantity) }
             : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [...prev, { product, quantity: addedQuantity }];
     });
     setIsCartOpen(true);
   };
@@ -266,9 +268,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(productId);
       return;
     }
+    const cappedQuantity = Math.min(MAX_PRODUCT_QUANTITY, Math.floor(quantity));
     setCart((prev) =>
       prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
+        item.product.id === productId ? { ...item, quantity: cappedQuantity } : item
       )
     );
   };
@@ -500,19 +503,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const cartSubtotal = cart.reduce((sum, item) => {
-    const isWholesale = item.quantity >= (item.product.minWholesaleQty || 3);
-    const unitPrice = isWholesale ? item.product.priceWholesale : item.product.priceRetail;
+    const unitPrice = getProductUnitPrice(item.product, item.quantity);
     return sum + unitPrice * item.quantity;
   }, 0);
 
   const cartTotalSavings = cart.reduce((sum, item) => {
-    const isWholesale = item.quantity >= (item.product.minWholesaleQty || 3);
-    if (isWholesale) {
-      const standardTotal = item.product.priceRetail * item.quantity;
-      const wholesaleTotal = item.product.priceWholesale * item.quantity;
-      return sum + (standardTotal - wholesaleTotal);
-    }
-    return sum;
+    const unitPrice = getProductUnitPrice(item.product, item.quantity);
+    return sum + (item.product.priceRetail - unitPrice) * item.quantity;
   }, 0);
 
   return (

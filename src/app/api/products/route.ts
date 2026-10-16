@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { DEFAULT_WHOLESALE_MINIMUM } from '@/lib/pricing';
 import { MOCK_PRODUCTS } from '@/lib/mockData';
 import { Product } from '@/lib/types';
 
@@ -20,6 +21,9 @@ interface ProductRow {
   seller_group_buy_enabled?: boolean;
   seller_wholesale_price?: number | string | null;
   seller_group_buy_minimum?: number | null;
+  seller_wholesale_enabled?: boolean;
+  seller_wholesale_discount_percent?: number | string;
+  seller_wholesale_minimum?: number | null;
   seller_winga_campaign_enabled?: boolean;
   seller_winga_commission_rate?: number | string;
   product_condition_id?: string | null;
@@ -46,12 +50,23 @@ export async function GET() {
   const sellerIds = [...new Set(data.map((product) => product.seller_profile_id).filter((id): id is string => Boolean(id)))];
   let visibleRows = data as ProductRow[];
   let sellerNames = new Map<string, string>();
+  let sellerContacts = new Map<string, { whatsappPhone?: string; tillNetwork?: Product['sellerTillNetwork']; tillNumber?: string; tillAccountName?: string }>();
   let sellerTrust = new Map<string, { verified: boolean; label: string | undefined }>();
   if (sellerIds.length) {
-    const { data: approvedSellers, error: sellerError } = await supabase.from('seller_profiles').select('id,display_name').in('id', sellerIds).eq('status', 'approved');
+    const { data: approvedSellers, error: sellerError } = await supabase.from('seller_profiles').select('id,display_name,contact_options').in('id', sellerIds).eq('status', 'approved');
     if (sellerError) return NextResponse.json({ products: MOCK_PRODUCTS, source: 'fallback' });
     const approvedIds = new Set((approvedSellers || []).map((seller) => seller.id));
     sellerNames = new Map((approvedSellers || []).map((seller) => [seller.id, seller.display_name]));
+    sellerContacts = new Map((approvedSellers || []).map((seller) => {
+      const options = seller.contact_options && typeof seller.contact_options === 'object' ? seller.contact_options as Record<string, unknown> : {};
+      const network = ['M-Pesa', 'Tigo Pesa', 'Airtel Money'].includes(String(options.tillNetwork)) ? options.tillNetwork as Product['sellerTillNetwork'] : undefined;
+      return [seller.id, {
+        whatsappPhone: typeof options.phone === 'string' ? options.phone : undefined,
+        tillNetwork: network,
+        tillNumber: typeof options.tillNumber === 'string' ? options.tillNumber : undefined,
+        tillAccountName: typeof options.tillAccountName === 'string' ? options.tillAccountName : undefined,
+      }];
+    }));
     visibleRows = visibleRows.filter((product) => !product.seller_profile_id || approvedIds.has(product.seller_profile_id));
     const visibleSellerIds = [...approvedIds];
     if (visibleSellerIds.length) {
@@ -82,14 +97,16 @@ export async function GET() {
     description: p.description || '',
     category: p.category as Product['category'],
     priceRetail: Number(p.price),
-    priceWholesale: Number(p.seller_profile_id ? p.seller_wholesale_price || p.price : p.wholesale_price || p.price),
+    priceWholesale: Number(p.seller_profile_id
+      ? p.seller_wholesale_enabled ? Number(p.price) * (1 - Number(p.seller_wholesale_discount_percent || 0) / 100) : p.price
+      : p.wholesale_price || p.price),
     condition: ((p.specs as Record<string, string> | null)?.Condition || 'Brand New') as Product['condition'],
     stockStatus: p.in_stock ? 'In Stock' : 'Coming Soon',
     images: Array.isArray(p.images) && p.images.every((image): image is string => typeof image === 'string') && p.images.length > 0
       ? p.images.map((image) => p.seller_profile_id && !/^https?:\/\//i.test(image) && image.startsWith(`${p.seller_profile_id}/`) ? supabase.storage.from('seller-product-images').getPublicUrl(image).data.publicUrl : image)
       : [p.image],
     specs: { ...(typeof p.specs === 'object' && p.specs ? p.specs as Record<string, string> : {}), ...(dynamicSpecs.get(p.id) || {}) },
-    minWholesaleQty: p.seller_profile_id ? p.seller_group_buy_minimum || 3 : p.wholesale_min_qty || 3,
+    minWholesaleQty: p.seller_profile_id ? p.seller_wholesale_minimum || DEFAULT_WHOLESALE_MINIMUM : p.wholesale_min_qty || DEFAULT_WHOLESALE_MINIMUM,
     featured: Boolean(p.is_featured),
     warrantyDays: 30,
     sellerProfileId: p.seller_profile_id || undefined,
@@ -98,8 +115,13 @@ export async function GET() {
     sellerVerificationLabel: p.seller_profile_id ? sellerTrust.get(p.seller_profile_id)?.label : undefined,
     officialUniSoko: !p.seller_profile_id && Boolean(p.is_official_unisoko),
     sellerGroupBuyEnabled: Boolean(p.seller_group_buy_enabled),
+      sellerWholesaleEnabled: p.seller_profile_id ? Boolean(p.seller_wholesale_enabled) : true,
     sellerWingaCampaignEnabled: Boolean(p.seller_winga_campaign_enabled),
     sellerWingaCommissionRate: Number(p.seller_winga_commission_rate || 0),
+    sellerWhatsappPhone: p.seller_profile_id ? sellerContacts.get(p.seller_profile_id)?.whatsappPhone : undefined,
+    sellerTillNetwork: p.seller_profile_id ? sellerContacts.get(p.seller_profile_id)?.tillNetwork : undefined,
+    sellerTillNumber: p.seller_profile_id ? sellerContacts.get(p.seller_profile_id)?.tillNumber : undefined,
+    sellerTillAccountName: p.seller_profile_id ? sellerContacts.get(p.seller_profile_id)?.tillAccountName : undefined,
   }));
 
   return NextResponse.json({ products: formatted, source: 'database' }, {

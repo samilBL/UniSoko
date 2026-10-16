@@ -6,9 +6,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, submitted_at, moderation_notes, reviewed_at, created_at, updated_at, seller_winga_campaign_enabled, seller_winga_commission_rate, seller_group_buy_enabled, seller_wholesale_price, seller_group_buy_minimum';
+const productFields = 'id, name, category, category_id, subcategory_id, product_condition_id, price, description, specs, image, images, listing_status, submitted_at, moderation_notes, reviewed_at, created_at, updated_at, seller_winga_campaign_enabled, seller_winga_commission_rate, seller_group_buy_enabled, seller_group_buy_minimum, seller_wholesale_enabled, seller_wholesale_discount_percent, seller_wholesale_minimum';
 
 function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value && typeof value === 'object' && !Array.isArray(value)); }
+
+function readWholesaleSettings(body: Record<string, unknown>) {
+  const enabled = body.wholesaleEnabled === true;
+  const discountPercent = Number(body.wholesaleDiscountPercent ?? 5);
+  const minimum = Number(body.wholesaleMinimum ?? 3);
+  if ((body.wholesaleEnabled !== undefined && typeof body.wholesaleEnabled !== 'boolean') ||
+      !Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 5 ||
+      !Number.isInteger(minimum) || minimum < 2 || minimum > 12) return null;
+  return { seller_wholesale_enabled: enabled, seller_wholesale_discount_percent: discountPercent, seller_wholesale_minimum: minimum };
+}
 
 async function validateProductConfiguration(client: SupabaseClient, sellerId: string, body: Record<string, unknown>) {
   const categoryId = typeof body.categoryId === 'string' ? body.categoryId : '';
@@ -33,8 +43,16 @@ async function validateProductConfiguration(client: SupabaseClient, sellerId: st
     (!attribute.subcategory_id || attribute.subcategory_id === subcategoryId) &&
     (!attribute.product_condition_id || attribute.product_condition_id === conditionId));
   const allowedKeys = new Set(attributes.map((attribute) => attribute.attribute_key));
-  if (Object.keys(rawSpecs).some((key) => !allowedKeys.has(key))) return { error: 'Remove specifications that are not available for this product category and condition.', status: 400 as const };
   const validatedSpecs: Record<string, unknown> = {};
+  if (attributes.length === 0) {
+    for (const [name, value] of Object.entries(rawSpecs)) {
+      if (!/^[A-Za-z0-9][A-Za-z0-9 _./()-]{1,79}$/.test(name.trim())) return { error: 'Specification names must be 2–80 letters, numbers, spaces, or basic punctuation.', status: 400 as const };
+      if (value === '' || value === undefined || value === null) continue;
+      if (typeof value !== 'string' || value.length > 300) return { error: `${name} must be text under 300 characters.`, status: 400 as const };
+      validatedSpecs[name.trim()] = value.trim();
+    }
+  } else {
+    if (Object.keys(rawSpecs).some((key) => !allowedKeys.has(key))) return { error: 'Remove specifications that are not available for this product category and condition.', status: 400 as const };
   for (const attribute of attributes) {
     const value = rawSpecs[attribute.attribute_key];
     const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
@@ -50,6 +68,7 @@ async function validateProductConfiguration(client: SupabaseClient, sellerId: st
     if (attribute.input_type === 'select' && (typeof value !== 'string' || !options.includes(value))) return { error: `Choose an available ${attribute.name} option.`, status: 400 as const };
     if (attribute.input_type === 'multiselect' && (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || !options.includes(item)))) return { error: `Choose available ${attribute.name} options.`, status: 400 as const };
     validatedSpecs[attribute.attribute_key] = value;
+  }
   }
   if (rawImages.length < 1 || rawImages.length > 8 || rawImages.some((image) => typeof image !== 'string' || !image.startsWith(`${sellerId}/`) || image.includes('..'))) return { error: 'Upload between 1 and 8 product images using your seller account.', status: 400 as const };
   const imagePaths = rawImages as string[];
@@ -144,7 +163,7 @@ const DEFAULT_CONDITIONS = [
 export async function GET() {
   const seller = await currentSeller();
   if ('response' in seller) return seller.response;
-  let [{ data: products, error: productError }, { data: categories, error: categoryError }, { data: subcategories, error: subcategoryError }, { data: conditions, error: conditionError }, { data: attributes, error: attributeError }] = await Promise.all([
+  const [productResult, categoryResult, subcategoryResult, conditionResult, attributeResult] = await Promise.all([
     seller.actor.serviceClient.from('products').select(productFields)
       .eq('seller_profile_id', seller.profile.id)
       .order('created_at', { ascending: false }),
@@ -154,6 +173,15 @@ export async function GET() {
     seller.actor.serviceClient.from('product_conditions').select('id,name,description').eq('is_active', true).order('display_order'),
     seller.actor.serviceClient.from('product_attributes').select('id,category_id,subcategory_id,product_condition_id,name,attribute_key,input_type,is_required,display_order,validation_rules,product_attribute_options(id,value,label,is_active)').eq('is_active', true).order('display_order'),
   ]);
+  const { data: products, error: productError } = productResult;
+  let categories = categoryResult.data;
+  const categoryError = categoryResult.error;
+  let subcategories = subcategoryResult.data;
+  const subcategoryError = subcategoryResult.error;
+  let conditions = conditionResult.data;
+  const conditionError = conditionResult.error;
+  const attributes = attributeResult.data;
+  const attributeError = attributeResult.error;
 
   if (productError || categoryError || subcategoryError || conditionError || attributeError) return NextResponse.json({ error: 'Seller marketplace data is not ready. Confirm that the marketplace migrations have been applied.' }, { status: 503 });
 
@@ -235,6 +263,8 @@ export async function POST(request: NextRequest) {
   }
   const configured = await validateProductConfiguration(seller.actor.serviceClient, seller.profile.id, body);
   if ('error' in configured) return NextResponse.json({ error: configured.error }, { status: configured.status });
+  const wholesaleSettings = readWholesaleSettings(body);
+  if (!wholesaleSettings) return NextResponse.json({ error: 'Wholesale discount must be 0–5%, with a minimum quantity between 2 and 12.' }, { status: 400 });
 
   const { data, error } = await seller.actor.serviceClient.from('products').insert({
     id: `seller-${randomUUID()}`,
@@ -252,6 +282,7 @@ export async function POST(request: NextRequest) {
     image: configured.imageUrls[0] || '/favicon.svg',
     images: configured.images,
     specs: configured.specs,
+    ...wholesaleSettings,
     in_stock: false,
     stock_count: 0,
     is_featured: false,
@@ -326,9 +357,11 @@ export async function PATCH(request: NextRequest) {
   }
   const configured = await validateProductConfiguration(seller.actor.serviceClient, seller.profile.id, body);
   if ('error' in configured) return NextResponse.json({ error: configured.error }, { status: configured.status });
+  const wholesaleSettings = readWholesaleSettings(body);
+  if (!wholesaleSettings) return NextResponse.json({ error: 'Wholesale discount must be 0–5%, with a minimum quantity between 2 and 12.' }, { status: 400 });
 
   const { data, error } = await seller.actor.serviceClient.from('products')
-    .update({ name, description, price, category_id: configured.category.id, subcategory_id: configured.subcategoryId, product_condition_id: configured.conditionId, category: configured.category.name, specs: configured.specs, images: configured.images, image: configured.imageUrls[0] || '/favicon.svg', listing_status: 'draft', is_active: false, updated_at: new Date().toISOString() })
+    .update({ name, description, price, category_id: configured.category.id, subcategory_id: configured.subcategoryId, product_condition_id: configured.conditionId, category: configured.category.name, specs: configured.specs, images: configured.images, image: configured.imageUrls[0] || '/favicon.svg', ...wholesaleSettings, listing_status: 'draft', is_active: false, updated_at: new Date().toISOString() })
     .eq('id', id).eq('seller_profile_id', seller.profile.id).eq('listing_status', current.listing_status)
     .select(productFields).maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not save product changes.' }, { status: 500 });

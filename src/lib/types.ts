@@ -27,7 +27,7 @@ export interface OrderStatusEvent {
   statusType: 'payment' | 'fulfillment' | 'delivery' | 'cancellation';
   status: string;
   label: string;
-  changedBy: 'customer' | 'admin';
+  changedBy: 'customer' | 'admin' | 'winga';
   changedAt: string;
 }
 
@@ -64,6 +64,11 @@ export interface Product {
   sellerWingaCampaignEnabled?: boolean;
   sellerWingaCommissionRate?: number;
   sellerGroupBuyEnabled?: boolean;
+    sellerWholesaleEnabled?: boolean;
+  sellerWhatsappPhone?: string;
+  sellerTillNetwork?: 'M-Pesa' | 'Tigo Pesa' | 'Airtel Money';
+  sellerTillNumber?: string;
+  sellerTillAccountName?: string;
 }
 
 export interface OrderItem {
@@ -106,6 +111,10 @@ export interface Order {
   paymentStatus?: PaymentStatus;
   fulfillmentStatus?: FulfillmentStatus;
   deliveryStatus?: DeliveryStatus;
+  dispatchAssigneeType?: 'winga' | 'dispatch_team' | 'courier';
+  dispatchAssigneeId?: string;
+  dispatchAssigneeName?: string;
+  dispatchAssignedAt?: string;
   statusHistory?: OrderStatusEvent[];
   trackingToken?: string;
   createdAt: string;
