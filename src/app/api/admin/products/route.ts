@@ -138,3 +138,20 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ product: data }, { headers: { 'Cache-Control': 'no-store' } });
 }
+
+export async function DELETE(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: 'Database not configured.' }, { status: 503 });
+  const body = await readJsonObject(req);
+  if (!body || typeof body.id !== 'string' || !body.id.trim() || body.id.trim().length > 120) {
+    return NextResponse.json({ error: 'A valid product ID is required.' }, { status: 400 });
+  }
+  const id = body.id.trim();
+  const { data, error } = await supabase.from('products').delete()
+    .eq('id', id).is('seller_profile_id', null).select('id,name').maybeSingle();
+  if (error) return NextResponse.json({ error: 'Could not delete product.' }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Admin catalog product not found.' }, { status: 404 });
+  await writeAdminAuditEvent(req, { action: 'product.delete', resourceType: 'product', resourceId: id, metadata: { name: data.name } });
+  return NextResponse.json({ deleted: true, id }, { headers: { 'Cache-Control': 'no-store' } });
+}

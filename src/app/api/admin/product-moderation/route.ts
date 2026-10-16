@@ -65,3 +65,34 @@ export async function PATCH(request: NextRequest) {
   await writeAdminAuditEvent(request, { action: `seller.product.${action}`, resourceType: 'product', resourceId: id, metadata: { status: nextStatus } });
   return NextResponse.json({ product: data }, { headers: { 'Cache-Control': 'no-store' } });
 }
+
+export async function DELETE(request: NextRequest) {
+  if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return NextResponse.json({ error: 'Product moderation is not configured.' }, { status: 503 });
+  let body: Record<string, unknown>;
+  try { const value: unknown = await request.json(); if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(); body = value as Record<string, unknown>; }
+  catch { return NextResponse.json({ error: 'Enter a valid product ID.' }, { status: 400 }); }
+  const id = typeof body.id === 'string' ? body.id.trim() : '';
+  if (!id || id.length > 120) return NextResponse.json({ error: 'A valid product ID is required.' }, { status: 400 });
+
+  const { data: current, error: lookupError } = await supabase.from('products')
+    .select('id,name,seller_profile_id,images')
+    .eq('id', id).not('seller_profile_id', 'is', null).maybeSingle();
+  if (lookupError) return NextResponse.json({ error: 'Could not load this seller product.' }, { status: 503 });
+  if (!current) return NextResponse.json({ error: 'Seller product not found.' }, { status: 404 });
+
+  const { data, error } = await supabase.from('products').delete()
+    .eq('id', id).eq('seller_profile_id', current.seller_profile_id).select('id').maybeSingle();
+  if (error) return NextResponse.json({ error: 'Could not delete this seller product.' }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Product changed or was already deleted. Refresh and try again.' }, { status: 409 });
+  const imagePaths = Array.isArray(current.images)
+    ? current.images.filter((path): path is string => typeof path === 'string' && path.startsWith(`${current.seller_profile_id}/`))
+    : [];
+  if (imagePaths.length) {
+    const { error: storageError } = await supabase.storage.from('seller-product-images').remove(imagePaths);
+    if (storageError) console.error('Admin seller product image cleanup failed', { productId: id, code: storageError.name });
+  }
+  await writeAdminAuditEvent(request, { action: 'seller.product.delete', resourceType: 'product', resourceId: id, metadata: { name: current.name } });
+  return NextResponse.json({ deleted: true, id }, { headers: { 'Cache-Control': 'no-store' } });
+}

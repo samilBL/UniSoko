@@ -1,7 +1,7 @@
 'use client';
 
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, Check, ClipboardList, Headphones, Home, Laptop, Package, Pencil, Save, ShieldCheck, Smartphone, Store, Zap } from 'lucide-react';
+import { Archive, Check, ClipboardList, Headphones, Home, Laptop, Package, Pencil, Save, ShieldCheck, Smartphone, Store, Trash2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import AccountSignOutButton from '@/components/AccountSignOutButton';
@@ -246,6 +246,19 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
       if (!response.ok) throw new Error(result.error || 'Could not archive this draft.');
       await load(); setMessage('Draft archived.');
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not archive this draft.'); }
+    finally { setBusy(false); }
+  };
+
+  const deleteProduct = async (product: SellerProduct) => {
+    if (!window.confirm(`Permanently delete “${product.name}”? This cannot be undone.`)) return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      const response = await fetch('/api/seller/products', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: product.id }) });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error || 'Could not delete this product.');
+      if (editingId === product.id) { setEditingId(null); setDraft(emptyProductDraft); }
+      await load(); setMessage('Product deleted.');
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not delete this product.'); }
     finally { setBusy(false); }
   };
 
@@ -887,7 +900,7 @@ export default function SellerDashboard({ email, initialProfile }: { email: stri
           </form> : <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">Your application must be approved before you can create product drafts.</p>}
         </section>
         <section className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white px-5 dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900" aria-label="Seller products">
-        {visibleProducts.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No products in this status.</p> : visibleProducts.map((product) => <article key={product.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h3 className="truncate text-sm font-bold">{product.name}</h3><p className="mt-1 text-xs text-slate-500">{product.category}{product.subcategory_id ? ` · ${subcategories.find((subcategory) => subcategory.id === product.subcategory_id)?.name || ''}` : ''} · TZS {Number(product.price).toLocaleString('en-TZ')} · <span className="capitalize">{product.listing_status.replaceAll('_', ' ')}</span></p><p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{product.description}</p>{product.listing_status === 'approved' && <SellerPromotionSettings product={product} onSaved={() => void load().catch(() => undefined)} />}{product.moderation_notes && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">Admin feedback: {product.moderation_notes}</p>}</div><div className="flex shrink-0 gap-2">{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void submitProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">Submit for review</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" onClick={() => startEdit(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold"><Pencil className="h-3.5 w-3.5" />Edit</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void archiveProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button>}</div></article>)}
+        {visibleProducts.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No products in this status.</p> : visibleProducts.map((product) => <article key={product.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h3 className="truncate text-sm font-bold">{product.name}</h3><p className="mt-1 text-xs text-slate-500">{product.category}{product.subcategory_id ? ` · ${subcategories.find((subcategory) => subcategory.id === product.subcategory_id)?.name || ''}` : ''} · TZS {Number(product.price).toLocaleString('en-TZ')} · <span className="capitalize">{product.listing_status.replaceAll('_', ' ')}</span></p><p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">{product.description}</p>{product.listing_status === 'approved' && <SellerPromotionSettings product={product} onSaved={() => void load().catch(() => undefined)} />}{product.moderation_notes && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">Admin feedback: {product.moderation_notes}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void submitProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50">Submit for review</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" onClick={() => startEdit(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold"><Pencil className="h-3.5 w-3.5" />Edit</button>}{['draft', 'rejected', 'changes_requested'].includes(product.listing_status) && <button type="button" disabled={busy} onClick={() => void archiveProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-bold disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button>}<button type="button" disabled={busy} onClick={() => void deleteProduct(product)} aria-label={`Delete ${product.name}`} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-rose-300 px-3 text-xs font-bold text-rose-700 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />Delete</button></div></article>)}
         </section>
       </div>}
 

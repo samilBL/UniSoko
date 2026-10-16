@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Truck,
   Plus,
+  Trash2,
   Edit2,
   Search,
   Check,
@@ -74,6 +75,7 @@ export default function AdminPanelPage() {
     products,
     addProduct,
     updateProduct,
+    deleteProduct,
     payoutRequests,
     markPayoutPaid,
     wingaAgents,
@@ -492,6 +494,11 @@ export default function AdminPanelPage() {
     setProdFormStockStatus(prod.stockStatus);
     setProdFormDesc(prod.description);
     setProdFormImage(prod.images[0] || '');
+  };
+
+  const handleDeleteProduct = (prod: Product) => {
+    if (!window.confirm(`Remove “${prod.title}” from the catalog? This cannot be undone.`)) return;
+    deleteProduct(prod.id);
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -1911,13 +1918,18 @@ export default function AdminPanelPage() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => openEditModal(prod)}
-                    className="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                    <span>Edit Price & Stock</span>
-                  </button>
+                  <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+                    <button
+                      onClick={() => openEditModal(prod)}
+                      className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-300 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                      <span>Edit Price & Stock</span>
+                    </button>
+                    <button type="button" onClick={() => handleDeleteProduct(prod)} aria-label={`Delete ${prod.title}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-rose-300 px-3 text-xs font-bold text-rose-700 hover:bg-rose-50">
+                      <Trash2 className="h-4 w-4" /><span className="sr-only">Delete</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

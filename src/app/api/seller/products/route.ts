@@ -368,3 +368,40 @@ export async function PATCH(request: NextRequest) {
   if (!data) return NextResponse.json({ error: 'Product status changed. Refresh and try again.' }, { status: 409 });
   return NextResponse.json({ product: data }, { headers: { 'Cache-Control': 'no-store' } });
 }
+
+export async function DELETE(request: NextRequest) {
+  const seller = await currentSeller();
+  if ('response' in seller) return seller.response;
+
+  let body: Record<string, unknown> | null;
+  try { body = readBody(await request.json()); } catch { body = null; }
+  const id = typeof body?.id === 'string' ? body.id.trim() : '';
+  if (!id || id.length > 120) return NextResponse.json({ error: 'A valid product ID is required.' }, { status: 400 });
+
+  const { data: product, error: lookupError } = await seller.actor.serviceClient.from('products')
+    .select('id,images')
+    .eq('id', id)
+    .eq('seller_profile_id', seller.profile.id)
+    .maybeSingle();
+  if (lookupError) return NextResponse.json({ error: 'Could not load this product.' }, { status: 500 });
+  if (!product) return NextResponse.json({ error: 'Product not found.' }, { status: 404 });
+
+  const { data: deleted, error } = await seller.actor.serviceClient.from('products')
+    .delete()
+    .eq('id', id)
+    .eq('seller_profile_id', seller.profile.id)
+    .select('id')
+    .maybeSingle();
+  if (error) return NextResponse.json({ error: 'Could not delete this product.' }, { status: 500 });
+  if (!deleted) return NextResponse.json({ error: 'Product changed or was already deleted. Refresh and try again.' }, { status: 409 });
+
+  const imagePaths = Array.isArray(product.images)
+    ? product.images.filter((path): path is string => typeof path === 'string' && path.startsWith(`${seller.profile.id}/`))
+    : [];
+  if (imagePaths.length) {
+    const { error: storageError } = await seller.actor.serviceClient.storage.from('seller-product-images').remove(imagePaths);
+    if (storageError) console.error('Seller product image cleanup failed', { productId: id, code: storageError.name });
+  }
+
+  return NextResponse.json({ deleted: true, id }, { headers: { 'Cache-Control': 'no-store' } });
+}

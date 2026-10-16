@@ -56,6 +56,7 @@ interface StoreContextType {
   products: Product[];
   addProduct: (product: Product) => void;
   updateProduct: (product: Product) => void;
+  deleteProduct: (productId: string) => void;
   wingaAgents: WingaAgent[];
   payoutRequests: PayoutRequest[];
   requestPayout: (agentId: string, amount: number) => { success: boolean; message: string };
@@ -359,6 +360,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const deleteProduct = (productId: string) => {
+    setProducts((previous) => previous.filter((product) => product.id !== productId));
+  };
+
   const uploadKycStudentId = (agentId: string, idUrl: string) => {
     setWingaAgents((prev) =>
       prev.map((a) =>
@@ -540,6 +545,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         products,
         addProduct,
         updateProduct,
+        deleteProduct,
         wingaAgents,
         payoutRequests,
         requestPayout,
