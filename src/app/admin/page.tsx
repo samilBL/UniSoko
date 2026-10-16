@@ -129,6 +129,7 @@ export default function AdminPanelPage() {
   const [removeDeveloperImage, setRemoveDeveloperImage] = useState(false);
   const [developerProfileError, setDeveloperProfileError] = useState('');
   const [developerProfileMessage, setDeveloperProfileMessage] = useState('');
+  const [developerProfileSaving, setDeveloperProfileSaving] = useState(false);
   const [uploadingPartnerIndex, setUploadingPartnerIndex] = useState<number | null>(null);
   const [cancellationRequests, setCancellationRequests] = useState<AdminCancellation[]>([]);
   const [cancellationForms, setCancellationForms] = useState<Record<string, { status: AdminCancellation['status']; refundAmount: number; refundReference: string; adminNotes: string }>>({});
@@ -554,11 +555,44 @@ export default function AdminPanelPage() {
     setActiveTradeInModal(null);
   };
 
+  const persistDeveloperProfile = async () => {
+    setDeveloperProfileSaving(true);
+    setDeveloperProfileError('');
+    setDeveloperProfileMessage('');
+    const formData = new FormData();
+    formData.append('profile', JSON.stringify(settingsForm.developerProfile));
+    formData.append('removeImage', String(removeDeveloperImage));
+    if (developerImageFile) formData.append('image', developerImageFile);
+    try {
+      const response = await fetch('/api/admin/developer-profile', { method: 'POST', body: formData });
+      const result = await response.json() as { profile?: DeveloperProfileSettings; error?: string };
+      if (!response.ok || !result.profile) throw new Error(result.error || 'Could not save developer profile.');
+      setSettingsForm((previous) => ({ ...previous, developerProfile: result.profile! }));
+      updateStoreSettings({ developerProfile: result.profile });
+      setDeveloperImageFile(null);
+      setRemoveDeveloperImage(false);
+      return result.profile;
+    } finally {
+      setDeveloperProfileSaving(false);
+    }
+  };
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    let developerProfile = settingsForm.developerProfile;
+    if (developerImageFile || removeDeveloperImage) {
+      try {
+        developerProfile = await persistDeveloperProfile();
+        setDeveloperProfileMessage('Developer photo and profile saved.');
+      } catch (error) {
+        setDeveloperProfileError(error instanceof Error ? error.message : 'Could not save developer profile.');
+        return;
+      }
+    }
     const primaryMethod = settingsForm.paymentMethods?.find((method) => method.enabled && method.tillNumber.trim());
     const updatedSettings = {
       ...settingsForm,
+      developerProfile,
       tillNumber: primaryMethod?.tillNumber || settingsForm.tillNumber,
       accountName: primaryMethod?.accountName || settingsForm.accountName,
       supportWhatsApp: (settingsForm.officialWhatsAppNumbers?.[0] || settingsForm.supportWhatsApp).trim(),
@@ -598,20 +632,8 @@ export default function AdminPanelPage() {
   };
 
   const handleSaveDeveloperProfile = async () => {
-    setDeveloperProfileError('');
-    setDeveloperProfileMessage('');
-    const formData = new FormData();
-    formData.append('profile', JSON.stringify(settingsForm.developerProfile));
-    formData.append('removeImage', String(removeDeveloperImage));
-    if (developerImageFile) formData.append('image', developerImageFile);
     try {
-      const response = await fetch('/api/admin/developer-profile', { method: 'POST', body: formData });
-      const result = await response.json() as { profile?: DeveloperProfileSettings; error?: string };
-      if (!response.ok || !result.profile) throw new Error(result.error || 'Could not save developer profile.');
-      setSettingsForm((previous) => ({ ...previous, developerProfile: result.profile! }));
-      updateStoreSettings({ developerProfile: result.profile });
-      setDeveloperImageFile(null);
-      setRemoveDeveloperImage(false);
+      await persistDeveloperProfile();
       setDeveloperProfileMessage('Developer profile saved.');
     } catch (error) {
       setDeveloperProfileError(error instanceof Error ? error.message : 'Could not save developer profile.');
@@ -2271,7 +2293,7 @@ export default function AdminPanelPage() {
                   <label className="text-xs font-semibold sm:col-span-2">Email<input required type="email" value={settingsForm.developerProfile.email} onChange={(event) => setSettingsForm((previous) => ({ ...previous, developerProfile: { ...previous.developerProfile, email: event.target.value } }))} className="mt-1 block min-h-10 w-full rounded-lg border border-slate-300 px-3" /></label>
                   <label className="text-xs font-semibold sm:col-span-2">Short story<textarea maxLength={1200} rows={4} value={settingsForm.developerProfile.story} onChange={(event) => setSettingsForm((previous) => ({ ...previous, developerProfile: { ...previous.developerProfile, story: event.target.value } }))} className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2" /></label>
                 </div>
-                <button type="button" onClick={() => void handleSaveDeveloperProfile()} className="min-h-10 rounded-lg bg-slate-900 px-4 text-xs font-bold text-white hover:bg-indigo-700">Save Developer Profile</button>
+                <button type="button" disabled={developerProfileSaving} onClick={() => void handleSaveDeveloperProfile()} className="min-h-10 rounded-lg bg-slate-900 px-4 text-xs font-bold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60">{developerProfileSaving ? 'Saving developer profile…' : 'Save Developer Profile'}</button>
               </div>
 
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
